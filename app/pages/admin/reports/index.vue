@@ -5,5 +5,5 @@ definePageMeta({
 </script>
 
 <template>
-  <div>Admin Dashboard</div>
+  <div>Reports (Finance)</div>
 </template>

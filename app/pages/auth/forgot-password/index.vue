@@ -1,9 +1,9 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: "admin",
+  layout: "auth",
 });
 </script>
 
 <template>
-  <div>Admin Dashboard</div>
+  <div>Password Reset</div>
 </template>

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: "admin",
+  layout: "driver",
 });
 </script>
 
 <template>
-  <div>Admin Dashboard</div>
+  <div>Update Delivery Status</div>
 </template>

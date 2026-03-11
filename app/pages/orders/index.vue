@@ -1,9 +1,9 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: "admin",
+  layout: "orders",
 });
 </script>
 
 <template>
-  <div>Admin Dashboard</div>
+  <div>User Orders List</div>
 </template>
