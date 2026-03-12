@@ -2,8 +2,10 @@
 definePageMeta({
   layout: "admin",
 });
+
+await navigateTo("/admin/dashboard");
 </script>
 
 <template>
-  <div>Admin Dashboard</div>
+  <div />
 </template>

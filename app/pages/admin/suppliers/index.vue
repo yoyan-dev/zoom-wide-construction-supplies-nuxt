@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { Category } from "~/types/category";
 import type { Product } from "~/types/product";
-import CategoriesHeader from "./_components/CategoriesHeader.vue";
-import CategoriesTable from "./_components/CategoriesTable.vue";
-import CategoryEditModal from "./_components/CategoryEditModal.vue";
+import SupplierHeader from "./_components/SupplierHeader.vue";
+import SupplierTable from "./_components/SupplierTable.vue";
+import CategoryEditModal from "./_components/SupplierEditModal.vue";
 
 definePageMeta({
   layout: "admin",
@@ -31,8 +31,8 @@ const openEdit = (category: Category) => {
 <template>
   <div class="min-h-screen p-6">
     <div class="space-y-6">
-      <CategoriesHeader :total="categories.length" />
-      <CategoriesTable
+      <SupplierHeader :total="categories.length" />
+      <SupplierTable
         :categories="categories"
         :products="products"
         @edit="openEdit"

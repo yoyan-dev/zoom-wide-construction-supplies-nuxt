@@ -9,7 +9,7 @@ const links = [
     {
       label: "Dashboard",
       icon: "i-lucide-layout-dashboard",
-      to: "/admin",
+      to: "/admin/dashboard",
       onSelect: () => (open.value = false),
     },
 
@@ -166,7 +166,11 @@ const groups = computed(() => [
     <template #header>
       <UDashboardNavbar title="Admin" class="bg-elevated/25" />
     </template>
-
-    <slot />
+    <div
+      class="w-full max-h-screen overflow-y-scroll bg-gray-50 dark:bg-gray-900"
+    >
+      <slot />
+    </div>
   </UDashboardGroup>
 </template>
+h
