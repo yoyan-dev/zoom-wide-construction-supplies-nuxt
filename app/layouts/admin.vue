@@ -130,6 +130,13 @@ const groups = computed(() => [
       class="bg-elevated/25"
     >
       <template #header="{ collapsed }">
+        <div class="flex items-center gap-2" v-if="!collapsed">
+          <NuxtImg src="/logo.png" width="50" height="40" />
+          <h1 class="text-xl font-semibold text-primary">ZOOM WIDE</h1>
+        </div>
+
+        <NuxtImg src="/logo.png" width="40" height="40" v-else />
+
         <TeamsMenu :collapsed="collapsed" />
       </template>
 
@@ -162,15 +169,26 @@ const groups = computed(() => [
     </UDashboardSidebar>
 
     <UDashboardSearch :groups="groups" />
+    <UDashboardPanel id="customers">
+      <template #header>
+        <UDashboardNavbar title="ZOOM WIDE Construction Supplies">
+          <template #leading>
+            <UDashboardSidebarCollapse />
+          </template>
 
-    <template #header>
-      <UDashboardNavbar title="Admin" class="bg-elevated/25" />
-    </template>
-    <div
-      class="w-full max-h-screen overflow-y-scroll bg-gray-50 dark:bg-gray-900"
-    >
-      <slot />
-    </div>
+          <template #right>
+            <UAvatar src="https://github.com/benjamincanac.png" />
+          </template>
+        </UDashboardNavbar>
+      </template>
+
+      <template #body>
+        <slot />
+        <!-- <div
+          class="w-full max-h-screen overflow-y-scroll bg-gray-50 dark:bg-gray-900"
+        >
+        </div> -->
+      </template>
+    </UDashboardPanel>
   </UDashboardGroup>
 </template>
-h

@@ -30,7 +30,7 @@ const dashboard = computed(() => data.value ?? empty);
 </script>
 
 <template>
-  <div class="min-h-screen p-6">
+  <div class="min-h-screen">
     <div class="space-y-6">
       <DashboardHero
         :range-label="dashboard.range_label"

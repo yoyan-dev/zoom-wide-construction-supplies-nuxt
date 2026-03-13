@@ -29,7 +29,7 @@ const openEdit = (category: Category) => {
 </script>
 
 <template>
-  <div class="min-h-screen p-6">
+  <div class="min-h-screen">
     <div class="space-y-6">
       <CategoriesHeader :total="categories.length" />
       <CategoriesTable

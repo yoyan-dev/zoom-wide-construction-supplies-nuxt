@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
 import type { Category } from "~/types/category";
 import type { Product } from "~/types/product";
 import { formatShortDate } from "~/utils/format";
 
+const table = useTemplateRef("table");
 const props = defineProps<{
   categories: Category[];
   products: Product[];
@@ -47,6 +49,10 @@ const columns: TableColumn<Category>[] = [
     header: "",
   },
 ];
+const pagination = ref({
+  pageIndex: 0,
+  pageSize: 5,
+});
 </script>
 
 <template>
@@ -56,14 +62,23 @@ const columns: TableColumn<Category>[] = [
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
           Catalog Structure
         </p>
-        <p class="mt-1 text-lg font-semibold">Category overview</p>
+        <p class="mt-1 text-lg font-semibold">Supplier overview</p>
       </div>
       <UButton color="neutral" variant="ghost" icon="i-lucide-filter">
         Filters
       </UButton>
     </div>
 
-    <UTable :data="props.categories" :columns="columns" class="text-sm">
+    <UTable
+      ref="table"
+      v-model:pagination="pagination"
+      :data="props.categories"
+      :columns="columns"
+      class="text-sm"
+      :pagination-options="{
+        getPaginationRowModel: getPaginationRowModel(),
+      }"
+    >
       <template #name-cell="{ row }">
         <div class="flex flex-col">
           <span class="font-medium">{{ row.original.name }}</span>
@@ -99,5 +114,13 @@ const columns: TableColumn<Category>[] = [
         </div>
       </template>
     </UTable>
+    <div class="flex justify-end border-t border-default pt-4 px-4">
+      <UPagination
+        :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
+        :items-per-page="table?.tableApi?.getState().pagination.pageSize"
+        :total="table?.tableApi?.getFilteredRowModel().rows.length"
+        @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)"
+      />
+    </div>
   </UCard>
 </template>

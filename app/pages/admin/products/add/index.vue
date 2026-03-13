@@ -31,9 +31,9 @@ const handleSubmit = (payload: Record<string, unknown>) => {
 </script>
 
 <template>
-  <div class="min-h-screen p-6">
+  <div class="min-h-screen">
     <div class="space-y-6">
-      <section class="bg-white dark:bg-gray-800 p-6">
+      <section class="bg-white dark:bg-gray-800 p-2">
         <div
           class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
+import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { Category } from "~/types/category";
 import type { Product } from "~/types/product";
 import type { Supplier } from "~/types/supplier";
@@ -26,6 +27,7 @@ const props = defineProps<{
   status: string;
 }>();
 
+const table = useTemplateRef("table");
 const selectedProduct = ref<Product | null>(null);
 const editOpen = ref(false);
 
@@ -106,13 +108,27 @@ const openEdit = (product: Product) => {
   selectedProduct.value = product;
   editOpen.value = true;
 };
+
+const pagination = ref({
+  pageIndex: 0,
+  pageSize: 5,
+});
 </script>
 
 <template>
   <UCard>
     <ProductHeader />
 
-    <UTable :data="filteredProducts" :columns="columns" class="text-sm">
+    <UTable
+      ref="table"
+      v-model:pagination="pagination"
+      :data="filteredProducts"
+      :columns="columns"
+      class="text-sm"
+      :pagination-options="{
+        getPaginationRowModel: getPaginationRowModel(),
+      }"
+    >
       <template #sku-cell="{ row }">
         <span class="font-medium">{{ row.original.sku }}</span>
       </template>
@@ -183,13 +199,21 @@ const openEdit = (product: Product) => {
         </div>
       </template>
     </UTable>
+    <div class="flex justify-end border-t border-default pt-4 px-4">
+      <UPagination
+        :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
+        :items-per-page="table?.tableApi?.getState().pagination.pageSize"
+        :total="table?.tableApi?.getFilteredRowModel().rows.length"
+        @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)"
+      />
+    </div>
   </UCard>
 
-  <ProductQuickEditModal
+  <!-- <ProductQuickEditModal
     :open="editOpen"
     :product="selectedProduct"
     :categories="props.categories"
     :suppliers="props.suppliers"
     @update:open="editOpen = $event"
-  />
+  /> -->
 </template>

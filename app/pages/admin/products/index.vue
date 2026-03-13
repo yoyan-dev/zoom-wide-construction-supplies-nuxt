@@ -18,6 +18,12 @@ type ProductsResponse =
     }
   | Product[];
 
+const productStore = useProductStore();
+
+onMounted(() => {
+  productStore.fetchProducts();
+});
+
 const { data } = await useFetch<ProductsResponse>("/api/admin/products");
 
 const products = computed(() =>
@@ -45,7 +51,7 @@ const categoryOptions = computed(() => [
 </script>
 
 <template>
-  <div class="min-h-screen p-6">
+  <div class="min-h-screen">
     <div class="space-y-6">
       <ProductsStats :products="products" />
       <ProductsFilters
