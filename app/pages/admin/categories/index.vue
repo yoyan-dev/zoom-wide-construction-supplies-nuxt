@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { Category } from "~/types/category";
-import type { Product } from "~/types/product";
+import { storeToRefs } from "pinia";
 import CategoriesHeader from "./_components/CategoriesHeader.vue";
 import CategoriesTable from "./_components/CategoriesTable.vue";
 import CategoryEditModal from "./_components/CategoryEditModal.vue";
@@ -9,15 +8,16 @@ definePageMeta({
   layout: "admin",
 });
 
-const { data: categoriesData } = await useFetch<Category[]>(
-  "/api/admin/categories",
-);
-const { data: productsData } = await useFetch<Product[]>(
-  "/api/admin/products?only=products",
-);
+const categoryStore = useCategoryStore();
+const productStore = useProductStore();
 
-const categories = computed(() => categoriesData.value ?? []);
-const products = computed(() => productsData.value ?? []);
+await Promise.all([
+  categoryStore.fetchCategories(),
+  productStore.fetchProducts(),
+]);
+
+const { categories } = storeToRefs(categoryStore);
+const { products } = storeToRefs(productStore);
 
 const selectedCategory = ref<Category | null>(null);
 const editOpen = ref(false);

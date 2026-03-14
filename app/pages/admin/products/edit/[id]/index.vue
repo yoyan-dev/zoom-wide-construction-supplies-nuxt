@@ -1,39 +1,27 @@
 <script setup lang="ts">
-import type { Category } from "~/types/category";
-import type { Product } from "~/types/product";
-import type { Supplier } from "~/types/supplier";
+import { storeToRefs } from "pinia";
 import ProductForm from "../../_components/ProductForm.vue";
 
 definePageMeta({
   layout: "admin",
 });
 
-type ProductsResponse =
-  | {
-      products: Product[];
-      categories: Category[];
-      suppliers: Supplier[];
-    }
-  | Product[];
-
 const route = useRoute();
 const productId = computed(() => String(route.params.id));
 
-const { data } = await useFetch<ProductsResponse>("/api/admin/products");
+const productStore = useProductStore();
+const categoryStore = useCategoryStore();
+const supplierStore = useSupplierStore();
 
-const products = computed(() =>
-  Array.isArray(data.value) ? data.value : (data.value?.products ?? []),
-);
-const categories = computed(() =>
-  Array.isArray(data.value) ? [] : (data.value?.categories ?? []),
-);
-const suppliers = computed(() =>
-  Array.isArray(data.value) ? [] : (data.value?.suppliers ?? []),
-);
+await Promise.all([
+  productStore.fetchProductById(productId.value),
+  categoryStore.fetchCategories(),
+  supplierStore.fetchSuppliers(),
+]);
 
-const product = computed(
-  () => products.value.find((item) => item.id === productId.value) ?? null,
-);
+const { product } = storeToRefs(productStore);
+const { categories } = storeToRefs(categoryStore);
+const { suppliers } = storeToRefs(supplierStore);
 
 const handleSubmit = (payload: Record<string, unknown>) => {
   console.info("Update product payload", payload);

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { DashboardDeliverySummary } from "~/types/dashboard";
 import type { Delivery } from "~/types/delivery";
+import type { Driver } from "~/types/driver";
 import { formatShortDate } from "~/utils/format";
 
 const props = defineProps<{
   statuses: DashboardDeliverySummary[];
   deliveries: Delivery[];
+  drivers: Driver[];
 }>();
 
 const activeDeliveries = computed(() =>
@@ -14,6 +16,14 @@ const activeDeliveries = computed(() =>
       delivery.status === "scheduled" || delivery.status === "in_transit",
   ),
 );
+
+const driverMap = computed(() => {
+  const map: Record<string, Driver> = {};
+  for (const driver of props.drivers) {
+    map[driver.id] = driver;
+  }
+  return map;
+});
 
 type BadgeColor =
   | "primary"
@@ -69,8 +79,16 @@ const toneMap: Record<Delivery["status"], BadgeColor> = {
             {{ delivery.order_id }}
           </p>
           <p class="text-xs text-slate-500">
-            {{ delivery.driver_name ?? "Driver unassigned" }} ·
-            {{ delivery.vehicle_number ?? "Vehicle TBA" }}
+            {{
+              driverMap[delivery.driver_id ?? ""]?.name ??
+                "Driver unassigned"
+            }}
+            ·
+            {{
+              driverMap[delivery.driver_id ?? ""]?.vehicle_number ??
+                delivery.vehicle_number ??
+                "Vehicle TBA"
+            }}
           </p>
         </div>
         <div class="text-right">

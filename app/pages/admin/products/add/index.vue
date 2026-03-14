@@ -1,29 +1,21 @@
 <script setup lang="ts">
-import type { Category } from "~/types/category";
-import type { Product } from "~/types/product";
-import type { Supplier } from "~/types/supplier";
+import { storeToRefs } from "pinia";
 import ProductForm from "../_components/ProductForm.vue";
 
 definePageMeta({
   layout: "admin",
 });
 
-type ProductsResponse =
-  | {
-      products: Product[];
-      categories: Category[];
-      suppliers: Supplier[];
-    }
-  | Product[];
+const categoryStore = useCategoryStore();
+const supplierStore = useSupplierStore();
 
-const { data } = await useFetch<ProductsResponse>("/api/admin/products");
+await Promise.all([
+  categoryStore.fetchCategories(),
+  supplierStore.fetchSuppliers(),
+]);
 
-const categories = computed(() =>
-  Array.isArray(data.value) ? [] : (data.value?.categories ?? []),
-);
-const suppliers = computed(() =>
-  Array.isArray(data.value) ? [] : (data.value?.suppliers ?? []),
-);
+const { categories } = storeToRefs(categoryStore);
+const { suppliers } = storeToRefs(supplierStore);
 
 const handleSubmit = (payload: Record<string, unknown>) => {
   console.info("Create product payload", payload);

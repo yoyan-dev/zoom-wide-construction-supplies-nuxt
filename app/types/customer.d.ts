@@ -10,3 +10,15 @@ export interface Customer {
   created_at: string;
   updated_at: string;
 }
+
+export interface FetchCustomerParams {
+  q?: string;
+  page?: number;
+}
+
+export interface CustomerPagination {
+  page?: number;
+  limit?: number;
+  total?: number;
+  total_pages?: number;
+}

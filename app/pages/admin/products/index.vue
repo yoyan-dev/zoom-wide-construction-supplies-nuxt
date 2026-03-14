@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { Category } from "~/types/category";
-import type { Product } from "~/types/product";
-import type { Supplier } from "~/types/supplier";
+import { storeToRefs } from "pinia";
 import ProductsFilters from "./_components/ProductsFilters.vue";
 import ProductsStats from "./_components/ProductsStats.vue";
 import ProductsTable from "./_components/ProductsTable.vue";
@@ -10,31 +8,19 @@ definePageMeta({
   layout: "admin",
 });
 
-type ProductsResponse =
-  | {
-      products: Product[];
-      categories: Category[];
-      suppliers: Supplier[];
-    }
-  | Product[];
-
 const productStore = useProductStore();
+const categoryStore = useCategoryStore();
+const supplierStore = useSupplierStore();
 
-onMounted(() => {
-  productStore.fetchProducts();
-});
+await Promise.all([
+  productStore.fetchProducts(),
+  categoryStore.fetchCategories(),
+  supplierStore.fetchSuppliers(),
+]);
 
-const { data } = await useFetch<ProductsResponse>("/api/admin/products");
-
-const products = computed(() =>
-  Array.isArray(data.value) ? data.value : (data.value?.products ?? []),
-);
-const categories = computed(() =>
-  Array.isArray(data.value) ? [] : (data.value?.categories ?? []),
-);
-const suppliers = computed(() =>
-  Array.isArray(data.value) ? [] : (data.value?.suppliers ?? []),
-);
+const { products } = storeToRefs(productStore);
+const { categories } = storeToRefs(categoryStore);
+const { suppliers } = storeToRefs(supplierStore);
 
 const search = ref("");
 const categoryId = ref("all");

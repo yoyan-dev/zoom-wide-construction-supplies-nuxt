@@ -1,44 +1,29 @@
 <script setup lang="ts">
 import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
-import type { Product } from "~/types/product";
-import type { Supplier } from "~/types/supplier";
+import type { Driver } from "~/types/driver";
 import { formatShortDate } from "~/utils/format";
 
 const table = useTemplateRef("table");
 const props = defineProps<{
-  suppliers: Supplier[];
-  products: Product[];
+  drivers: Driver[];
 }>();
 
-const emit = defineEmits<{
-  (e: "edit", supplier: Supplier): void;
-}>();
-
-const productCounts = computed(() => {
-  const counts: Record<string, number> = {};
-  for (const product of props.products) {
-    if (!product.supplier_id) continue;
-    counts[product.supplier_id] = (counts[product.supplier_id] ?? 0) + 1;
-  }
-  return counts;
-});
-
-const columns: TableColumn<Supplier>[] = [
+const columns: TableColumn<Driver>[] = [
   {
-    id: "name",
-    header: "Supplier",
+    id: "driver",
+    header: "Driver",
     accessorFn: (row) => row.name,
   },
   {
     id: "contact",
     header: "Contact",
-    accessorFn: (row) => row.contact_name ?? "No contact",
+    accessorFn: (row) => row.phone ?? "",
   },
   {
-    id: "products",
-    header: "Products",
-    accessorFn: (row) => productCounts.value[row.id] ?? 0,
+    id: "vehicle",
+    header: "Vehicle",
+    accessorFn: (row) => row.vehicle_number ?? "",
   },
   {
     id: "updated",
@@ -50,6 +35,7 @@ const columns: TableColumn<Supplier>[] = [
     header: "",
   },
 ];
+
 const pagination = ref({
   pageIndex: 0,
   pageSize: 5,
@@ -61,9 +47,9 @@ const pagination = ref({
     <div class="mb-4 flex items-center justify-between">
       <div>
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Catalog Structure
+          Driver Roster
         </p>
-        <p class="mt-1 text-lg font-semibold">Supplier overview</p>
+        <p class="mt-1 text-lg font-semibold">Driver overview</p>
       </div>
       <UButton color="neutral" variant="ghost" icon="i-lucide-filter">
         Filters
@@ -73,33 +59,35 @@ const pagination = ref({
     <UTable
       ref="table"
       v-model:pagination="pagination"
-      :data="props.suppliers"
+      :data="props.drivers"
       :columns="columns"
       class="text-sm"
       :pagination-options="{
         getPaginationRowModel: getPaginationRowModel(),
       }"
     >
-      <template #name-cell="{ row }">
+      <template #driver-cell="{ row }">
         <div class="flex flex-col">
           <span class="font-medium">{{ row.original.name }}</span>
-          <span class="text-xs text-slate-500">{{ row.original.id }}</span>
+          <span class="text-xs text-slate-500">
+            {{ row.original.license_number ?? "No license" }}
+          </span>
         </div>
       </template>
       <template #contact-cell="{ row }">
         <div class="flex flex-col">
-          <span class="text-slate-600">
-            {{ row.original.contact_name ?? "No contact" }}
+          <span class="text-slate-700">
+            {{ row.original.phone ?? "No phone" }}
           </span>
           <span class="text-xs text-slate-500">
-            {{ row.original.email ?? row.original.phone ?? "No contact info" }}
+            {{ row.original.email ?? "No email" }}
           </span>
         </div>
       </template>
-      <template #products-cell="{ row }">
-        <UBadge color="info" variant="subtle">
-          {{ productCounts[row.original.id] ?? 0 }} products
-        </UBadge>
+      <template #vehicle-cell="{ row }">
+        <span class="text-slate-600">
+          {{ row.original.vehicle_number ?? "No vehicle" }}
+        </span>
       </template>
       <template #updated-cell="{ row }">
         <span class="text-slate-600">
@@ -108,14 +96,8 @@ const pagination = ref({
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            icon="i-lucide-pencil"
-            @click="emit('edit', row.original)"
-          >
-            Edit
+          <UButton color="neutral" variant="ghost" size="sm">
+            View
           </UButton>
         </div>
       </template>

@@ -1,55 +1,41 @@
 <script setup lang="ts">
 import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
-import type { Product } from "~/types/product";
-import type { Supplier } from "~/types/supplier";
+import type { Customer } from "~/types/customer";
 import { formatShortDate } from "~/utils/format";
 
 const table = useTemplateRef("table");
 const props = defineProps<{
-  suppliers: Supplier[];
-  products: Product[];
+  customers: Customer[];
 }>();
 
-const emit = defineEmits<{
-  (e: "edit", supplier: Supplier): void;
-}>();
-
-const productCounts = computed(() => {
-  const counts: Record<string, number> = {};
-  for (const product of props.products) {
-    if (!product.supplier_id) continue;
-    counts[product.supplier_id] = (counts[product.supplier_id] ?? 0) + 1;
-  }
-  return counts;
-});
-
-const columns: TableColumn<Supplier>[] = [
+const columns: TableColumn<Customer>[] = [
   {
-    id: "name",
-    header: "Supplier",
-    accessorFn: (row) => row.name,
+    id: "company",
+    header: "Company",
+    accessorFn: (row) => row.company_name,
   },
   {
     id: "contact",
-    header: "Contact",
-    accessorFn: (row) => row.contact_name ?? "No contact",
+    header: "Primary Contact",
+    accessorFn: (row) => row.contact_name,
   },
   {
-    id: "products",
-    header: "Products",
-    accessorFn: (row) => productCounts.value[row.id] ?? 0,
+    id: "email",
+    header: "Email",
+    accessorFn: (row) => row.email,
   },
   {
-    id: "updated",
-    header: "Updated",
-    accessorFn: (row) => row.updated_at,
+    id: "created",
+    header: "Joined",
+    accessorFn: (row) => row.created_at,
   },
   {
     id: "actions",
     header: "",
   },
 ];
+
 const pagination = ref({
   pageIndex: 0,
   pageSize: 5,
@@ -61,9 +47,9 @@ const pagination = ref({
     <div class="mb-4 flex items-center justify-between">
       <div>
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Catalog Structure
+          Customer Directory
         </p>
-        <p class="mt-1 text-lg font-semibold">Supplier overview</p>
+        <p class="mt-1 text-lg font-semibold">Customer overview</p>
       </div>
       <UButton color="neutral" variant="ghost" icon="i-lucide-filter">
         Filters
@@ -73,49 +59,39 @@ const pagination = ref({
     <UTable
       ref="table"
       v-model:pagination="pagination"
-      :data="props.suppliers"
+      :data="props.customers"
       :columns="columns"
       class="text-sm"
       :pagination-options="{
         getPaginationRowModel: getPaginationRowModel(),
       }"
     >
-      <template #name-cell="{ row }">
+      <template #company-cell="{ row }">
         <div class="flex flex-col">
-          <span class="font-medium">{{ row.original.name }}</span>
+          <span class="font-medium">{{ row.original.company_name }}</span>
           <span class="text-xs text-slate-500">{{ row.original.id }}</span>
         </div>
       </template>
       <template #contact-cell="{ row }">
         <div class="flex flex-col">
-          <span class="text-slate-600">
-            {{ row.original.contact_name ?? "No contact" }}
-          </span>
+          <span class="text-slate-700">{{ row.original.contact_name }}</span>
           <span class="text-xs text-slate-500">
-            {{ row.original.email ?? row.original.phone ?? "No contact info" }}
+            {{ row.original.phone ?? "No phone" }}
           </span>
         </div>
       </template>
-      <template #products-cell="{ row }">
-        <UBadge color="info" variant="subtle">
-          {{ productCounts[row.original.id] ?? 0 }} products
-        </UBadge>
+      <template #email-cell="{ row }">
+        <span class="text-slate-600">{{ row.original.email }}</span>
       </template>
-      <template #updated-cell="{ row }">
+      <template #created-cell="{ row }">
         <span class="text-slate-600">
-          {{ formatShortDate(row.original.updated_at) }}
+          {{ formatShortDate(row.original.created_at) }}
         </span>
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            icon="i-lucide-pencil"
-            @click="emit('edit', row.original)"
-          >
-            Edit
+          <UButton color="neutral" variant="ghost" size="sm">
+            View
           </UButton>
         </div>
       </template>

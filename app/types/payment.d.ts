@@ -12,3 +12,18 @@ export interface Payment {
   created_at: string;
   updated_at: string;
 }
+
+export interface FetchPaymentParams {
+  q?: string;
+  status?: PaymentStatus | "";
+  method?: PaymentMethod | "";
+  order_id?: string;
+  page?: number;
+}
+
+export interface PaymentPagination {
+  page?: number;
+  limit?: number;
+  total?: number;
+  total_pages?: number;
+}

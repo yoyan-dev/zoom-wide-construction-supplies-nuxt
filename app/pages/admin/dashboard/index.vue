@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import type { DashboardResponse } from "~/types/dashboard";
 import DashboardDeliveryOverview from "./_components/DashboardDeliveryOverview.vue";
 import DashboardHero from "./_components/DashboardHero.vue";
@@ -12,7 +13,11 @@ definePageMeta({
   layout: "admin",
 });
 
+const driverStore = useDriverStore();
 const { data } = await useFetch<DashboardResponse>("/api/admin/dashboard");
+await driverStore.fetchDrivers();
+
+const { drivers } = storeToRefs(driverStore);
 
 const empty: DashboardResponse = {
   range_label: "",
@@ -50,6 +55,7 @@ const dashboard = computed(() => data.value ?? empty);
           <DashboardDeliveryOverview
             :statuses="dashboard.delivery_statuses"
             :deliveries="dashboard.deliveries"
+            :drivers="drivers"
           />
           <DashboardLowStock :rows="dashboard.low_stock_items" />
         </div>

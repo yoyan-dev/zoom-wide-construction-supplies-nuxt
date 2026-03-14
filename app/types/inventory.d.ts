@@ -11,3 +11,17 @@ export interface InventoryLog {
   created_by: string | null;
   created_at: string;
 }
+
+export interface FetchInventoryParams {
+  q?: string;
+  movement_type?: InventoryMovementType | "";
+  product_id?: string;
+  page?: number;
+}
+
+export interface InventoryPagination {
+  page?: number;
+  limit?: number;
+  total?: number;
+  total_pages?: number;
+}

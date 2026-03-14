@@ -1,29 +1,30 @@
 <script setup lang="ts">
-import type { Category } from "~/types/category";
-import type { Product } from "~/types/product";
+import { storeToRefs } from "pinia";
+import type { Supplier } from "~/types/supplier";
 import SupplierHeader from "./_components/SupplierHeader.vue";
 import SupplierTable from "./_components/SupplierTable.vue";
-import CategoryEditModal from "./_components/SupplierEditModal.vue";
+import SupplierEditModal from "./_components/SupplierEditModal.vue";
 
 definePageMeta({
   layout: "admin",
 });
 
-const { data: categoriesData } = await useFetch<Category[]>(
-  "/api/admin/categories",
-);
-const { data: productsData } = await useFetch<Product[]>(
-  "/api/admin/products?only=products",
-);
+const supplierStore = useSupplierStore();
+const productStore = useProductStore();
 
-const categories = computed(() => categoriesData.value ?? []);
-const products = computed(() => productsData.value ?? []);
+await Promise.all([
+  supplierStore.fetchSuppliers(),
+  productStore.fetchProducts(),
+]);
 
-const selectedCategory = ref<Category | null>(null);
+const { suppliers } = storeToRefs(supplierStore);
+const { products } = storeToRefs(productStore);
+
+const selectedSupplier = ref<Supplier | null>(null);
 const editOpen = ref(false);
 
-const openEdit = (category: Category) => {
-  selectedCategory.value = category;
+const openEdit = (supplier: Supplier) => {
+  selectedSupplier.value = supplier;
   editOpen.value = true;
 };
 </script>
@@ -31,18 +32,18 @@ const openEdit = (category: Category) => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <SupplierHeader :total="categories.length" />
+      <SupplierHeader :total="suppliers.length" />
       <SupplierTable
-        :categories="categories"
+        :suppliers="suppliers"
         :products="products"
         @edit="openEdit"
       />
     </div>
   </div>
 
-  <!-- <CategoryEditModal
+  <!-- <SupplierEditModal
     :open="editOpen"
-    :category="selectedCategory"
+    :category="selectedSupplier"
     @update:open="editOpen = $event"
   /> -->
 </template>

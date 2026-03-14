@@ -5,7 +5,7 @@ export const deliveries: Delivery[] = [
   {
     id: "del-2001",
     order_id: "ord-1001",
-    driver_name: "Miles Carter",
+    driver_id: "drv-miles",
     vehicle_number: "TRK-204",
     status: "delivered",
     scheduled_at: daysAgo(1),
@@ -16,7 +16,7 @@ export const deliveries: Delivery[] = [
   {
     id: "del-2002",
     order_id: "ord-1002",
-    driver_name: "Alicia Park",
+    driver_id: "drv-alicia",
     vehicle_number: "TRK-118",
     status: "in_transit",
     scheduled_at: daysAgo(0),
@@ -27,7 +27,7 @@ export const deliveries: Delivery[] = [
   {
     id: "del-2003",
     order_id: "ord-1003",
-    driver_name: null,
+    driver_id: null,
     vehicle_number: null,
     status: "scheduled",
     scheduled_at: daysFromNow(1),
@@ -38,7 +38,7 @@ export const deliveries: Delivery[] = [
   {
     id: "del-2004",
     order_id: "ord-1004",
-    driver_name: "Eric Dalton",
+    driver_id: "drv-eric",
     vehicle_number: "TRK-310",
     status: "delivered",
     scheduled_at: daysAgo(2),
@@ -49,7 +49,7 @@ export const deliveries: Delivery[] = [
   {
     id: "del-2005",
     order_id: "ord-1006",
-    driver_name: "Priya Nair",
+    driver_id: "drv-priya",
     vehicle_number: "VAN-45",
     status: "scheduled",
     scheduled_at: daysFromNow(2),
@@ -60,7 +60,7 @@ export const deliveries: Delivery[] = [
   {
     id: "del-2006",
     order_id: "ord-1008",
-    driver_name: "Owen Brooks",
+    driver_id: "drv-owen",
     vehicle_number: "TRK-522",
     status: "delivered",
     scheduled_at: daysAgo(8),
@@ -71,7 +71,7 @@ export const deliveries: Delivery[] = [
   {
     id: "del-2007",
     order_id: "ord-1010",
-    driver_name: "Lina Ortega",
+    driver_id: "drv-lina",
     vehicle_number: "TRK-287",
     status: "delivered",
     scheduled_at: daysAgo(11),

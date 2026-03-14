@@ -79,6 +79,7 @@ const filteredProducts = computed(() => {
 });
 
 const columns: TableColumn<Product>[] = [
+  { id: "image", header: "", accessorFn: (row) => row.image_url ?? "" },
   { id: "sku", header: "SKU", accessorFn: (row) => row.sku },
   { id: "name", header: "Product", accessorFn: (row) => row.name },
   { id: "category", header: "Category", accessorFn: (row) => row.category_id },
@@ -113,6 +114,13 @@ const pagination = ref({
   pageIndex: 0,
   pageSize: 5,
 });
+
+const productInitials = (name?: string) => {
+  if (!name) return "NA";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+};
 </script>
 
 <template>
@@ -129,6 +137,26 @@ const pagination = ref({
         getPaginationRowModel: getPaginationRowModel(),
       }"
     >
+      <template #image-cell="{ row }">
+        <div class="flex items-center">
+          <div
+            class="h-10 w-10 overflow-hidden rounded-lg bg-slate-100 text-slate-500"
+          >
+            <img
+              v-if="row.original.image_url"
+              :src="row.original.image_url"
+              :alt="row.original.name ?? 'Product image'"
+              class="h-full w-full object-cover"
+            />
+            <span
+              v-else
+              class="flex h-full w-full items-center justify-center text-[10px] font-medium"
+            >
+              {{ productInitials(row.original.name) }}
+            </span>
+          </div>
+        </div>
+      </template>
       <template #sku-cell="{ row }">
         <span class="font-medium">{{ row.original.sku }}</span>
       </template>

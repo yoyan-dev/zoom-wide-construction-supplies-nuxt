@@ -27,3 +27,17 @@ export interface OrderItem {
   created_at: string;
   updated_at: string;
 }
+
+export interface FetchOrderParams {
+  q?: string;
+  status?: OrderStatus | "";
+  customer_id?: string;
+  page?: number;
+}
+
+export interface OrderPagination {
+  page?: number;
+  limit?: number;
+  total?: number;
+  total_pages?: number;
+}

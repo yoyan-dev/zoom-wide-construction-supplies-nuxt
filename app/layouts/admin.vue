@@ -33,6 +33,11 @@ const links = [
           to: "/admin/suppliers",
           onSelect: () => (open.value = false),
         },
+        {
+          label: "Inventory",
+          to: "/admin/inventory",
+          onSelect: () => (open.value = false),
+        },
       ],
     },
 
@@ -49,14 +54,6 @@ const links = [
       to: "/admin/deliveries",
       onSelect: () => (open.value = false),
     },
-
-    {
-      label: "Inventory",
-      icon: "i-lucide-warehouse",
-      to: "/admin/inventory",
-      onSelect: () => (open.value = false),
-    },
-
     {
       label: "Payments",
       icon: "i-lucide-credit-card",
@@ -64,6 +61,12 @@ const links = [
       onSelect: () => (open.value = false),
     },
 
+    {
+      label: "Drivers",
+      icon: "i-lucide-car",
+      to: "/admin/drivers",
+      onSelect: () => (open.value = false),
+    },
     {
       label: "Users",
       icon: "i-lucide-users",
