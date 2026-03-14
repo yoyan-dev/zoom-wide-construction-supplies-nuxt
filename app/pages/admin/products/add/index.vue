@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import type { Product } from "~/types/product";
 import ProductForm from "../_components/ProductForm.vue";
 
 definePageMeta({
@@ -8,6 +9,8 @@ definePageMeta({
 
 const categoryStore = useCategoryStore();
 const supplierStore = useSupplierStore();
+const productStore = useProductStore();
+const router = useRouter();
 
 await Promise.all([
   categoryStore.fetchCategories(),
@@ -17,8 +20,11 @@ await Promise.all([
 const { categories } = storeToRefs(categoryStore);
 const { suppliers } = storeToRefs(supplierStore);
 
-const handleSubmit = (payload: Record<string, unknown>) => {
-  console.info("Create product payload", payload);
+type ProductDraft = Omit<Product, "id" | "created_at" | "updated_at">;
+
+const handleSubmit = async (payload: ProductDraft) => {
+  await productStore.createProduct(payload);
+  router.push("/admin/products");
 };
 </script>
 

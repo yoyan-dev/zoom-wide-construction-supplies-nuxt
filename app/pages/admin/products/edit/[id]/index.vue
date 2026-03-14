@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import type { Product } from "~/types/product";
 import ProductForm from "../../_components/ProductForm.vue";
 
 definePageMeta({
@@ -8,6 +9,7 @@ definePageMeta({
 
 const route = useRoute();
 const productId = computed(() => String(route.params.id));
+const router = useRouter();
 
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
@@ -23,8 +25,18 @@ const { product } = storeToRefs(productStore);
 const { categories } = storeToRefs(categoryStore);
 const { suppliers } = storeToRefs(supplierStore);
 
-const handleSubmit = (payload: Record<string, unknown>) => {
-  console.info("Update product payload", payload);
+type ProductDraft = Omit<Product, "id" | "created_at" | "updated_at">;
+
+const handleSubmit = async (payload: ProductDraft) => {
+  if (!product.value?.id) return;
+  await productStore.updateProduct(product.value.id, payload);
+  router.push("/admin/products");
+};
+
+const handleDelete = async () => {
+  if (!product.value?.id) return;
+  await productStore.deleteProduct(product.value.id);
+  router.push("/admin/products");
 };
 </script>
 
@@ -44,9 +56,14 @@ const handleSubmit = (payload: Record<string, unknown>) => {
               Update pricing, stock, and catalog visibility for this SKU.
             </p>
           </div>
-          <UButton color="neutral" variant="outline" to="/admin/products">
-            Back to Products
-          </UButton>
+          <div class="flex flex-wrap items-center gap-2">
+            <UButton color="neutral" variant="outline" to="/admin/products">
+              Back to Products
+            </UButton>
+            <UButton color="error" variant="outline" @click="handleDelete">
+              Delete Product
+            </UButton>
+          </div>
         </div>
       </section>
 

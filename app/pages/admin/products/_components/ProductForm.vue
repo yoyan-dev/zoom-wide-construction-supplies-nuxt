@@ -6,6 +6,7 @@ import type { Supplier } from "~/types/supplier";
 type ProductDraft = {
   name: string;
   sku: string;
+  image_url: string | null;
   category_id: string;
   supplier_id: string | null;
   unit: string;
@@ -31,6 +32,7 @@ const emit = defineEmits<{
 const draft = ref<ProductDraft>({
   name: "",
   sku: "",
+  image_url: "",
   category_id: "",
   supplier_id: null,
   unit: "unit",
@@ -47,6 +49,7 @@ watch(
     draft.value = {
       name: value?.name ?? "",
       sku: value?.sku ?? "",
+      image_url: value?.image_url ?? "",
       category_id: value?.category_id ?? "",
       supplier_id: value?.supplier_id ?? null,
       unit: value?.unit ?? "unit",
@@ -79,6 +82,7 @@ const supplierOptions = computed(() => [
 const submit = () => {
   emit("submit", {
     ...draft.value,
+    image_url: draft.value.image_url || null,
     supplier_id: draft.value.supplier_id || null,
   });
 };
@@ -92,6 +96,12 @@ const submit = () => {
       </UFormField>
       <UFormField label="SKU">
         <UInput v-model="draft.sku" placeholder="CON-25MPA-001" />
+      </UFormField>
+      <UFormField label="Image URL">
+        <UInput
+          v-model="draft.image_url"
+          placeholder="https://example.com/product.jpg"
+        />
       </UFormField>
       <UFormField label="Category">
         <USelect v-model="draft.category_id" :items="categoryOptions" />

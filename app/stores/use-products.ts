@@ -129,6 +129,87 @@ export const useProductStore = defineStore("products", () => {
     }
   };
 
+  const createProduct = async (
+    payload: Omit<Product, "id" | "created_at" | "updated_at">,
+  ): Promise<H3Response<Product>> => {
+    try {
+      isLoading.value = true;
+      const now = new Date().toISOString();
+      const created: Product = {
+        ...payload,
+        id: `prod-${Date.now()}`,
+        created_at: now,
+        updated_at: now,
+      };
+
+      allProducts.value = [created, ...allProducts.value];
+      await fetchProducts();
+
+      return buildOkResponse(created, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<Product>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const updateProduct = async (
+    id: string,
+    payload: Partial<Product>,
+  ): Promise<H3Response<Product | null>> => {
+    try {
+      isLoading.value = true;
+      const index = allProducts.value.findIndex((p) => p.id === id);
+
+      if (index === -1) {
+        return buildOkResponse(null, 0);
+      }
+
+      const updated: Product = {
+        ...allProducts.value[index],
+        ...payload,
+        id,
+        updated_at: new Date().toISOString(),
+      };
+
+      allProducts.value.splice(index, 1, updated);
+
+      if (product.value?.id === id) {
+        product.value = updated;
+      }
+
+      await fetchProducts();
+
+      return buildOkResponse(updated, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<Product | null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const deleteProduct = async (id: string): Promise<H3Response<null>> => {
+    try {
+      isLoading.value = true;
+      allProducts.value = allProducts.value.filter((p) => p.id !== id);
+
+      if (product.value?.id === id) {
+        product.value = null;
+      }
+
+      await fetchProducts();
+
+      return buildOkResponse(null, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   const setSearch = async (value: string) => {
     query.value.q = value;
     query.value.page = 1;
@@ -159,6 +240,9 @@ export const useProductStore = defineStore("products", () => {
     error,
     fetchProducts,
     fetchProductById,
+    createProduct,
+    updateProduct,
+    deleteProduct,
     setSearch,
     setFilter,
     setPage,
