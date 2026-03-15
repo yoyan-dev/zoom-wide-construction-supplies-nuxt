@@ -4,12 +4,17 @@ import type { TableColumn } from "@nuxt/ui";
 import type { Category } from "~/types/category";
 import type { Product } from "~/types/product";
 import { formatShortDate } from "~/utils/format";
+import { useModal } from "~/composables/admin/useModal";
+import CategoryEditModal from "./modals/CategoryEditModal.vue";
+import CategoryDeleteModal from "./modals/CategoryDeleteModal.vue";
+import CategoryViewModal from "./modals/CategoryViewModal.vue";
 
 const table = useTemplateRef("table");
 const props = defineProps<{
   categories: Category[];
   products: Product[];
 }>();
+const { openModal } = useModal();
 
 const emit = defineEmits<{
   (e: "view", category: Category): void;
@@ -20,6 +25,7 @@ const emit = defineEmits<{
 const productCounts = computed(() => {
   const counts: Record<string, number> = {};
   for (const product of props.products) {
+    if (!product.category_id) continue;
     counts[product.category_id] = (counts[product.category_id] ?? 0) + 1;
   }
   return counts;
@@ -106,32 +112,26 @@ const pagination = ref({
         <div class="flex justify-end">
           <div class="flex items-center gap-2">
             <UButton
-              color="neutral"
-              variant="ghost"
-              size="sm"
+              color="info"
+              variant="outline"
               icon="i-lucide-eye"
-              @click="emit('view', row.original)"
+              @click="openModal(CategoryViewModal, row.original)"
+              >View</UButton
             >
-              View
-            </UButton>
             <UButton
               color="neutral"
-              variant="ghost"
-              size="sm"
+              variant="outline"
               icon="i-lucide-pencil"
-              @click="emit('edit', row.original)"
+              @click="openModal(CategoryEditModal, row.original)"
+              >Edit</UButton
             >
-              Edit
-            </UButton>
             <UButton
               color="error"
-              variant="ghost"
-              size="sm"
+              variant="outline"
               icon="i-lucide-trash"
-              @click="emit('delete', row.original)"
+              @click="openModal(CategoryDeleteModal, row.original)"
+              >Delete</UButton
             >
-              Delete
-            </UButton>
           </div>
         </div>
       </template>

@@ -1,8 +1,8 @@
 export interface Category {
   id: string;
   name: string;
-  description: string | null;
-  image_url: string | null;
+  description: string;
+  image_url: string;
   created_at: string;
   updated_at: string;
 }

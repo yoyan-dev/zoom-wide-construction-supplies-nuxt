@@ -35,7 +35,7 @@
       </div>
     </template>
     <template #footer>
-      <div class="flex justify-end gap-2">
+      <div class="flex justify-end gap-2 w-full">
         <UButton color="neutral" variant="ghost"> Cancel </UButton>
         <UButton color="primary">Save</UButton>
       </div>

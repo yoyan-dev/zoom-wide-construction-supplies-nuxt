@@ -78,7 +78,7 @@ const emit = defineEmits<{ close: [boolean] }>();
     </template>
 
     <template #footer>
-      <div class="flex justify-end">
+      <div class="flex justify-end w-full">
         <UButton color="neutral" variant="ghost" @click="emit('close', false)">
           Close
         </UButton>

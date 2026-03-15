@@ -2,72 +2,71 @@
 import type { Category } from "~/types/category";
 
 const props = defineProps<{
-  open: boolean;
-  category: Category | null;
+  payload: Category | null;
 }>();
 
-const emit = defineEmits<{
-  (e: "update:open", value: boolean): void;
-}>();
+const category = ref<Category | null>(props.payload);
+console.log(props.payload);
+const emit = defineEmits<{ close: [boolean] }>();
 </script>
 
 <template>
-  <UModal :open="props.open" @update:open="emit('update:open', $event)">
+  <UModal :close="{ onClick: () => emit('close', false) }">
     <template #header>
       <div>
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
           Category Details
         </p>
         <h3 class="mt-2 text-lg font-semibold">
-          {{ props.category?.name ?? "Category" }}
+          {{ category?.name ?? "Category" }}
         </h3>
       </div>
     </template>
 
-    <div class="space-y-4 text-sm text-slate-600">
-      <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">ID</p>
-        <p class="mt-1 font-medium text-slate-700">
-          {{ props.category?.id ?? "—" }}
-        </p>
-      </div>
-      <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Description
-        </p>
-        <p class="mt-1">{{ props.category?.description ?? "No description" }}</p>
-      </div>
-      <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Image
-        </p>
-        <p class="mt-1 break-all">
-          {{ props.category?.image_url ?? "No image" }}
-        </p>
-      </div>
-      <div class="grid gap-3 sm:grid-cols-2">
+    <template #body>
+      <div class="space-y-4 text-sm text-slate-600">
         <div>
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-            Created
+          <p class="text-xs uppercase tracking-[0.18em] text-slate-500">ID</p>
+          <p class="mt-1 font-medium text-slate-700">
+            {{ category?.id ?? "—" }}
           </p>
-          <p class="mt-1">{{ props.category?.created_at ?? "—" }}</p>
         </div>
         <div>
           <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-            Updated
+            Description
           </p>
-          <p class="mt-1">{{ props.category?.updated_at ?? "—" }}</p>
+          <p class="mt-1">
+            {{ category?.description ?? "No description" }}
+          </p>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+            Image
+          </p>
+          <p class="mt-1 break-all">
+            {{ category?.image_url ?? "No image" }}
+          </p>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+              Created
+            </p>
+            <p class="mt-1">{{ category?.created_at ?? "—" }}</p>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+              Updated
+            </p>
+            <p class="mt-1">{{ category?.updated_at ?? "—" }}</p>
+          </div>
         </div>
       </div>
-    </div>
+    </template>
 
     <template #footer>
-      <div class="flex justify-end">
-        <UButton
-          color="neutral"
-          variant="ghost"
-          @click="emit('update:open', false)"
-        >
+      <div class="flex justify-end w-full">
+        <UButton color="neutral" variant="ghost" @click="emit('close', false)">
           Close
         </UButton>
       </div>
