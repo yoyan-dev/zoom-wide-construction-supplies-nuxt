@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
+import { storeToRefs } from "pinia";
 import type { InventoryLog, InventoryMovementType } from "~/types/inventory";
 import type { Product } from "~/types/product";
 import { formatNumber, formatShortDate } from "~/utils/format";
@@ -25,6 +26,8 @@ const props = defineProps<{
   products: Product[];
 }>();
 const { openModal } = useModal();
+const inventoryStore = useInventoryStore();
+const { query } = storeToRefs(inventoryStore);
 
 const selectedIds = ref<Set<string>>(new Set());
 
@@ -81,6 +84,10 @@ const handleBulkDelete = async () => {
       selectedIds.value = new Set();
     },
   });
+};
+
+const handleSearch = async (value: string) => {
+  await inventoryStore.setSearch(value);
 };
 
 watch(selectableIds, (ids) => {
@@ -148,6 +155,13 @@ const pagination = ref({
         <p class="mt-1 text-lg font-semibold">Inventory overview</p>
       </div>
       <div class="flex items-center gap-2">
+        <UInput
+          :model-value="query.q ?? ''"
+          class="w-56"
+          icon="i-lucide-search"
+          placeholder="Search inventory"
+          @update:model-value="handleSearch(String($event))"
+        />
         <UButton color="neutral" variant="ghost" icon="i-lucide-filter">
           Filters
         </UButton>

@@ -49,9 +49,20 @@ export const useSupplierStore = defineStore("suppliers", () => {
 
       let filtered = [...allSuppliers.value];
 
-      if (query.value.q) {
+      const term = query.value.q?.trim().toLowerCase();
+      if (term) {
         filtered = filtered.filter((s) =>
-          s.name?.toLowerCase().includes(query.value.q!.toLowerCase()),
+          [
+            s.id ?? "",
+            s.name ?? "",
+            s.contact_name ?? "",
+            s.email ?? "",
+            s.phone ?? "",
+            s.address ?? "",
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(term),
         );
       }
 

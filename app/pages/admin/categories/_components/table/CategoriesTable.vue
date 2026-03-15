@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
+import { storeToRefs } from "pinia";
 import type { Category } from "~/types/category";
 import type { Product } from "~/types/product";
 import { formatShortDate } from "~/utils/format";
@@ -16,6 +17,8 @@ const props = defineProps<{
   products: Product[];
 }>();
 const { openModal } = useModal();
+const categoryStore = useCategoryStore();
+const { query } = storeToRefs(categoryStore);
 const selectedIds = ref<Set<string>>(new Set());
 
 const emit = defineEmits<{
@@ -75,6 +78,10 @@ const handleBulkDelete = async () => {
   });
 };
 
+const handleSearch = async (value: string) => {
+  await categoryStore.setSearch(value);
+};
+
 watch(selectableIds, (ids) => {
   const next = new Set<string>();
   for (const id of ids) {
@@ -129,6 +136,13 @@ const pagination = ref({
         <p class="mt-1 text-lg font-semibold">Category overview</p>
       </div>
       <div class="flex items-center gap-2">
+        <UInput
+          :model-value="query.q ?? ''"
+          class="w-56"
+          icon="i-lucide-search"
+          placeholder="Search categories"
+          @update:model-value="handleSearch(String($event))"
+        />
         <UButton color="neutral" variant="ghost" icon="i-lucide-filter">
           Filters
         </UButton>

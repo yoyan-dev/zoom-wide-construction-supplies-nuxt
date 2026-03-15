@@ -63,10 +63,17 @@ export const useProductStore = defineStore("products", () => {
       let filtered = [...allProducts.value];
 
       // search
-      if (query.value.q) {
-        filtered = filtered.filter((p) =>
-          p.name?.toLowerCase().includes(query.value.q!.toLowerCase()),
-        );
+      const term = query.value.q?.trim().toLowerCase();
+      if (term) {
+        filtered = filtered.filter((p) => {
+          const supplierName = p.supplier_id
+            ? suppliers.find((s) => s.id === p.supplier_id)?.name ?? ""
+            : "";
+          return [p.name ?? "", p.sku ?? "", supplierName]
+            .join(" ")
+            .toLowerCase()
+            .includes(term);
+        });
       }
 
       // category filter

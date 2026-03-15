@@ -49,9 +49,13 @@ export const useCategoryStore = defineStore("categories", () => {
 
       let filtered = [...allCategories.value];
 
-      if (query.value.q) {
+      const term = query.value.q?.trim().toLowerCase();
+      if (term) {
         filtered = filtered.filter((c) =>
-          c.name?.toLowerCase().includes(query.value.q!.toLowerCase()),
+          [c.id, c.name, c.description ?? "", c.image_url ?? ""]
+            .join(" ")
+            .toLowerCase()
+            .includes(term),
         );
       }
 

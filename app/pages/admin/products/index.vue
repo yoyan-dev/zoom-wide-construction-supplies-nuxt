@@ -18,14 +18,15 @@ await Promise.all([
   supplierStore.fetchSuppliers(),
 ]);
 
-const { products } = storeToRefs(productStore);
+const { products, query } = storeToRefs(productStore);
 const { categories } = storeToRefs(categoryStore);
 const { suppliers } = storeToRefs(supplierStore);
 
-const search = ref("");
-const categoryId = ref("all");
 const stockStatus = ref("all");
 const status = ref("all");
+
+const search = computed(() => query.value.q ?? "");
+const categoryId = computed(() => query.value.category_id || "all");
 
 const categoryOptions = computed(() => [
   { label: "All categories", value: "all" },
@@ -34,6 +35,16 @@ const categoryOptions = computed(() => [
     value: category.id,
   })),
 ]);
+
+const handleSearch = async (value: string) => {
+  await productStore.setSearch(value);
+};
+
+const handleCategoryFilter = async (value: string) => {
+  await productStore.setFilter({
+    category_id: value === "all" ? "" : value,
+  });
+};
 </script>
 
 <template>
@@ -46,8 +57,8 @@ const categoryOptions = computed(() => [
         :stock-status="stockStatus"
         :status="status"
         :category-options="categoryOptions"
-        @update:search="search = $event"
-        @update:category-id="categoryId = $event"
+        @update:search="handleSearch"
+        @update:category-id="handleCategoryFilter"
         @update:stock-status="stockStatus = $event"
         @update:status="status = $event"
       />

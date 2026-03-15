@@ -7,6 +7,7 @@ import type {
 } from "~/types/inventory";
 import type { H3Response } from "~/types/h3Response";
 import { inventoryLogs as seedInventoryLogs } from "~/seeds/inventory";
+import { products as seedProducts } from "~/seeds/products";
 
 const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
   status: "ok",
@@ -53,16 +54,27 @@ export const useInventoryStore = defineStore("inventory", () => {
 
       if (query.value.q) {
         const q = query.value.q.toLowerCase();
+        const productMap = new Map(
+          seedProducts.map((product) => [
+            product.id ?? "",
+            { name: product.name ?? "", sku: product.sku ?? "" },
+          ]),
+        );
         filtered = filtered.filter((entry) => {
           const note = entry.note ?? "";
           const refType = entry.reference_type ?? "";
           const refId = entry.reference_id ?? "";
+          const product = productMap.get(entry.product_id);
+          const productName = product?.name ?? "";
+          const productSku = product?.sku ?? "";
           return (
             entry.id.toLowerCase().includes(q) ||
             entry.product_id.toLowerCase().includes(q) ||
             note.toLowerCase().includes(q) ||
             refType.toLowerCase().includes(q) ||
-            refId.toLowerCase().includes(q)
+            refId.toLowerCase().includes(q) ||
+            productName.toLowerCase().includes(q) ||
+            productSku.toLowerCase().includes(q)
           );
         });
       }
