@@ -117,6 +117,91 @@ export const useInventoryStore = defineStore("inventory", () => {
     }
   };
 
+  const createInventoryLog = async (
+    payload: Omit<InventoryLog, "id" | "created_at">,
+  ): Promise<H3Response<InventoryLog>> => {
+    try {
+      isLoading.value = true;
+      const now = new Date().toISOString();
+      const created: InventoryLog = {
+        id: `inv-${Date.now()}`,
+        product_id: payload.product_id,
+        movement_type: payload.movement_type,
+        quantity_change: payload.quantity_change,
+        reference_type: payload.reference_type ?? null,
+        reference_id: payload.reference_id ?? null,
+        note: payload.note ?? null,
+        created_by: payload.created_by ?? null,
+        created_at: now,
+      };
+
+      allLogs.value = [created, ...allLogs.value];
+      await fetchInventoryLogs();
+
+      return buildOkResponse(created, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<InventoryLog>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const updateInventoryLog = async (
+    id: string,
+    payload: Partial<InventoryLog>,
+  ): Promise<H3Response<InventoryLog | null>> => {
+    try {
+      isLoading.value = true;
+      const index = allLogs.value.findIndex((entry) => entry.id === id);
+
+      if (index === -1) {
+        return buildOkResponse(null, 0);
+      }
+
+      const updated: InventoryLog = {
+        ...allLogs.value[index],
+        ...payload,
+        id,
+      };
+
+      allLogs.value.splice(index, 1, updated);
+
+      if (log.value?.id === id) {
+        log.value = updated;
+      }
+
+      await fetchInventoryLogs();
+
+      return buildOkResponse(updated, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<InventoryLog | null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const deleteInventoryLog = async (id: string): Promise<H3Response<null>> => {
+    try {
+      isLoading.value = true;
+      allLogs.value = allLogs.value.filter((entry) => entry.id !== id);
+
+      if (log.value?.id === id) {
+        log.value = null;
+      }
+
+      await fetchInventoryLogs();
+
+      return buildOkResponse(null, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   const setSearch = async (value: string) => {
     query.value.q = value;
     query.value.page = 1;
@@ -147,6 +232,9 @@ export const useInventoryStore = defineStore("inventory", () => {
     error,
     fetchInventoryLogs,
     fetchInventoryLogById,
+    createInventoryLog,
+    updateInventoryLog,
+    deleteInventoryLog,
     setSearch,
     setFilter,
     setPage,

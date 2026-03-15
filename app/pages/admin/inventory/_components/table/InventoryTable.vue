@@ -4,6 +4,10 @@ import type { TableColumn } from "@nuxt/ui";
 import type { InventoryLog, InventoryMovementType } from "~/types/inventory";
 import type { Product } from "~/types/product";
 import { formatNumber, formatShortDate } from "~/utils/format";
+import InventoryViewModal from "../modals/InventoryViewModal.vue";
+import InventoryEditModal from "../modals/InventoryEditModal.vue";
+import InventoryDeleteModal from "../modals/InventoryDeleteModal.vue";
+import { useModal } from "~/composables/admin/useModal";
 
 type BadgeColor =
   | "primary"
@@ -19,6 +23,7 @@ const props = defineProps<{
   logs: InventoryLog[];
   products: Product[];
 }>();
+const { openModal } = useModal();
 
 const productMap = computed(() => {
   const map: Record<string, Product> = {};
@@ -115,7 +120,7 @@ const pagination = ref({
           <span class="font-medium">
             {{
               productMap[row.original.product_id]?.name ??
-                row.original.product_id
+              row.original.product_id
             }}
           </span>
           <span class="text-xs text-slate-500">
@@ -124,7 +129,10 @@ const pagination = ref({
         </div>
       </template>
       <template #movement-cell="{ row }">
-        <UBadge :color="movementTone[row.original.movement_type]" variant="subtle">
+        <UBadge
+          :color="movementTone[row.original.movement_type]"
+          variant="subtle"
+        >
           {{ row.original.movement_type }}
         </UBadge>
       </template>
@@ -145,9 +153,35 @@ const pagination = ref({
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <UButton color="neutral" variant="ghost" size="sm">
-            View
-          </UButton>
+          <div class="flex items-center gap-2">
+            <UButton
+              color="info"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-eye"
+              @click="openModal(InventoryViewModal, row.original)"
+            >
+              View
+            </UButton>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-pencil"
+              @click="openModal(InventoryEditModal, row.original)"
+            >
+              Edit
+            </UButton>
+            <UButton
+              color="error"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-trash"
+              @click="openModal(InventoryDeleteModal, row.original)"
+            >
+              Delete
+            </UButton>
+          </div>
         </div>
       </template>
     </UTable>

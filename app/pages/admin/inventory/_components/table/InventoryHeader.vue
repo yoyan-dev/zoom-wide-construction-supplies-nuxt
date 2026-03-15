@@ -2,6 +2,10 @@
 const props = defineProps<{
   total: number;
 }>();
+
+const emit = defineEmits<{
+  (e: "create"): void;
+}>();
 </script>
 
 <template>
@@ -23,7 +27,9 @@ const props = defineProps<{
         <UBadge color="primary" variant="subtle">
           {{ props.total }} records
         </UBadge>
-        <UButton color="primary" icon="i-lucide-plus">New Adjustment</UButton>
+        <UButton color="primary" icon="i-lucide-plus" @click="emit('create')">
+          New Adjustment
+        </UButton>
       </div>
     </div>
   </section>

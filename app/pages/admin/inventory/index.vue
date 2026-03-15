@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import InventoryHeader from "./_components/InventoryHeader.vue";
-import InventoryTable from "./_components/InventoryTable.vue";
+import InventoryHeader from "./_components/table/InventoryHeader.vue";
+import InventoryTable from "./_components/table/InventoryTable.vue";
+import AddInventoryModal from "./_components/modals/AddInventoryModal.vue";
+import { useModal } from "~/composables/admin/useModal";
 
 definePageMeta({
   layout: "admin",
@@ -9,6 +11,7 @@ definePageMeta({
 
 const inventoryStore = useInventoryStore();
 const productStore = useProductStore();
+const { openModal } = useModal();
 
 await Promise.all([
   inventoryStore.fetchInventoryLogs(),
@@ -17,12 +20,16 @@ await Promise.all([
 
 const { logs } = storeToRefs(inventoryStore);
 const { products } = storeToRefs(productStore);
+
+const handleCreate = () => {
+  openModal(AddInventoryModal);
+};
 </script>
 
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <InventoryHeader :total="logs.length" />
+      <InventoryHeader :total="logs.length" @create="handleCreate" />
       <InventoryTable :logs="logs" :products="products" />
     </div>
   </div>
