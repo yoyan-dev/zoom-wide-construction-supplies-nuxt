@@ -5,8 +5,8 @@ import type { Category } from "~/types/category";
 import type { Product } from "~/types/product";
 import type { Supplier } from "~/types/supplier";
 import { formatCurrency, formatNumber, formatShortDate } from "~/utils/format";
-import ProductQuickEditModal from "./ProductQuickEditModal.vue";
 import ProductHeader from "./ProductHeader.vue";
+import TableActions from "./TableActions.vue";
 
 type BadgeColor =
   | "primary"
@@ -105,11 +105,6 @@ const statusBadge = (product: Product): { color: BadgeColor; label: string } =>
     ? { color: "success", label: "Active" }
     : { color: "neutral", label: "Inactive" };
 
-const openEdit = (product: Product) => {
-  selectedProduct.value = product;
-  editOpen.value = true;
-};
-
 const pagination = ref({
   pageIndex: 0,
   pageSize: 5,
@@ -170,7 +165,11 @@ const productInitials = (name?: string) => {
       </template>
       <template #category-cell="{ row }">
         <span class="text-slate-600">
-          {{ categoryMap[row.original.category_id] ?? "Unassigned" }}
+          {{
+            row.original.category_id
+              ? categoryMap[row.original.category_id]
+              : "Unassigned"
+          }}
         </span>
       </template>
       <template #price-cell="{ row }">
@@ -181,11 +180,20 @@ const productInitials = (name?: string) => {
       <template #stock-cell="{ row }">
         <div class="flex flex-col">
           <span class="font-medium">
-            {{ formatNumber(row.original.stock_quantity) }}
+            {{
+              row.original.stock_quantity
+                ? formatNumber(row.original.stock_quantity)
+                : "_"
+            }}
             {{ row.original.unit }}
           </span>
           <span class="text-xs text-slate-500">
-            Min {{ formatNumber(row.original.minimum_stock_quantity) }}
+            Min
+            {{
+              row.original.minimum_stock_quantity
+                ? formatNumber(row.original.minimum_stock_quantity)
+                : "_"
+            }}
           </span>
         </div>
       </template>
@@ -201,30 +209,15 @@ const productInitials = (name?: string) => {
       </template>
       <template #updated-cell="{ row }">
         <span class="text-slate-600">
-          {{ formatShortDate(row.original.updated_at) }}
+          {{
+            row.original.updated_at
+              ? formatShortDate(row.original.updated_at)
+              : "_"
+          }}
         </span>
       </template>
       <template #actions-cell="{ row }">
-        <div class="flex justify-end">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            icon="i-lucide-pencil"
-            @click="openEdit(row.original)"
-          >
-            Quick Edit
-          </UButton>
-          <UButton
-            color="primary"
-            variant="ghost"
-            size="sm"
-            icon="i-lucide-arrow-up-right"
-            :to="`/admin/products/edit/${row.original.id}`"
-          >
-            Edit Page
-          </UButton>
-        </div>
+        <TableActions :product="row.original" />
       </template>
     </UTable>
     <div class="flex justify-end border-t border-default pt-4 px-4">

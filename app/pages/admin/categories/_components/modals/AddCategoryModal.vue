@@ -1,24 +1,84 @@
-<template>
-  <UModal
-    title="New Category"
-    description="Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-  >
-    <UButton color="primary" icon="i-lucide-plus">New Category</UButton>
+<script setup lang="ts">
+defineProps<{ payload?: unknown }>();
+const emit = defineEmits<{ close: [boolean] }>();
 
+const categoryStore = useCategoryStore();
+const isSaving = ref(false);
+
+const form = reactive({
+  name: "",
+  description: "",
+  image_url: "",
+});
+
+const resetForm = () => {
+  form.name = "";
+  form.description = "";
+  form.image_url = "";
+};
+
+const handleSave = async () => {
+  if (!form.name.trim()) return;
+  isSaving.value = true;
+  await categoryStore.createCategory({
+    name: form.name.trim(),
+    description: form.description.trim(),
+    image_url: form.image_url.trim(),
+  });
+  isSaving.value = false;
+  resetForm();
+  emit("close", false);
+};
+</script>
+
+<template>
+  <UModal :close="{ onClick: () => emit('close', false) }">
+    <template #header>
+      <div>
+        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+          New Category
+        </p>
+        <h3 class="mt-2 text-lg font-semibold">Create a category</h3>
+      </div>
+    </template>
     <template #body>
       <div class="space-y-4">
         <UFormField label="Category name">
-          <UInput placeholder="Concrete & Cement" />
+          <UInput
+            class="w-full"
+            v-model="form.name"
+            placeholder="Concrete & Cement"
+          />
         </UFormField>
         <UFormField label="Description">
-          <UTextarea placeholder="Add a short description..." />
+          <UTextarea
+            class="w-full"
+            v-model="form.description"
+            placeholder="Add a short description..."
+          />
+        </UFormField>
+        <UFormField label="Image URL">
+          <UInput
+            class="w-full"
+            v-model="form.image_url"
+            placeholder="https://example.com/category.jpg"
+          />
         </UFormField>
       </div>
     </template>
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
-        <UButton color="neutral" variant="ghost"> Cancel </UButton>
-        <UButton color="primary">Save Changes</UButton>
+        <UButton color="neutral" variant="ghost" @click="emit('close', false)">
+          Cancel
+        </UButton>
+        <UButton
+          color="primary"
+          :disabled="!form.name.trim()"
+          :loading="isSaving"
+          @click="handleSave"
+        >
+          Save Changes
+        </UButton>
       </div>
     </template>
   </UModal>

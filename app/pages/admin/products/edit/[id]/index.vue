@@ -2,6 +2,8 @@
 import { storeToRefs } from "pinia";
 import type { Product } from "~/types/product";
 import ProductForm from "../../_components/ProductForm.vue";
+import { useModal } from "~/composables/admin/useModal";
+import ProductDeleteModal from "../../_components/modals/ProductDeleteModal.vue";
 
 definePageMeta({
   layout: "admin",
@@ -10,6 +12,7 @@ definePageMeta({
 const route = useRoute();
 const productId = computed(() => String(route.params.id));
 const router = useRouter();
+const { openModal } = useModal();
 
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
@@ -30,12 +33,6 @@ type ProductDraft = Omit<Product, "id" | "created_at" | "updated_at">;
 const handleSubmit = async (payload: ProductDraft) => {
   if (!product.value?.id) return;
   await productStore.updateProduct(product.value.id, payload);
-  router.push("/admin/products");
-};
-
-const handleDelete = async () => {
-  if (!product.value?.id) return;
-  await productStore.deleteProduct(product.value.id);
   router.push("/admin/products");
 };
 </script>
@@ -60,9 +57,12 @@ const handleDelete = async () => {
             <UButton color="neutral" variant="outline" to="/admin/products">
               Back to Products
             </UButton>
-            <UButton color="error" variant="outline" @click="handleDelete">
-              Delete Product
-            </UButton>
+            <UButton
+              color="error"
+              variant="outline"
+              label="Delete Product"
+              @click="openModal(ProductDeleteModal, product)"
+            />
           </div>
         </div>
       </section>

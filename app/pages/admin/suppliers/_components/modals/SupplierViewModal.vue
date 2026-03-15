@@ -6,7 +6,6 @@ const props = defineProps<{
 }>();
 
 const supplier = ref<Supplier | null>(props.payload);
-console.log(props.payload);
 const emit = defineEmits<{ close: [boolean] }>();
 </script>
 

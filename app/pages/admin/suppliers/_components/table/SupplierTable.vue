@@ -4,9 +4,9 @@ import type { TableColumn } from "@nuxt/ui";
 import type { Product } from "~/types/product";
 import type { Supplier } from "~/types/supplier";
 import { formatShortDate } from "~/utils/format";
-import SupplierViewModal from "./modals/SupplierViewModal.vue";
-import SupplierEditModal from "./modals/SupplierEditModal.vue";
-import SupplierDeleteModal from "./modals/SupplierDeleteModal.vue";
+import SupplierViewModal from "../modals/SupplierViewModal.vue";
+import SupplierEditModal from "../modals/SupplierEditModal.vue";
+import SupplierDeleteModal from "../modals/SupplierDeleteModal.vue";
 import { useModal } from "~/composables/admin/useModal";
 
 const table = useTemplateRef("table");
@@ -116,6 +116,7 @@ const pagination = ref({
         <div class="flex justify-end">
           <div class="flex items-center gap-2">
             <UButton
+              size="sm"
               color="info"
               variant="outline"
               icon="i-lucide-eye"
@@ -123,6 +124,7 @@ const pagination = ref({
               >View</UButton
             >
             <UButton
+              size="sm"
               color="neutral"
               variant="outline"
               icon="i-lucide-pencil"
@@ -130,6 +132,7 @@ const pagination = ref({
               >Edit</UButton
             >
             <UButton
+              size="sm"
               color="error"
               variant="outline"
               icon="i-lucide-trash"

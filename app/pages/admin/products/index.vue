@@ -2,7 +2,7 @@
 import { storeToRefs } from "pinia";
 import ProductsFilters from "./_components/ProductsFilters.vue";
 import ProductsStats from "./_components/ProductsStats.vue";
-import ProductsTable from "./_components/ProductsTable.vue";
+import ProductsTable from "./_components/table/ProductsTable.vue";
 
 definePageMeta({
   layout: "admin",

@@ -1,20 +1,18 @@
 <script setup lang="ts">
-import type { Supplier } from "~/types/supplier";
+import type { Product } from "~/types/product";
 
 const props = defineProps<{
-  payload: Supplier | null;
+  payload: Product | null;
 }>();
 
-const supplier = ref<Supplier | null>(props.payload);
-const supplierStore = useSupplierStore();
-const isDeleting = ref(false);
+const product = ref<Product | null>(props.payload);
+const productStore = useProductStore();
+
 const emit = defineEmits<{ close: [boolean] }>();
 
 const handleDelete = async () => {
-  if (!supplier.value?.id) return;
-  isDeleting.value = true;
-  await supplierStore.deleteSupplier(supplier.value.id);
-  isDeleting.value = false;
+  if (!product.value?.id) return;
+  await productStore.deleteProduct(product.value.id);
   emit("close", false);
 };
 </script>
@@ -24,17 +22,18 @@ const handleDelete = async () => {
     <template #header>
       <div>
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Delete Supplier
+          Delete Product
         </p>
         <h3 class="mt-2 text-lg font-semibold">
-          {{ supplier?.name ?? "Supplier" }}
+          {{ [product?.name ?? "Product", product?.sku ?? ""].join(" - ") }}
         </h3>
       </div>
     </template>
+
     <template #body>
       <div class="text-sm text-slate-600">
         This action cannot be undone. Are you sure you want to delete this
-        supplier?
+        product?
       </div>
     </template>
 
@@ -43,7 +42,11 @@ const handleDelete = async () => {
         <UButton color="neutral" variant="ghost" @click="emit('close', false)">
           Cancel
         </UButton>
-        <UButton color="error" :loading="isDeleting" @click="handleDelete">
+        <UButton
+          color="error"
+          :loading="productStore.isLoading"
+          @click="handleDelete"
+        >
           Delete
         </UButton>
       </div>

@@ -6,8 +6,17 @@ const props = defineProps<{
 }>();
 
 const category = ref<Category | null>(props.payload);
-console.log(props.payload);
+const categoryStore = useCategoryStore();
+const isDeleting = ref(false);
 const emit = defineEmits<{ close: [boolean] }>();
+
+const handleDelete = async () => {
+  if (!category.value?.id) return;
+  isDeleting.value = true;
+  await categoryStore.deleteCategory(category.value.id);
+  isDeleting.value = false;
+  emit("close", false);
+};
 </script>
 
 <template>
@@ -35,7 +44,9 @@ const emit = defineEmits<{ close: [boolean] }>();
         <UButton color="neutral" variant="ghost" @click="emit('close', false)">
           Cancel
         </UButton>
-        <UButton color="error">Delete</UButton>
+        <UButton color="error" :loading="isDeleting" @click="handleDelete">
+          Delete
+        </UButton>
       </div>
     </template>
   </UModal>

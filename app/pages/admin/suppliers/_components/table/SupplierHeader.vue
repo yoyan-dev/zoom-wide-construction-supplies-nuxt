@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import AddSupplierModal from "./modals/AddSupplierModal.vue";
 const props = defineProps<{
   total: number;
+}>();
+
+const emit = defineEmits<{
+  (e: "create"): void;
 }>();
 </script>
 
@@ -24,7 +27,9 @@ const props = defineProps<{
         <UBadge color="primary" variant="subtle">
           {{ props.total }} suppliers
         </UBadge>
-        <addSupplierModal />
+        <UButton color="primary" icon="i-lucide-plus" @click="emit('create')">
+          New Supplier
+        </UButton>
       </div>
     </div>
   </section>

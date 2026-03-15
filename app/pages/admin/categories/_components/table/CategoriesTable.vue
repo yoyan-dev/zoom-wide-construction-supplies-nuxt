@@ -5,9 +5,9 @@ import type { Category } from "~/types/category";
 import type { Product } from "~/types/product";
 import { formatShortDate } from "~/utils/format";
 import { useModal } from "~/composables/admin/useModal";
-import CategoryEditModal from "./modals/CategoryEditModal.vue";
-import CategoryDeleteModal from "./modals/CategoryDeleteModal.vue";
-import CategoryViewModal from "./modals/CategoryViewModal.vue";
+import CategoryEditModal from "../modals/CategoryEditModal.vue";
+import CategoryDeleteModal from "../modals/CategoryDeleteModal.vue";
+import CategoryViewModal from "../modals/CategoryViewModal.vue";
 
 const table = useTemplateRef("table");
 const props = defineProps<{
@@ -112,6 +112,7 @@ const pagination = ref({
         <div class="flex justify-end">
           <div class="flex items-center gap-2">
             <UButton
+              size="sm"
               color="info"
               variant="outline"
               icon="i-lucide-eye"
@@ -119,6 +120,7 @@ const pagination = ref({
               >View</UButton
             >
             <UButton
+              size="sm"
               color="neutral"
               variant="outline"
               icon="i-lucide-pencil"
@@ -126,6 +128,7 @@ const pagination = ref({
               >Edit</UButton
             >
             <UButton
+              size="sm"
               color="error"
               variant="outline"
               icon="i-lucide-trash"

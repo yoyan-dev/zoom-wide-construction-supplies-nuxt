@@ -5,13 +5,56 @@ const props = defineProps<{
   payload: Supplier | null;
 }>();
 
-const supplier = ref<Supplier | null>(props.payload);
 const emit = defineEmits<{ close: [boolean] }>();
+
+const supplierStore = useSupplierStore();
+const isSaving = ref(false);
+
+const form = reactive({
+  name: "",
+  contact_name: "",
+  phone: "",
+  email: "",
+  address: "",
+});
+
+const supplierId = computed(() => props.payload?.id ?? "");
+
+watch(
+  () => props.payload,
+  (value) => {
+    form.name = value?.name ?? "";
+    form.contact_name = value?.contact_name ?? "";
+    form.phone = value?.phone ?? "";
+    form.email = value?.email ?? "";
+    form.address = value?.address ?? "";
+  },
+  { immediate: true },
+);
+
+const normalize = (value: string) => {
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : undefined;
+};
+
+const handleSave = async () => {
+  if (!supplierId.value) return;
+  if (!form.name.trim()) return;
+  isSaving.value = true;
+  await supplierStore.updateSupplier(supplierId.value, {
+    name: normalize(form.name),
+    contact_name: normalize(form.contact_name),
+    phone: normalize(form.phone),
+    email: normalize(form.email),
+    address: normalize(form.address),
+  });
+  isSaving.value = false;
+  emit("close", false);
+};
 </script>
 
 <template>
   <UModal :close="{ onClick: () => emit('close', false) }">
-    <UButton color="primary" icon="i-lucide-pencil" label="edit" />
     <template #header>
       <div>
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
@@ -21,11 +64,11 @@ const emit = defineEmits<{ close: [boolean] }>();
       </div>
     </template>
     <template #body>
-      <div class="space-y-4" v-if="supplier">
+      <div class="space-y-4">
         <UFormField label="Supplier name">
           <UInput
             class="w-full"
-            v-model="supplier.name"
+            v-model="form.name"
             name="name"
             placeholder="Atlas Aggregates"
           />
@@ -33,7 +76,7 @@ const emit = defineEmits<{ close: [boolean] }>();
         <UFormField label="Contact name">
           <UInput
             class="w-full"
-            v-model="supplier.contact_name"
+            v-model="form.contact_name"
             name="contact_name"
             placeholder="Kim Warren"
           />
@@ -42,7 +85,7 @@ const emit = defineEmits<{ close: [boolean] }>();
           <UFormField label="Phone">
             <UInput
               class="w-full"
-              v-model="supplier.phone"
+              v-model="form.phone"
               name="phone"
               placeholder="+1-555-555-5555"
             />
@@ -50,7 +93,7 @@ const emit = defineEmits<{ close: [boolean] }>();
           <UFormField label="Email">
             <UInput
               class="w-full"
-              v-model="supplier.email"
+              v-model="form.email"
               name="email"
               placeholder="contact@supplier.com"
             />
@@ -59,7 +102,7 @@ const emit = defineEmits<{ close: [boolean] }>();
         <UFormField label="Address">
           <UTextarea
             class="w-full"
-            v-model="supplier.address"
+            v-model="form.address"
             name="address"
             placeholder="Street, City, State"
           />
@@ -72,7 +115,14 @@ const emit = defineEmits<{ close: [boolean] }>();
         <UButton color="neutral" variant="ghost" @click="emit('close', false)">
           Cancel
         </UButton>
-        <UButton color="primary">Save Changes </UButton>
+        <UButton
+          color="primary"
+          :disabled="!supplierId || !form.name.trim()"
+          :loading="isSaving"
+          @click="handleSave"
+        >
+          Save Changes
+        </UButton>
       </div>
     </template>
   </UModal>
