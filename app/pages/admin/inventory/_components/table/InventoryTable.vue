@@ -7,6 +7,7 @@ import { formatNumber, formatShortDate } from "~/utils/format";
 import InventoryViewModal from "../modals/InventoryViewModal.vue";
 import InventoryEditModal from "../modals/InventoryEditModal.vue";
 import InventoryDeleteModal from "../modals/InventoryDeleteModal.vue";
+import InventoryBulkDeleteModal from "../modals/InventoryBulkDeleteModal.vue";
 import { useModal } from "~/composables/admin/useModal";
 
 type BadgeColor =
@@ -25,6 +26,8 @@ const props = defineProps<{
 }>();
 const { openModal } = useModal();
 
+const selectedIds = ref<Set<string>>(new Set());
+
 const productMap = computed(() => {
   const map: Record<string, Product> = {};
   for (const product of props.products) {
@@ -40,7 +43,59 @@ const movementTone: Record<InventoryMovementType, BadgeColor> = {
   adjustment: "info",
 };
 
+const selectableIds = computed(() => props.logs.map((log) => log.id));
+
+const selectedCount = computed(() => selectedIds.value.size);
+
+const allSelected = computed(
+  () =>
+    selectableIds.value.length > 0 &&
+    selectableIds.value.every((id) => selectedIds.value.has(id)),
+);
+
+const toggleAll = (value: boolean) => {
+  const next = new Set(selectedIds.value);
+  if (value) {
+    selectableIds.value.forEach((id) => next.add(id));
+  } else {
+    selectableIds.value.forEach((id) => next.delete(id));
+  }
+  selectedIds.value = next;
+};
+
+const toggleOne = (id: string, value: boolean) => {
+  const next = new Set(selectedIds.value);
+  if (value) {
+    next.add(id);
+  } else {
+    next.delete(id);
+  }
+  selectedIds.value = next;
+};
+
+const handleBulkDelete = async () => {
+  if (!selectedIds.value.size) return;
+  openModal(InventoryBulkDeleteModal, {
+    ids: Array.from(selectedIds.value),
+    onDeleted: () => {
+      selectedIds.value = new Set();
+    },
+  });
+};
+
+watch(selectableIds, (ids) => {
+  const next = new Set<string>();
+  for (const id of ids) {
+    if (selectedIds.value.has(id)) next.add(id);
+  }
+  selectedIds.value = next;
+});
+
 const columns: TableColumn<InventoryLog>[] = [
+  {
+    id: "select",
+    header: "",
+  },
   {
     id: "entry",
     header: "Entry",
@@ -92,9 +147,20 @@ const pagination = ref({
         </p>
         <p class="mt-1 text-lg font-semibold">Inventory overview</p>
       </div>
-      <UButton color="neutral" variant="ghost" icon="i-lucide-filter">
-        Filters
-      </UButton>
+      <div class="flex items-center gap-2">
+        <UButton color="neutral" variant="ghost" icon="i-lucide-filter">
+          Filters
+        </UButton>
+        <UButton
+          v-if="selectedCount"
+          color="error"
+          variant="outline"
+          icon="i-lucide-trash-2"
+          @click="handleBulkDelete"
+        >
+          Delete selected ({{ selectedCount }})
+        </UButton>
+      </div>
     </div>
 
     <UTable
@@ -107,6 +173,22 @@ const pagination = ref({
         getPaginationRowModel: getPaginationRowModel(),
       }"
     >
+      <template #select-header>
+        <div class="flex items-center justify-center">
+          <UCheckbox
+            :model-value="allSelected"
+            @update:model-value="toggleAll"
+          />
+        </div>
+      </template>
+      <template #select-cell="{ row }">
+        <div class="flex items-center justify-center">
+          <UCheckbox
+            :model-value="selectedIds.has(row.original.id)"
+            @update:model-value="toggleOne(row.original.id, $event)"
+          />
+        </div>
+      </template>
       <template #entry-cell="{ row }">
         <div class="flex flex-col">
           <span class="font-medium">{{ row.original.id }}</span>

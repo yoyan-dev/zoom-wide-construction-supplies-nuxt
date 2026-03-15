@@ -7,6 +7,7 @@ import { formatShortDate } from "~/utils/format";
 import SupplierViewModal from "../modals/SupplierViewModal.vue";
 import SupplierEditModal from "../modals/SupplierEditModal.vue";
 import SupplierDeleteModal from "../modals/SupplierDeleteModal.vue";
+import SupplierBulkDeleteModal from "../modals/SupplierBulkDeleteModal.vue";
 import { useModal } from "~/composables/admin/useModal";
 
 const table = useTemplateRef("table");
@@ -17,6 +18,8 @@ const props = defineProps<{
 
 const { openModal } = useModal();
 
+const selectedIds = ref<Set<string>>(new Set());
+
 const productCounts = computed(() => {
   const counts: Record<string, number> = {};
   for (const product of props.products) {
@@ -26,7 +29,64 @@ const productCounts = computed(() => {
   return counts;
 });
 
+const selectableIds = computed(() =>
+  props.suppliers
+    .map((supplier) => supplier.id)
+    .filter((id): id is string => Boolean(id)),
+);
+
+const selectedCount = computed(() => selectedIds.value.size);
+
+const allSelected = computed(
+  () =>
+    selectableIds.value.length > 0 &&
+    selectableIds.value.every((id) => selectedIds.value.has(id)),
+);
+
+const toggleAll = (value: boolean) => {
+  const next = new Set(selectedIds.value);
+  if (value) {
+    selectableIds.value.forEach((id) => next.add(id));
+  } else {
+    selectableIds.value.forEach((id) => next.delete(id));
+  }
+  selectedIds.value = next;
+};
+
+const toggleOne = (id: string | undefined, value: boolean) => {
+  if (!id) return;
+  const next = new Set(selectedIds.value);
+  if (value) {
+    next.add(id);
+  } else {
+    next.delete(id);
+  }
+  selectedIds.value = next;
+};
+
+const handleBulkDelete = async () => {
+  if (!selectedIds.value.size) return;
+  openModal(SupplierBulkDeleteModal, {
+    ids: Array.from(selectedIds.value),
+    onDeleted: () => {
+      selectedIds.value = new Set();
+    },
+  });
+};
+
+watch(selectableIds, (ids) => {
+  const next = new Set<string>();
+  for (const id of ids) {
+    if (selectedIds.value.has(id)) next.add(id);
+  }
+  selectedIds.value = next;
+});
+
 const columns: TableColumn<Supplier>[] = [
+  {
+    id: "select",
+    header: "",
+  },
   {
     id: "name",
     header: "Supplier",
@@ -67,9 +127,20 @@ const pagination = ref({
         </p>
         <p class="mt-1 text-lg font-semibold">Supplier overview</p>
       </div>
-      <UButton color="neutral" variant="ghost" icon="i-lucide-filter">
-        Filters
-      </UButton>
+      <div class="flex items-center gap-2">
+        <UButton color="neutral" variant="ghost" icon="i-lucide-filter">
+          Filters
+        </UButton>
+        <UButton
+          v-if="selectedCount"
+          color="error"
+          variant="outline"
+          icon="i-lucide-trash-2"
+          @click="handleBulkDelete"
+        >
+          Delete selected ({{ selectedCount }})
+        </UButton>
+      </div>
     </div>
 
     <UTable
@@ -82,6 +153,23 @@ const pagination = ref({
         getPaginationRowModel: getPaginationRowModel(),
       }"
     >
+      <template #select-header>
+        <div class="flex items-center justify-center">
+          <UCheckbox
+            :model-value="allSelected"
+            @update:model-value="toggleAll"
+          />
+        </div>
+      </template>
+      <template #select-cell="{ row }">
+        <div class="flex items-center justify-center">
+          <UCheckbox
+            :model-value="selectedIds.has(row.original.id ?? '')"
+            :disabled="!row.original.id"
+            @update:model-value="toggleOne(row.original.id, $event)"
+          />
+        </div>
+      </template>
       <template #name-cell="{ row }">
         <div class="flex flex-col">
           <span class="font-medium">{{ row.original.name }}</span>

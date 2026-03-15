@@ -7,6 +7,8 @@ import type { Supplier } from "~/types/supplier";
 import { formatCurrency, formatNumber, formatShortDate } from "~/utils/format";
 import ProductHeader from "./ProductHeader.vue";
 import TableActions from "./TableActions.vue";
+import ProductBulkDeleteModal from "../modals/ProductBulkDeleteModal.vue";
+import { useModal } from "~/composables/admin/useModal";
 
 type BadgeColor =
   | "primary"
@@ -28,8 +30,9 @@ const props = defineProps<{
 }>();
 
 const table = useTemplateRef("table");
-const selectedProduct = ref<Product | null>(null);
-const editOpen = ref(false);
+const productStore = useProductStore();
+const { openModal } = useModal();
+const selectedIds = ref<Set<string>>(new Set());
 
 const categoryMap = computed(() => {
   const map: Record<string, string> = {};
@@ -78,7 +81,61 @@ const filteredProducts = computed(() => {
   });
 });
 
+const selectableIds = computed(() =>
+  filteredProducts.value
+    .map((product) => product.id)
+    .filter((id): id is string => Boolean(id)),
+);
+
+const selectedCount = computed(() => selectedIds.value.size);
+
+const allSelected = computed(
+  () =>
+    selectableIds.value.length > 0 &&
+    selectableIds.value.every((id) => selectedIds.value.has(id)),
+);
+
+const toggleAll = (value: boolean) => {
+  const next = new Set(selectedIds.value);
+  if (value) {
+    selectableIds.value.forEach((id) => next.add(id));
+  } else {
+    selectableIds.value.forEach((id) => next.delete(id));
+  }
+  selectedIds.value = next;
+};
+
+const toggleOne = (id: string | undefined, value: boolean) => {
+  if (!id) return;
+  const next = new Set(selectedIds.value);
+  if (value) {
+    next.add(id);
+  } else {
+    next.delete(id);
+  }
+  selectedIds.value = next;
+};
+
+const handleBulkDelete = async () => {
+  if (!selectedIds.value.size) return;
+  openModal(ProductBulkDeleteModal, {
+    ids: Array.from(selectedIds.value),
+    onDeleted: () => {
+      selectedIds.value = new Set();
+    },
+  });
+};
+
+watch(selectableIds, (ids) => {
+  const next = new Set<string>();
+  for (const id of ids) {
+    if (selectedIds.value.has(id)) next.add(id);
+  }
+  selectedIds.value = next;
+});
+
 const columns: TableColumn<Product>[] = [
+  { id: "select", header: "" },
   { id: "image", header: "", accessorFn: (row) => row.image_url ?? "" },
   { id: "sku", header: "SKU", accessorFn: (row) => row.sku },
   { id: "name", header: "Product", accessorFn: (row) => row.name },
@@ -121,6 +178,19 @@ const productInitials = (name?: string) => {
 <template>
   <UCard>
     <ProductHeader />
+    <div v-if="selectedCount" class="mb-4 flex items-center justify-between">
+      <p class="text-xs text-slate-500">
+        Selected {{ selectedCount }} products
+      </p>
+      <UButton
+        color="error"
+        variant="outline"
+        icon="i-lucide-trash-2"
+        @click="handleBulkDelete"
+      >
+        Delete selected
+      </UButton>
+    </div>
 
     <UTable
       ref="table"
@@ -132,6 +202,23 @@ const productInitials = (name?: string) => {
         getPaginationRowModel: getPaginationRowModel(),
       }"
     >
+      <template #select-header>
+        <div class="flex items-center justify-center">
+          <UCheckbox
+            :model-value="allSelected"
+            @update:model-value="toggleAll"
+          />
+        </div>
+      </template>
+      <template #select-cell="{ row }">
+        <div class="flex items-center justify-center">
+          <UCheckbox
+            :model-value="selectedIds.has(row.original.id ?? '')"
+            :disabled="!row.original.id"
+            @update:model-value="toggleOne(row.original.id, $event)"
+          />
+        </div>
+      </template>
       <template #image-cell="{ row }">
         <div class="flex items-center">
           <div
