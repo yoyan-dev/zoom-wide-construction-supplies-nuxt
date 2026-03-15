@@ -93,6 +93,87 @@ export const useSupplierStore = defineStore("suppliers", () => {
     }
   };
 
+  const createSupplier = async (
+    payload: Omit<Supplier, "id" | "created_at" | "updated_at">,
+  ): Promise<H3Response<Supplier>> => {
+    try {
+      isLoading.value = true;
+      const now = new Date().toISOString();
+      const created: Supplier = {
+        ...payload,
+        id: `sup-${Date.now()}`,
+        created_at: now,
+        updated_at: now,
+      };
+
+      allSuppliers.value = [created, ...allSuppliers.value];
+      await fetchSuppliers();
+
+      return buildOkResponse(created, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<Supplier>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const updateSupplier = async (
+    id: string,
+    payload: Partial<Supplier>,
+  ): Promise<H3Response<Supplier | null>> => {
+    try {
+      isLoading.value = true;
+      const index = allSuppliers.value.findIndex((s) => s.id === id);
+
+      if (index === -1) {
+        return buildOkResponse(null, 0);
+      }
+
+      const updated: Supplier = {
+        ...allSuppliers.value[index],
+        ...payload,
+        id,
+        updated_at: new Date().toISOString(),
+      };
+
+      allSuppliers.value.splice(index, 1, updated);
+
+      if (supplier.value?.id === id) {
+        supplier.value = updated;
+      }
+
+      await fetchSuppliers();
+
+      return buildOkResponse(updated, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<Supplier | null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const deleteSupplier = async (id: string): Promise<H3Response<null>> => {
+    try {
+      isLoading.value = true;
+      allSuppliers.value = allSuppliers.value.filter((s) => s.id !== id);
+
+      if (supplier.value?.id === id) {
+        supplier.value = null;
+      }
+
+      await fetchSuppliers();
+
+      return buildOkResponse(null, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   const setSearch = async (value: string) => {
     query.value.q = value;
     query.value.page = 1;
@@ -113,6 +194,9 @@ export const useSupplierStore = defineStore("suppliers", () => {
     error,
     fetchSuppliers,
     fetchSupplierById,
+    createSupplier,
+    updateSupplier,
+    deleteSupplier,
     setSearch,
     setPage,
   };

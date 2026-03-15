@@ -12,7 +12,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
+  (e: "view", category: Category): void;
   (e: "edit", category: Category): void;
+  (e: "delete", category: Category): void;
 }>();
 
 const productCounts = computed(() => {
@@ -102,15 +104,35 @@ const pagination = ref({
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            icon="i-lucide-pencil"
-            @click="emit('edit', row.original)"
-          >
-            Edit
-          </UButton>
+          <div class="flex items-center gap-2">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              icon="i-lucide-eye"
+              @click="emit('view', row.original)"
+            >
+              View
+            </UButton>
+            <UButton
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              icon="i-lucide-pencil"
+              @click="emit('edit', row.original)"
+            >
+              Edit
+            </UButton>
+            <UButton
+              color="error"
+              variant="ghost"
+              size="sm"
+              icon="i-lucide-trash"
+              @click="emit('delete', row.original)"
+            >
+              Delete
+            </UButton>
+          </div>
         </div>
       </template>
     </UTable>

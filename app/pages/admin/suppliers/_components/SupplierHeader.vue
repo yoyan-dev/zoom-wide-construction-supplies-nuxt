@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import AddCategoryModal from "./modals/AddCategoryModal.vue";
-
+import AddSupplierModal from "./modals/AddSupplierModal.vue";
 const props = defineProps<{
   total: number;
 }>();
@@ -25,7 +24,7 @@ const props = defineProps<{
         <UBadge color="primary" variant="subtle">
           {{ props.total }} suppliers
         </UBadge>
-        <AddCategoryModal />
+        <addSupplierModal />
       </div>
     </div>
   </section>

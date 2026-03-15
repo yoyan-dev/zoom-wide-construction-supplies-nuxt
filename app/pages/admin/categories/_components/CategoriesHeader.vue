@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import AddCategoryModal from "./modals/AddCategoryModal.vue";
-
 const props = defineProps<{
   total: number;
+}>();
+
+const emit = defineEmits<{
+  (e: "create"): void;
 }>();
 </script>
 
@@ -25,7 +27,9 @@ const props = defineProps<{
         <UBadge color="primary" variant="subtle">
           {{ props.total }} categories
         </UBadge>
-        <AddCategoryModal />
+        <UButton color="primary" icon="i-lucide-plus" @click="emit('create')">
+          New Category
+        </UButton>
       </div>
     </div>
   </section>

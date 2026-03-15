@@ -8,23 +8,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "update:open", value: boolean): void;
+  (e: "confirm"): void;
 }>();
-
-const draft = ref({
-  name: "",
-  description: "",
-});
-
-watch(
-  () => props.category,
-  (value) => {
-    draft.value = {
-      name: value?.name ?? "",
-      description: value?.description ?? "",
-    };
-  },
-  { immediate: true },
-);
 </script>
 
 <template>
@@ -32,24 +17,17 @@ watch(
     <template #header>
       <div>
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Edit Category
+          Delete Category
         </p>
         <h3 class="mt-2 text-lg font-semibold">
-          {{ props.category?.name ?? "New Category" }}
+          {{ props.category?.name ?? "Category" }}
         </h3>
       </div>
     </template>
 
-    <div class="space-y-4">
-      <UFormField label="Category name">
-        <UInput v-model="draft.name" placeholder="Concrete & Cement" />
-      </UFormField>
-      <UFormField label="Description">
-        <UTextarea
-          v-model="draft.description"
-          placeholder="Add a short description..."
-        />
-      </UFormField>
+    <div class="text-sm text-slate-600">
+      This action cannot be undone. Are you sure you want to delete this
+      category?
     </div>
 
     <template #footer>
@@ -61,7 +39,7 @@ watch(
         >
           Cancel
         </UButton>
-        <UButton color="primary">Save Changes</UButton>
+        <UButton color="error" @click="emit('confirm')">Delete</UButton>
       </div>
     </template>
   </UModal>

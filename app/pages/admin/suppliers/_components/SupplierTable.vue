@@ -4,6 +4,10 @@ import type { TableColumn } from "@nuxt/ui";
 import type { Product } from "~/types/product";
 import type { Supplier } from "~/types/supplier";
 import { formatShortDate } from "~/utils/format";
+import SupplierViewModal from "./modals/SupplierViewModal.vue";
+import SupplierEditModal from "./modals/SupplierEditModal.vue";
+import SupplierDeleteModal from "./modals/SupplierDeleteModal.vue";
+import { useModal } from "~/composables/admin/useModal";
 
 const table = useTemplateRef("table");
 const props = defineProps<{
@@ -11,9 +15,7 @@ const props = defineProps<{
   products: Product[];
 }>();
 
-const emit = defineEmits<{
-  (e: "edit", supplier: Supplier): void;
-}>();
+const { openModal } = useModal();
 
 const productCounts = computed(() => {
   const counts: Record<string, number> = {};
@@ -38,7 +40,7 @@ const columns: TableColumn<Supplier>[] = [
   {
     id: "products",
     header: "Products",
-    accessorFn: (row) => productCounts.value[row.id] ?? 0,
+    accessorFn: (row) => (row.id ? productCounts.value[row.id] : 0),
   },
   {
     id: "updated",
@@ -98,25 +100,43 @@ const pagination = ref({
       </template>
       <template #products-cell="{ row }">
         <UBadge color="info" variant="subtle">
-          {{ productCounts[row.original.id] ?? 0 }} products
+          {{ row.original.id ? productCounts[row.original.id] : 0 }} products
         </UBadge>
       </template>
       <template #updated-cell="{ row }">
         <span class="text-slate-600">
-          {{ formatShortDate(row.original.updated_at) }}
+          {{
+            row.original.updated_at
+              ? formatShortDate(row.original.updated_at)
+              : "—"
+          }}
         </span>
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            icon="i-lucide-pencil"
-            @click="emit('edit', row.original)"
-          >
-            Edit
-          </UButton>
+          <div class="flex items-center gap-2">
+            <UButton
+              color="info"
+              variant="outline"
+              icon="i-lucide-eye"
+              @click="openModal(SupplierViewModal, row.original)"
+              >View</UButton
+            >
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-pencil"
+              @click="openModal(SupplierEditModal, row.original)"
+              >Edit</UButton
+            >
+            <UButton
+              color="error"
+              variant="outline"
+              icon="i-lucide-trash"
+              @click="openModal(SupplierDeleteModal, row.original)"
+              >Delete</UButton
+            >
+          </div>
         </div>
       </template>
     </UTable>

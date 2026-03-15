@@ -63,22 +63,6 @@ watch(
   { immediate: true },
 );
 
-const categoryOptions = computed(() => [
-  { label: "Select category", value: "" },
-  ...props.categories.map((category) => ({
-    label: category.name,
-    value: category.id,
-  })),
-]);
-
-const supplierOptions = computed(() => [
-  { label: "Unassigned", value: "" },
-  ...props.suppliers.map((supplier) => ({
-    label: supplier.name,
-    value: supplier.id,
-  })),
-]);
-
 const submit = () => {
   emit("submit", {
     ...draft.value,
@@ -91,41 +75,75 @@ const submit = () => {
 <template>
   <UCard>
     <div class="grid gap-6 md:grid-cols-2">
-      <UFormField label="Product name">
-        <UInput v-model="draft.name" placeholder="Ready-Mix Concrete 25MPa" />
-      </UFormField>
-      <UFormField label="SKU">
-        <UInput v-model="draft.sku" placeholder="CON-25MPA-001" />
-      </UFormField>
-      <UFormField label="Image URL">
+      <UFormField class="w-full" label="Product name">
         <UInput
+          class="w-full"
+          v-model="draft.name"
+          placeholder="Ready-Mix Concrete 25MPa"
+        />
+      </UFormField>
+      <UFormField class="w-full" label="SKU">
+        <UInput
+          class="w-full"
+          v-model="draft.sku"
+          placeholder="CON-25MPA-001"
+        />
+      </UFormField>
+      <UFormField class="w-full" label="Image URL">
+        <UInput
+          class="w-full"
           v-model="draft.image_url"
           placeholder="https://example.com/product.jpg"
         />
       </UFormField>
-      <UFormField label="Category">
-        <USelect v-model="draft.category_id" :items="categoryOptions" />
+      <UFormField class="w-full" label="Category">
+        <USelect
+          class="w-full"
+          valueKey="id"
+          labelKey="name"
+          v-model="draft.category_id"
+          :items="props.categories"
+        />
       </UFormField>
-      <UFormField label="Supplier">
-        <USelect v-model="draft.supplier_id" :items="supplierOptions" />
+      <UFormField class="w-full" label="Supplier">
+        <USelect
+          class="w-full"
+          valueKey="id"
+          labelKey="name"
+          v-model="draft.supplier_id"
+          :items="props.suppliers"
+        />
       </UFormField>
-      <UFormField label="Unit of measure">
-        <UInput v-model="draft.unit" placeholder="m³, bag, sheet" />
+      <UFormField class="w-full" label="Unit of measure">
+        <UInput
+          class="w-full"
+          v-model="draft.unit"
+          placeholder="m³, bag, sheet"
+        />
       </UFormField>
-      <UFormField label="Unit price">
-        <UInput v-model.number="draft.price" type="number" />
+      <UFormField class="w-full" label="Unit price">
+        <UInput class="w-full" v-model.number="draft.price" type="number" />
       </UFormField>
-      <UFormField label="Stock quantity">
-        <UInput v-model.number="draft.stock_quantity" type="number" />
+      <UFormField class="w-full" label="Stock quantity">
+        <UInput
+          class="w-full"
+          v-model.number="draft.stock_quantity"
+          type="number"
+        />
       </UFormField>
-      <UFormField label="Minimum stock">
-        <UInput v-model.number="draft.minimum_stock_quantity" type="number" />
+      <UFormField class="w-full" label="Minimum stock">
+        <UInput
+          class="w-full"
+          v-model.number="draft.minimum_stock_quantity"
+          type="number"
+        />
       </UFormField>
     </div>
 
     <div class="mt-6">
-      <UFormField label="Description">
+      <UFormField class="w-full" label="Description">
         <UTextarea
+          class="w-full"
           v-model="draft.description"
           placeholder="Add a short product description..."
         />

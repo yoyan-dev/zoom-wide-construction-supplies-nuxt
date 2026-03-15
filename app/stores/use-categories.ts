@@ -93,6 +93,87 @@ export const useCategoryStore = defineStore("categories", () => {
     }
   };
 
+  const createCategory = async (
+    payload: Omit<Category, "id" | "created_at" | "updated_at">,
+  ): Promise<H3Response<Category>> => {
+    try {
+      isLoading.value = true;
+      const now = new Date().toISOString();
+      const created: Category = {
+        ...payload,
+        id: `cat-${Date.now()}`,
+        created_at: now,
+        updated_at: now,
+      };
+
+      allCategories.value = [created, ...allCategories.value];
+      await fetchCategories();
+
+      return buildOkResponse(created, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<Category>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const updateCategory = async (
+    id: string,
+    payload: Partial<Category>,
+  ): Promise<H3Response<Category | null>> => {
+    try {
+      isLoading.value = true;
+      const index = allCategories.value.findIndex((c) => c.id === id);
+
+      if (index === -1) {
+        return buildOkResponse(null, 0);
+      }
+
+      const updated: Category = {
+        ...allCategories.value[index],
+        ...payload,
+        id,
+        updated_at: new Date().toISOString(),
+      };
+
+      allCategories.value.splice(index, 1, updated);
+
+      if (category.value?.id === id) {
+        category.value = updated;
+      }
+
+      await fetchCategories();
+
+      return buildOkResponse(updated, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<Category | null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const deleteCategory = async (id: string): Promise<H3Response<null>> => {
+    try {
+      isLoading.value = true;
+      allCategories.value = allCategories.value.filter((c) => c.id !== id);
+
+      if (category.value?.id === id) {
+        category.value = null;
+      }
+
+      await fetchCategories();
+
+      return buildOkResponse(null, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   const setSearch = async (value: string) => {
     query.value.q = value;
     query.value.page = 1;
@@ -113,6 +194,9 @@ export const useCategoryStore = defineStore("categories", () => {
     error,
     fetchCategories,
     fetchCategoryById,
+    createCategory,
+    updateCategory,
+    deleteCategory,
     setSearch,
     setPage,
   };
