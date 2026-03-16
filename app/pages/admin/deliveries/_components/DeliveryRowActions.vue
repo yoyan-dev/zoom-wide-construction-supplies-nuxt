@@ -3,6 +3,10 @@ import type { Delivery } from "~/types/delivery";
 import { useModal } from "~/composables/admin/useModal";
 import ActionConfirmModal from "../../_components/modals/ActionConfirmModal.vue";
 import ActionFormModal from "../../_components/modals/ActionFormModal.vue";
+import DeliveryDetailsModal from "./modals/DeliveryDetailsModal.vue";
+import DeliveryItemsModal from "./modals/DeliveryItemsModal.vue";
+import DeliveryAddressModal from "./modals/DeliveryAddressModal.vue";
+import DeliveryTrackingModal from "./modals/DeliveryTrackingModal.vue";
 
 type ActionItem = {
   label: string;
@@ -48,9 +52,6 @@ const openForm = (payload: {
 }) => {
   openModal(ActionFormModal, payload);
 };
-
-const toSection = (section: string) =>
-  `/admin/deliveries/${deliveryId.value}#${section}`;
 
 const openAssignDriver = () => {
   openForm({
@@ -182,27 +183,27 @@ const viewActions = computed<ActionItem[]>(() => [
   {
     label: "View Delivery",
     icon: "i-lucide-eye",
-    to: toSection("overview"),
+    to: `/admin/deliveries/${deliveryId.value}`,
   },
   {
     label: "View Delivery Details",
     icon: "i-lucide-clipboard",
-    to: toSection("details"),
+    onClick: () => openModal(DeliveryDetailsModal, props.delivery),
   },
   {
     label: "View Delivery Items",
     icon: "i-lucide-list",
-    to: toSection("items"),
+    onClick: () => openModal(DeliveryItemsModal, props.delivery),
   },
   {
     label: "View Delivery Address",
     icon: "i-lucide-map-pin",
-    to: toSection("address"),
+    onClick: () => openModal(DeliveryAddressModal, props.delivery),
   },
   {
     label: "Track Delivery",
     icon: "i-lucide-navigation",
-    to: toSection("tracking"),
+    onClick: () => openModal(DeliveryTrackingModal, props.delivery),
   },
 ]);
 

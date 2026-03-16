@@ -3,6 +3,12 @@ import type { Order } from "~/types/order";
 import { useModal } from "~/composables/admin/useModal";
 import ActionConfirmModal from "../../_components/modals/ActionConfirmModal.vue";
 import ActionFormModal from "../../_components/modals/ActionFormModal.vue";
+import OrderDetailsModal from "./modals/OrderDetailsModal.vue";
+import OrderItemsModal from "./modals/OrderItemsModal.vue";
+import OrderTimelineModal from "./modals/OrderTimelineModal.vue";
+import OrderPaymentModal from "./modals/OrderPaymentModal.vue";
+import OrderDeliveryModal from "./modals/OrderDeliveryModal.vue";
+import OrderAuditModal from "./modals/OrderAuditModal.vue";
 
 type ActionItem = {
   label: string;
@@ -50,9 +56,6 @@ const openForm = (payload: {
 }) => {
   openModal(ActionFormModal, payload);
 };
-
-const toSection = (section: string) =>
-  `/admin/orders/${orderId.value}#${section}`;
 
 const openAddItem = () => {
   openForm({
@@ -271,32 +274,32 @@ const viewActions = computed<ActionItem[]>(() => [
   {
     label: "View Order",
     icon: "i-lucide-eye",
-    to: toSection("overview"),
+    to: `/admin/orders/${orderId.value}`,
   },
   {
     label: "View Order Details",
     icon: "i-lucide-clipboard",
-    to: toSection("details"),
+    onClick: () => openModal(OrderDetailsModal, props.order),
   },
   {
     label: "View Ordered Items",
     icon: "i-lucide-list",
-    to: toSection("items"),
+    onClick: () => openModal(OrderItemsModal, props.order),
   },
   {
     label: "View Order Timeline",
     icon: "i-lucide-clock",
-    to: toSection("timeline"),
+    onClick: () => openModal(OrderTimelineModal, props.order),
   },
   {
     label: "View Payment",
     icon: "i-lucide-credit-card",
-    to: toSection("payment"),
+    onClick: () => openModal(OrderPaymentModal, props.order),
   },
   {
     label: "View Delivery",
     icon: "i-lucide-truck",
-    to: toSection("delivery"),
+    onClick: () => openModal(OrderDeliveryModal, props.order),
   },
 ]);
 
@@ -518,7 +521,7 @@ const adminActions = computed<ActionItem[]>(() => [
   {
     label: "View Audit Logs",
     icon: "i-lucide-shield",
-    to: toSection("audit"),
+    onClick: () => openModal(OrderAuditModal, props.order),
   },
 ]);
 

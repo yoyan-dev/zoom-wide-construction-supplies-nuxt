@@ -3,6 +3,10 @@ import type { Payment } from "~/types/payment";
 import { useModal } from "~/composables/admin/useModal";
 import ActionConfirmModal from "../../_components/modals/ActionConfirmModal.vue";
 import ActionFormModal from "../../_components/modals/ActionFormModal.vue";
+import PaymentDetailsModal from "./modals/PaymentDetailsModal.vue";
+import PaymentProofModal from "./modals/PaymentProofModal.vue";
+import PaymentReceiptModal from "./modals/PaymentReceiptModal.vue";
+import PaymentLogsModal from "./modals/PaymentLogsModal.vue";
 
 type ActionItem = {
   label: string;
@@ -48,9 +52,6 @@ const openForm = (payload: {
 }) => {
   openModal(ActionFormModal, payload);
 };
-
-const toSection = (section: string) =>
-  `/admin/payments/${paymentId.value}#${section}`;
 
 const openManualPayment = () => {
   openForm({
@@ -127,27 +128,27 @@ const viewActions = computed<ActionItem[]>(() => [
   {
     label: "View Payment",
     icon: "i-lucide-eye",
-    to: toSection("overview"),
+    to: `/admin/payments/${paymentId.value}`,
   },
   {
     label: "View Payment Details",
     icon: "i-lucide-clipboard",
-    to: toSection("details"),
+    onClick: () => openModal(PaymentDetailsModal, props.payment),
   },
   {
     label: "View Payment Proof",
     icon: "i-lucide-file-text",
-    to: toSection("proof"),
+    onClick: () => openModal(PaymentProofModal, props.payment),
   },
   {
     label: "View Receipt",
     icon: "i-lucide-receipt",
-    to: toSection("receipt"),
+    onClick: () => openModal(PaymentReceiptModal, props.payment),
   },
   {
     label: "View Payment Logs",
     icon: "i-lucide-shield",
-    to: toSection("logs"),
+    onClick: () => openModal(PaymentLogsModal, props.payment),
   },
 ]);
 
