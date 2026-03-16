@@ -7,6 +7,12 @@ import type {
 } from "~/types/supplier";
 import type { H3Response } from "~/types/h3Response";
 import { suppliers as seedSuppliers } from "~/seeds/suppliers";
+import { downloadText } from "~/utils/documents";
+
+type SupplierMeta = {
+  status?: "active" | "inactive";
+  payment_terms?: string;
+};
 
 const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
   status: "ok",
@@ -30,6 +36,7 @@ export const useSupplierStore = defineStore("suppliers", () => {
 
   const allSuppliers = ref<Supplier[]>([...seedSuppliers]);
   const suppliers = ref<Supplier[]>([]);
+  const supplierMeta = ref<Record<string, SupplierMeta>>({});
 
   const query = ref<FetchSupplierParams>({
     q: "",
@@ -165,6 +172,62 @@ export const useSupplierStore = defineStore("suppliers", () => {
     }
   };
 
+  const setSupplierStatus = (id: string, status: SupplierMeta["status"]) => {
+    supplierMeta.value = {
+      ...supplierMeta.value,
+      [id]: {
+        ...(supplierMeta.value[id] ?? {}),
+        status,
+      },
+    };
+  };
+
+  const updateSupplierPaymentTerms = (id: string, terms: string) => {
+    supplierMeta.value = {
+      ...supplierMeta.value,
+      [id]: {
+        ...(supplierMeta.value[id] ?? {}),
+        payment_terms: terms,
+      },
+    };
+  };
+
+  const duplicateSupplier = async (
+    id: string,
+  ): Promise<H3Response<Supplier | null>> => {
+    try {
+      isLoading.value = true;
+      const current = allSuppliers.value.find((item) => item.id === id);
+      if (!current) return buildOkResponse(null, 0);
+
+      const now = new Date().toISOString();
+      const duplicated: Supplier = {
+        ...current,
+        id: `sup-${Date.now()}`,
+        name: `${current.name ?? "Supplier"} (Copy)`,
+        created_at: now,
+        updated_at: now,
+      };
+
+      allSuppliers.value = [duplicated, ...allSuppliers.value];
+      await fetchSuppliers();
+
+      return buildOkResponse(duplicated, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<Supplier | null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const exportSupplier = (id: string) => {
+    const current = allSuppliers.value.find((item) => item.id === id);
+    if (!current) return;
+    const payload = JSON.stringify(current, null, 2);
+    downloadText(`supplier-${id}.json`, payload, "application/json");
+  };
+
   const deleteSupplier = async (id: string): Promise<H3Response<null>> => {
     try {
       isLoading.value = true;
@@ -199,6 +262,7 @@ export const useSupplierStore = defineStore("suppliers", () => {
   return {
     supplier,
     suppliers,
+    supplierMeta,
     query,
     pagination,
     isLoading,
@@ -208,6 +272,10 @@ export const useSupplierStore = defineStore("suppliers", () => {
     createSupplier,
     updateSupplier,
     deleteSupplier,
+    setSupplierStatus,
+    updateSupplierPaymentTerms,
+    duplicateSupplier,
+    exportSupplier,
     setSearch,
     setPage,
   };

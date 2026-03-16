@@ -6,7 +6,7 @@ import type { Product } from "~/types/product";
 import type { Supplier } from "~/types/supplier";
 import { formatCurrency, formatNumber, formatShortDate } from "~/utils/format";
 import ProductHeader from "./ProductHeader.vue";
-import TableActions from "./TableActions.vue";
+import ProductRowActions from "./ProductRowActions.vue";
 import ProductBulkDeleteModal from "../modals/ProductBulkDeleteModal.vue";
 import { useModal } from "~/composables/admin/useModal";
 
@@ -304,7 +304,7 @@ const productInitials = (name?: string) => {
         </span>
       </template>
       <template #actions-cell="{ row }">
-        <TableActions :product="row.original" />
+        <ProductRowActions :product="row.original" />
       </template>
     </UTable>
     <div class="flex justify-end border-t border-default pt-4 px-4">

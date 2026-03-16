@@ -6,10 +6,8 @@ import type { Category } from "~/types/category";
 import type { Product } from "~/types/product";
 import { formatShortDate } from "~/utils/format";
 import { useModal } from "~/composables/admin/useModal";
-import CategoryEditModal from "../modals/CategoryEditModal.vue";
-import CategoryDeleteModal from "../modals/CategoryDeleteModal.vue";
-import CategoryViewModal from "../modals/CategoryViewModal.vue";
 import CategoryBulkDeleteModal from "../modals/CategoryBulkDeleteModal.vue";
+import CategoryRowActions from "./CategoryRowActions.vue";
 
 const table = useTemplateRef("table");
 const props = defineProps<{
@@ -20,12 +18,6 @@ const { openModal } = useModal();
 const categoryStore = useCategoryStore();
 const { query } = storeToRefs(categoryStore);
 const selectedIds = ref<Set<string>>(new Set());
-
-const emit = defineEmits<{
-  (e: "view", category: Category): void;
-  (e: "edit", category: Category): void;
-  (e: "delete", category: Category): void;
-}>();
 
 const productCounts = computed(() => {
   const counts: Record<string, number> = {};
@@ -207,32 +199,7 @@ const pagination = ref({
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <div class="flex items-center gap-2">
-            <UButton
-              size="sm"
-              color="info"
-              variant="outline"
-              icon="i-lucide-eye"
-              @click="openModal(CategoryViewModal, row.original)"
-              >View</UButton
-            >
-            <UButton
-              size="sm"
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-pencil"
-              @click="openModal(CategoryEditModal, row.original)"
-              >Edit</UButton
-            >
-            <UButton
-              size="sm"
-              color="error"
-              variant="outline"
-              icon="i-lucide-trash"
-              @click="openModal(CategoryDeleteModal, row.original)"
-              >Delete</UButton
-            >
-          </div>
+          <CategoryRowActions :category="row.original" />
         </div>
       </template>
     </UTable>

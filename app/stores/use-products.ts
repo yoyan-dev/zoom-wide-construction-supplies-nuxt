@@ -10,6 +10,11 @@ import { ref } from "vue";
 import { products as seedProducts } from "~/seeds/products";
 import { categories } from "~/seeds/categories";
 import { suppliers } from "~/seeds/suppliers";
+import { downloadText, printText } from "~/utils/documents";
+
+type ProductMeta = {
+  archived?: boolean;
+};
 
 const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
   status: "ok",
@@ -33,6 +38,7 @@ export const useProductStore = defineStore("products", () => {
 
   const allProducts = ref<Product[]>([...seedProducts]);
   const products = ref<Product[]>([]);
+  const productMeta = ref<Record<string, ProductMeta>>({});
 
   const query = ref<FetchProductParams>({
     q: "",
@@ -197,6 +203,92 @@ export const useProductStore = defineStore("products", () => {
     }
   };
 
+  const adjustProductStock = async (
+    id: string,
+    delta: number,
+  ): Promise<H3Response<Product | null>> => {
+    const current = allProducts.value.find((item) => item.id === id);
+    if (!current) return buildOkResponse(null, 0);
+    const nextQuantity = Math.max((current.stock_quantity ?? 0) + delta, 0);
+    return await updateProduct(id, { stock_quantity: nextQuantity });
+  };
+
+  const setProductArchived = (id: string, archived: boolean) => {
+    productMeta.value = {
+      ...productMeta.value,
+      [id]: {
+        ...(productMeta.value[id] ?? {}),
+        archived,
+      },
+    };
+  };
+
+  const duplicateProduct = async (
+    id: string,
+  ): Promise<H3Response<Product | null>> => {
+    try {
+      isLoading.value = true;
+      const current = allProducts.value.find((item) => item.id === id);
+      if (!current) return buildOkResponse(null, 0);
+
+      const now = new Date().toISOString();
+      const duplicated: Product = {
+        ...current,
+        id: `prod-${Date.now()}`,
+        name: `${current.name ?? "Product"} (Copy)`,
+        created_at: now,
+        updated_at: now,
+      };
+
+      allProducts.value = [duplicated, ...allProducts.value];
+      await fetchProducts();
+
+      return buildOkResponse(duplicated, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<Product | null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const exportProduct = (id: string) => {
+    const current = allProducts.value.find((item) => item.id === id);
+    if (!current) return;
+    const payload = JSON.stringify(current, null, 2);
+    downloadText(`product-${id}.json`, payload, "application/json");
+  };
+
+  const printProductSheet = (id: string) => {
+    const current = allProducts.value.find((item) => item.id === id);
+    if (!current) return;
+    const content = [
+      `Product ${current.id}`,
+      `Name: ${current.name ?? ""}`,
+      `SKU: ${current.sku ?? ""}`,
+      `Price: ${current.price ?? 0}`,
+      `Stock: ${current.stock_quantity ?? 0}`,
+      `Minimum stock: ${current.minimum_stock_quantity ?? 0}`,
+      `Status: ${current.is_active ? "Active" : "Inactive"}`,
+    ].join("\n");
+    printText(`Product ${id} sheet`, content);
+  };
+
+  const downloadProductSheet = (id: string) => {
+    const current = allProducts.value.find((item) => item.id === id);
+    if (!current) return;
+    const content = [
+      `Product ${current.id}`,
+      `Name: ${current.name ?? ""}`,
+      `SKU: ${current.sku ?? ""}`,
+      `Price: ${current.price ?? 0}`,
+      `Stock: ${current.stock_quantity ?? 0}`,
+      `Minimum stock: ${current.minimum_stock_quantity ?? 0}`,
+      `Status: ${current.is_active ? "Active" : "Inactive"}`,
+    ].join("\n");
+    downloadText(`product-${id}.txt`, content, "text/plain");
+  };
+
   const deleteProduct = async (id: string): Promise<H3Response<null>> => {
     try {
       isLoading.value = true;
@@ -241,6 +333,7 @@ export const useProductStore = defineStore("products", () => {
   return {
     product,
     products,
+    productMeta,
     query,
     pagination,
     isLoading,
@@ -249,7 +342,13 @@ export const useProductStore = defineStore("products", () => {
     fetchProductById,
     createProduct,
     updateProduct,
+    adjustProductStock,
     deleteProduct,
+    setProductArchived,
+    duplicateProduct,
+    exportProduct,
+    printProductSheet,
+    downloadProductSheet,
     setSearch,
     setFilter,
     setPage,

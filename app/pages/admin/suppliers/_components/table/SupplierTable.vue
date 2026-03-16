@@ -5,11 +5,9 @@ import { storeToRefs } from "pinia";
 import type { Product } from "~/types/product";
 import type { Supplier } from "~/types/supplier";
 import { formatShortDate } from "~/utils/format";
-import SupplierViewModal from "../modals/SupplierViewModal.vue";
-import SupplierEditModal from "../modals/SupplierEditModal.vue";
-import SupplierDeleteModal from "../modals/SupplierDeleteModal.vue";
 import SupplierBulkDeleteModal from "../modals/SupplierBulkDeleteModal.vue";
 import { useModal } from "~/composables/admin/useModal";
+import SupplierRowActions from "./SupplierRowActions.vue";
 
 const table = useTemplateRef("table");
 const props = defineProps<{
@@ -216,32 +214,7 @@ const pagination = ref({
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <div class="flex items-center gap-2">
-            <UButton
-              size="sm"
-              color="info"
-              variant="outline"
-              icon="i-lucide-eye"
-              @click="openModal(SupplierViewModal, row.original)"
-              >View</UButton
-            >
-            <UButton
-              size="sm"
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-pencil"
-              @click="openModal(SupplierEditModal, row.original)"
-              >Edit</UButton
-            >
-            <UButton
-              size="sm"
-              color="error"
-              variant="outline"
-              icon="i-lucide-trash"
-              @click="openModal(SupplierDeleteModal, row.original)"
-              >Delete</UButton
-            >
-          </div>
+          <SupplierRowActions :supplier="row.original" />
         </div>
       </template>
     </UTable>

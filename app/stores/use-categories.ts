@@ -7,6 +7,12 @@ import type {
 } from "~/types/category";
 import type { H3Response } from "~/types/h3Response";
 import { categories as seedCategories } from "~/seeds/categories";
+import { downloadText } from "~/utils/documents";
+
+type CategoryMeta = {
+  status?: "active" | "inactive" | "archived";
+  parent_id?: string | null;
+};
 
 const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
   status: "ok",
@@ -30,6 +36,7 @@ export const useCategoryStore = defineStore("categories", () => {
 
   const allCategories = ref<Category[]>([...seedCategories]);
   const categories = ref<Category[]>([]);
+  const categoryMeta = ref<Record<string, CategoryMeta>>({});
 
   const query = ref<FetchCategoryParams>({
     q: "",
@@ -158,6 +165,62 @@ export const useCategoryStore = defineStore("categories", () => {
     }
   };
 
+  const setCategoryStatus = (id: string, status: CategoryMeta["status"]) => {
+    categoryMeta.value = {
+      ...categoryMeta.value,
+      [id]: {
+        ...(categoryMeta.value[id] ?? {}),
+        status,
+      },
+    };
+  };
+
+  const changeCategoryParent = (id: string, parentId: string | null) => {
+    categoryMeta.value = {
+      ...categoryMeta.value,
+      [id]: {
+        ...(categoryMeta.value[id] ?? {}),
+        parent_id: parentId,
+      },
+    };
+  };
+
+  const duplicateCategory = async (
+    id: string,
+  ): Promise<H3Response<Category | null>> => {
+    try {
+      isLoading.value = true;
+      const current = allCategories.value.find((item) => item.id === id);
+      if (!current) return buildOkResponse(null, 0);
+
+      const now = new Date().toISOString();
+      const duplicated: Category = {
+        ...current,
+        id: `cat-${Date.now()}`,
+        name: `${current.name} (Copy)`,
+        created_at: now,
+        updated_at: now,
+      };
+
+      allCategories.value = [duplicated, ...allCategories.value];
+      await fetchCategories();
+
+      return buildOkResponse(duplicated, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<Category | null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const exportCategory = (id: string) => {
+    const current = allCategories.value.find((item) => item.id === id);
+    if (!current) return;
+    const payload = JSON.stringify(current, null, 2);
+    downloadText(`category-${id}.json`, payload, "application/json");
+  };
+
   const deleteCategory = async (id: string): Promise<H3Response<null>> => {
     try {
       isLoading.value = true;
@@ -192,6 +255,7 @@ export const useCategoryStore = defineStore("categories", () => {
   return {
     category,
     categories,
+    categoryMeta,
     query,
     pagination,
     isLoading,
@@ -201,6 +265,10 @@ export const useCategoryStore = defineStore("categories", () => {
     createCategory,
     updateCategory,
     deleteCategory,
+    setCategoryStatus,
+    changeCategoryParent,
+    duplicateCategory,
+    exportCategory,
     setSearch,
     setPage,
   };

@@ -8,6 +8,13 @@ import type {
 import type { H3Response } from "~/types/h3Response";
 import { inventoryLogs as seedInventoryLogs } from "~/seeds/inventory";
 import { products as seedProducts } from "~/seeds/products";
+import { downloadText } from "~/utils/documents";
+
+type InventoryMeta = {
+  status?: "available" | "unavailable" | "archived";
+  location?: string;
+  warehouse?: string;
+};
 
 const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
   status: "ok",
@@ -31,6 +38,7 @@ export const useInventoryStore = defineStore("inventory", () => {
 
   const allLogs = ref<InventoryLog[]>([...seedInventoryLogs]);
   const logs = ref<InventoryLog[]>([]);
+  const inventoryMeta = ref<Record<string, InventoryMeta>>({});
 
   const query = ref<FetchInventoryParams>({
     q: "",
@@ -194,6 +202,70 @@ export const useInventoryStore = defineStore("inventory", () => {
     }
   };
 
+  const setInventoryStatus = (id: string, status: InventoryMeta["status"]) => {
+    inventoryMeta.value = {
+      ...inventoryMeta.value,
+      [id]: {
+        ...(inventoryMeta.value[id] ?? {}),
+        status,
+      },
+    };
+  };
+
+  const updateInventoryLocation = (id: string, location: string) => {
+    inventoryMeta.value = {
+      ...inventoryMeta.value,
+      [id]: {
+        ...(inventoryMeta.value[id] ?? {}),
+        location,
+      },
+    };
+  };
+
+  const updateInventoryWarehouse = (id: string, warehouse: string) => {
+    inventoryMeta.value = {
+      ...inventoryMeta.value,
+      [id]: {
+        ...(inventoryMeta.value[id] ?? {}),
+        warehouse,
+      },
+    };
+  };
+
+  const duplicateInventoryLog = async (
+    id: string,
+  ): Promise<H3Response<InventoryLog | null>> => {
+    try {
+      isLoading.value = true;
+      const current = allLogs.value.find((entry) => entry.id === id);
+      if (!current) return buildOkResponse(null, 0);
+
+      const now = new Date().toISOString();
+      const duplicated: InventoryLog = {
+        ...current,
+        id: `inv-${Date.now()}`,
+        created_at: now,
+      };
+
+      allLogs.value = [duplicated, ...allLogs.value];
+      await fetchInventoryLogs();
+
+      return buildOkResponse(duplicated, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<InventoryLog | null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const exportInventoryLog = (id: string) => {
+    const current = allLogs.value.find((entry) => entry.id === id);
+    if (!current) return;
+    const payload = JSON.stringify(current, null, 2);
+    downloadText(`inventory-${id}.json`, payload, "application/json");
+  };
+
   const deleteInventoryLog = async (id: string): Promise<H3Response<null>> => {
     try {
       isLoading.value = true;
@@ -238,6 +310,7 @@ export const useInventoryStore = defineStore("inventory", () => {
   return {
     log,
     logs,
+    inventoryMeta,
     query,
     pagination,
     isLoading,
@@ -247,6 +320,11 @@ export const useInventoryStore = defineStore("inventory", () => {
     createInventoryLog,
     updateInventoryLog,
     deleteInventoryLog,
+    setInventoryStatus,
+    updateInventoryLocation,
+    updateInventoryWarehouse,
+    duplicateInventoryLog,
+    exportInventoryLog,
     setSearch,
     setFilter,
     setPage,

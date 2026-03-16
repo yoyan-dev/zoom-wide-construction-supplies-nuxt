@@ -5,11 +5,9 @@ import { storeToRefs } from "pinia";
 import type { InventoryLog, InventoryMovementType } from "~/types/inventory";
 import type { Product } from "~/types/product";
 import { formatNumber, formatShortDate } from "~/utils/format";
-import InventoryViewModal from "../modals/InventoryViewModal.vue";
-import InventoryEditModal from "../modals/InventoryEditModal.vue";
-import InventoryDeleteModal from "../modals/InventoryDeleteModal.vue";
 import InventoryBulkDeleteModal from "../modals/InventoryBulkDeleteModal.vue";
 import { useModal } from "~/composables/admin/useModal";
+import InventoryRowActions from "./InventoryRowActions.vue";
 
 type BadgeColor =
   | "primary"
@@ -249,35 +247,7 @@ const pagination = ref({
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <div class="flex items-center gap-2">
-            <UButton
-              color="info"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-eye"
-              @click="openModal(InventoryViewModal, row.original)"
-            >
-              View
-            </UButton>
-            <UButton
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-pencil"
-              @click="openModal(InventoryEditModal, row.original)"
-            >
-              Edit
-            </UButton>
-            <UButton
-              color="error"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-trash"
-              @click="openModal(InventoryDeleteModal, row.original)"
-            >
-              Delete
-            </UButton>
-          </div>
+          <InventoryRowActions :log="row.original" />
         </div>
       </template>
     </UTable>
