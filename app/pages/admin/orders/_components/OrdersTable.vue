@@ -4,6 +4,7 @@ import type { TableColumn } from "@nuxt/ui";
 import type { Customer } from "~/types/customer";
 import type { Order, OrderStatus } from "~/types/order";
 import { formatCurrency, formatShortDate } from "~/utils/format";
+import OrderRowActions from "./OrderRowActions.vue";
 
 type BadgeColor =
   | "primary"
@@ -133,9 +134,7 @@ const pagination = ref({
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <UButton color="neutral" variant="ghost" size="sm">
-            View
-          </UButton>
+          <OrderRowActions :order="row.original" />
         </div>
       </template>
     </UTable>

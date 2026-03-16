@@ -7,6 +7,19 @@ import type {
 } from "~/types/delivery";
 import type { H3Response } from "~/types/h3Response";
 import { deliveries as seedDeliveries } from "~/seeds/deliveries";
+import { downloadText, printText } from "~/utils/documents";
+
+type DeliveryActivity = {
+  action: string;
+  at: string;
+  detail?: string;
+};
+
+type DeliveryMeta = {
+  warehouse_staff?: string;
+  route?: string;
+  location?: string;
+};
 
 const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
   status: "ok",
@@ -30,6 +43,8 @@ export const useDeliveryStore = defineStore("deliveries", () => {
 
   const allDeliveries = ref<Delivery[]>([...seedDeliveries]);
   const deliveries = ref<Delivery[]>([]);
+  const deliveryActivity = ref<Record<string, DeliveryActivity[]>>({});
+  const deliveryMeta = ref<Record<string, DeliveryMeta>>({});
 
   const query = ref<FetchDeliveryParams>({
     q: "",
@@ -116,6 +131,266 @@ export const useDeliveryStore = defineStore("deliveries", () => {
     }
   };
 
+  const logDeliveryActivity = (
+    deliveryId: string,
+    action: string,
+    detail?: string,
+  ) => {
+    const entry: DeliveryActivity = {
+      action,
+      detail,
+      at: new Date().toISOString(),
+    };
+    const current = deliveryActivity.value[deliveryId] ?? [];
+    deliveryActivity.value = {
+      ...deliveryActivity.value,
+      [deliveryId]: [entry, ...current],
+    };
+  };
+
+  const updateDeliveryMeta = (
+    deliveryId: string,
+    payload: Partial<DeliveryMeta>,
+  ) => {
+    deliveryMeta.value = {
+      ...deliveryMeta.value,
+      [deliveryId]: {
+        ...(deliveryMeta.value[deliveryId] ?? {}),
+        ...payload,
+      },
+    };
+  };
+
+  const createDelivery = async (
+    payload: Omit<Delivery, "id" | "created_at" | "updated_at">,
+  ): Promise<H3Response<Delivery>> => {
+    try {
+      isLoading.value = true;
+      const now = new Date().toISOString();
+      const created: Delivery = {
+        id: `del-${Date.now()}`,
+        order_id: payload.order_id,
+        driver_id: payload.driver_id,
+        vehicle_number: payload.vehicle_number,
+        status: payload.status,
+        scheduled_at: payload.scheduled_at,
+        delivered_at: payload.delivered_at,
+        created_at: now,
+        updated_at: now,
+      };
+
+      allDeliveries.value = [created, ...allDeliveries.value];
+      logDeliveryActivity(created.id, "Delivery created");
+      await fetchDeliveries();
+
+      return buildOkResponse(created, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<Delivery>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const updateDelivery = async (
+    id: string,
+    payload: Partial<Delivery>,
+    log?: { action: string; detail?: string },
+  ): Promise<H3Response<Delivery | null>> => {
+    try {
+      isLoading.value = true;
+      const index = allDeliveries.value.findIndex((item) => item.id === id);
+      if (index === -1) {
+        return buildOkResponse(null, 0);
+      }
+
+      const updated: Delivery = {
+        ...allDeliveries.value[index],
+        ...payload,
+        id,
+        updated_at: new Date().toISOString(),
+      };
+
+      allDeliveries.value.splice(index, 1, updated);
+
+      if (delivery.value?.id === id) {
+        delivery.value = updated;
+      }
+
+      if (log) {
+        logDeliveryActivity(id, log.action, log.detail);
+      }
+
+      await fetchDeliveries();
+
+      return buildOkResponse(updated, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<Delivery | null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const deleteDelivery = async (id: string): Promise<H3Response<null>> => {
+    try {
+      isLoading.value = true;
+      allDeliveries.value = allDeliveries.value.filter((item) => item.id !== id);
+
+      if (delivery.value?.id === id) {
+        delivery.value = null;
+      }
+
+      logDeliveryActivity(id, "Delivery deleted");
+      await fetchDeliveries();
+
+      return buildOkResponse(null, 1);
+    } catch (err: any) {
+      error.value = err;
+      return buildErrorResponse<null>(err);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const getDeliveryByOrderId = (orderId: string) =>
+    allDeliveries.value.find((item) => item.order_id === orderId) ?? null;
+
+  const ensureDeliveryForOrder = async (orderId: string) => {
+    const current = getDeliveryByOrderId(orderId);
+    if (current) return current;
+    const created = await createDelivery({
+      order_id: orderId,
+      driver_id: null,
+      vehicle_number: null,
+      status: "scheduled",
+      scheduled_at: new Date().toISOString(),
+      delivered_at: null,
+    });
+    return created.data;
+  };
+
+  const assignDriver = async (id: string, driverId: string) => {
+    await updateDelivery(
+      id,
+      { driver_id: driverId },
+      { action: "Driver assigned", detail: driverId },
+    );
+  };
+
+  const assignVehicle = async (id: string, vehicleNumber: string) => {
+    await updateDelivery(
+      id,
+      { vehicle_number: vehicleNumber },
+      { action: "Vehicle assigned", detail: vehicleNumber },
+    );
+  };
+
+  const assignWarehouseStaff = (id: string, staff: string) => {
+    updateDeliveryMeta(id, { warehouse_staff: staff });
+    logDeliveryActivity(id, "Warehouse staff assigned", staff);
+  };
+
+  const scheduleDelivery = async (id: string, scheduledAt: string) => {
+    await updateDelivery(
+      id,
+      { scheduled_at: scheduledAt },
+      { action: "Delivery scheduled", detail: scheduledAt },
+    );
+  };
+
+  const updateDeliveryStatus = async (id: string, status: Delivery["status"]) => {
+    await updateDelivery(
+      id,
+      {
+        status,
+        delivered_at: status === "delivered" ? new Date().toISOString() : null,
+      },
+      { action: `Status updated to ${status}` },
+    );
+  };
+
+  const updateDeliveryLocation = (id: string, location: string) => {
+    updateDeliveryMeta(id, { location });
+    logDeliveryActivity(id, "Location updated", location);
+  };
+
+  const updateDeliveryRoute = (id: string, route: string) => {
+    updateDeliveryMeta(id, { route });
+    logDeliveryActivity(id, "Route updated", route);
+  };
+
+  const updateDeliveryStatusByOrder = async (
+    orderId: string,
+    status: Delivery["status"],
+  ) => {
+    const current = await ensureDeliveryForOrder(orderId);
+    if (!current) return;
+    await updateDeliveryStatus(current.id, status);
+  };
+
+  const assignDriverByOrder = async (orderId: string, driverId: string) => {
+    const current = await ensureDeliveryForOrder(orderId);
+    if (!current) return;
+    await assignDriver(current.id, driverId);
+  };
+
+  const scheduleDeliveryByOrder = async (
+    orderId: string,
+    scheduledAt: string,
+  ) => {
+    const current = await ensureDeliveryForOrder(orderId);
+    if (!current) return;
+    await scheduleDelivery(current.id, scheduledAt);
+  };
+
+  const printDeliveryDocument = (id: string, type: string) => {
+    const current = allDeliveries.value.find((item) => item.id === id);
+    if (!current) return;
+    const content = [
+      `Delivery ${current.id}`,
+      `Order ${current.order_id}`,
+      `Status ${current.status}`,
+      `Driver ${current.driver_id ?? "Unassigned"}`,
+      `Vehicle ${current.vehicle_number ?? "Unassigned"}`,
+      `Scheduled ${current.scheduled_at ?? "TBD"}`,
+      `Document ${type}`,
+    ].join("\n");
+    printText(`Delivery ${id} ${type}`, content);
+    logDeliveryActivity(id, `Printed ${type}`);
+  };
+
+  const downloadDeliveryDocument = (id: string, type: string) => {
+    const current = allDeliveries.value.find((item) => item.id === id);
+    if (!current) return;
+    const content = [
+      `Delivery ${current.id}`,
+      `Order ${current.order_id}`,
+      `Status ${current.status}`,
+      `Driver ${current.driver_id ?? "Unassigned"}`,
+      `Vehicle ${current.vehicle_number ?? "Unassigned"}`,
+      `Scheduled ${current.scheduled_at ?? "TBD"}`,
+      `Document ${type}`,
+    ].join("\n");
+    downloadText(`delivery-${id}-${type}.txt`, content, "text/plain");
+    logDeliveryActivity(id, `Downloaded ${type}`);
+  };
+
+  const sendDeliveryCommunication = (id: string, type: string) => {
+    logDeliveryActivity(id, "Communication sent", type);
+  };
+
+  const exportDelivery = (id: string) => {
+    const current = allDeliveries.value.find((item) => item.id === id);
+    if (!current) return;
+    const payload = JSON.stringify(current, null, 2);
+    downloadText(`delivery-${id}.json`, payload, "application/json");
+    logDeliveryActivity(id, "Delivery exported");
+  };
+
+  const getDeliveryActivity = (id: string) =>
+    deliveryActivity.value[id] ?? [];
+
   const setSearch = async (value: string) => {
     query.value.q = value;
     query.value.page = 1;
@@ -140,12 +415,36 @@ export const useDeliveryStore = defineStore("deliveries", () => {
   return {
     delivery,
     deliveries,
+    deliveryActivity,
+    deliveryMeta,
     query,
     pagination,
     isLoading,
     error,
     fetchDeliveries,
     fetchDeliveryById,
+    createDelivery,
+    updateDelivery,
+    deleteDelivery,
+    getDeliveryByOrderId,
+    ensureDeliveryForOrder,
+    logDeliveryActivity,
+    updateDeliveryMeta,
+    assignDriver,
+    assignVehicle,
+    assignWarehouseStaff,
+    scheduleDelivery,
+    updateDeliveryStatus,
+    updateDeliveryStatusByOrder,
+    assignDriverByOrder,
+    scheduleDeliveryByOrder,
+    updateDeliveryLocation,
+    updateDeliveryRoute,
+    printDeliveryDocument,
+    downloadDeliveryDocument,
+    sendDeliveryCommunication,
+    exportDelivery,
+    getDeliveryActivity,
     setSearch,
     setFilter,
     setPage,

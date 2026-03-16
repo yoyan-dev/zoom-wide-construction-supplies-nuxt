@@ -4,6 +4,7 @@ import type { TableColumn } from "@nuxt/ui";
 import type { Delivery, DeliveryStatus } from "~/types/delivery";
 import type { Driver } from "~/types/driver";
 import { formatShortDate } from "~/utils/format";
+import DeliveryRowActions from "./DeliveryRowActions.vue";
 
 type BadgeColor =
   | "primary"
@@ -144,9 +145,7 @@ const pagination = ref({
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <UButton color="neutral" variant="ghost" size="sm">
-            View
-          </UButton>
+          <DeliveryRowActions :delivery="row.original" />
         </div>
       </template>
     </UTable>

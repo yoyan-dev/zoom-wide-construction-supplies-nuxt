@@ -3,6 +3,7 @@ import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
 import type { Payment, PaymentStatus } from "~/types/payment";
 import { formatCurrency, formatShortDate } from "~/utils/format";
+import PaymentRowActions from "./PaymentRowActions.vue";
 
 type BadgeColor =
   | "primary"
@@ -129,9 +130,7 @@ const pagination = ref({
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <UButton color="neutral" variant="ghost" size="sm">
-            View
-          </UButton>
+          <PaymentRowActions :payment="row.original" />
         </div>
       </template>
     </UTable>
