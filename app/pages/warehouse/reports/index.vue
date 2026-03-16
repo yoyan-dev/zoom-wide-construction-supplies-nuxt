@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import WarehouseInventoryTable from "../_components/table/WarehouseInventoryTable.vue";
+import LowStockTable from "../_components/table/LowStockTable.vue";
+import StockMovementTable from "../_components/table/StockMovementTable.vue";
 import {
   defaultAssignedWarehouses,
   getWarehouseForId,
@@ -13,10 +14,13 @@ definePageMeta({
 const inventoryStore = useInventoryStore();
 const productStore = useProductStore();
 
-await productStore.fetchProducts();
+await Promise.all([
+  productStore.fetchProducts(),
+  inventoryStore.fetchInventoryLogs(),
+]);
 
 const { products, productMeta } = storeToRefs(productStore);
-const { inventoryMeta } = storeToRefs(inventoryStore);
+const { logs, inventoryMeta } = storeToRefs(inventoryStore);
 
 const assignedWarehouses = defaultAssignedWarehouses;
 
@@ -45,6 +49,19 @@ const visibleProducts = computed(() =>
   ),
 );
 
+const lowStockItems = computed(() =>
+  visibleProducts.value.filter(
+    (product) =>
+      (product.stock_quantity ?? 0) <= (product.minimum_stock_quantity ?? 0),
+  ),
+);
+
+const assignedLogs = computed(() =>
+  logs.value.filter((log) =>
+    assignedWarehouses.includes(warehouseForProduct(log.product_id)),
+  ),
+);
+
 const statusForProduct = (product: typeof products.value[number]) => {
   const metaStatus = product.id ? inventoryMeta.value[product.id]?.status : undefined;
   const archived = product.id ? productMeta.value[product.id]?.archived : false;
@@ -67,11 +84,11 @@ const statusForProduct = (product: typeof products.value[number]) => {
         >
           <div>
             <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-              Inventory Management
+              Warehouse Reports
             </p>
-            <h1 class="mt-2 text-2xl font-semibold">Warehouse Inventory</h1>
+            <h1 class="mt-2 text-2xl font-semibold">Inventory Analytics</h1>
             <p class="mt-2 text-sm text-slate-600">
-              Monitor stock levels and take quick actions on inventory records.
+              Track stock movement and alert thresholds for your warehouse.
             </p>
           </div>
           <div class="rounded-full border border-slate-200/70 px-4 py-2 text-sm">
@@ -80,8 +97,10 @@ const statusForProduct = (product: typeof products.value[number]) => {
         </div>
       </section>
 
-      <WarehouseInventoryTable
-        :products="visibleProducts"
+      <StockMovementTable :logs="assignedLogs" :products="products" />
+
+      <LowStockTable
+        :products="lowStockItems"
         :warehouse-for="warehouseForProduct"
         :status-for="statusForProduct"
       />
