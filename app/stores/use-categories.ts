@@ -150,8 +150,13 @@ export const useCategoryStore = defineStore("categories", () => {
         return buildOkResponse(null, 0);
       }
 
+      const current = allCategories.value[index];
+      if (!current) {
+        return buildOkResponse(null, 0);
+      }
+
       const updated: Category = {
-        ...allCategories.value[index],
+        ...current,
         ...payload,
         id,
         updated_at: new Date().toISOString(),

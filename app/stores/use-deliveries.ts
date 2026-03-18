@@ -264,6 +264,9 @@ export const useDeliveryStore = defineStore("deliveries", () => {
       }
 
       const current = allDeliveries.value[index];
+      if (!current) {
+        return buildOkResponse(null, 0);
+      }
       const updated: Delivery = {
         ...current,
         ...payload,

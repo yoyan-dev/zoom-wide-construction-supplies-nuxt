@@ -159,8 +159,13 @@ export const useOrderStore = defineStore("orders", () => {
         return buildOkResponse(null, 0);
       }
 
+      const current = allOrders.value[index];
+      if (!current) {
+        return buildOkResponse(null, 0);
+      }
+
       const updated: Order = {
-        ...allOrders.value[index],
+        ...current,
         ...payload,
         id,
         updated_at: new Date().toISOString(),
@@ -311,6 +316,9 @@ export const useOrderStore = defineStore("orders", () => {
       }
 
       const current = orderItems.value[index];
+      if (!current) {
+        return buildOkResponse(null, 0);
+      }
       const nextQuantity = payload.quantity ?? current.quantity;
       const nextPrice = payload.unit_price ?? current.unit_price;
       const nextLineTotal =

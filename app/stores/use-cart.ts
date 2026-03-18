@@ -43,6 +43,7 @@ export const useCartStore = defineStore("cart", () => {
     }
 
     const current = items.value[index];
+    if (!current) return;
     const next = [...items.value];
     next[index] = {
       ...current,
@@ -65,6 +66,7 @@ export const useCartStore = defineStore("cart", () => {
     if (index === -1) return;
 
     const current = items.value[index];
+    if (!current) return;
     const next = [...items.value];
     next[index] = {
       ...current,

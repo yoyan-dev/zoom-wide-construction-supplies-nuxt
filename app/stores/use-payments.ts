@@ -182,8 +182,13 @@ export const usePaymentStore = defineStore("payments", () => {
         return buildOkResponse(null, 0);
       }
 
+      const current = allPayments.value[index];
+      if (!current) {
+        return buildOkResponse(null, 0);
+      }
+
       const updated: Payment = {
-        ...allPayments.value[index],
+        ...current,
         ...payload,
         id,
         updated_at: new Date().toISOString(),

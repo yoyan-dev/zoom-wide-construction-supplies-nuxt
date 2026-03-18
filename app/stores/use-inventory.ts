@@ -179,8 +179,13 @@ export const useInventoryStore = defineStore("inventory", () => {
         return buildOkResponse(null, 0);
       }
 
+      const current = allLogs.value[index];
+      if (!current) {
+        return buildOkResponse(null, 0);
+      }
+
       const updated: InventoryLog = {
-        ...allLogs.value[index],
+        ...current,
         ...payload,
         id,
       };

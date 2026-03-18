@@ -138,8 +138,11 @@ export const useWarehouseStore = defineStore("warehouses", () => {
 
       if (index === -1) return buildOkResponse(null, 0);
 
+      const current = allWarehouses.value[index];
+      if (!current) return buildOkResponse(null, 0);
+
       const updated: Warehouse = {
-        ...allWarehouses.value[index],
+        ...current,
         ...payload,
         id,
         updated_at: new Date().toISOString(),

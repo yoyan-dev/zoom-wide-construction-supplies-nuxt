@@ -28,7 +28,9 @@ const productCounts = computed(() => {
   return counts;
 });
 
-const selectableIds = computed(() => props.categories.map((category) => category.id));
+const selectableIds = computed(() =>
+  props.categories.map((category) => category.id),
+);
 const selectedCount = computed(() => selectedIds.value.size);
 
 const allSelected = computed(
@@ -85,9 +87,16 @@ watch(selectableIds, (ids) => {
 const columns: TableColumn<Category>[] = [
   { id: "select", header: "" },
   { id: "name", header: "Category", accessorFn: (row) => row.name },
-  { id: "overview", header: "Overview", accessorFn: (row) => row.overview ?? row.description },
-  { id: "signals", header: "Signals", accessorFn: (row) => specCount(row) + usesCount(row) },
-  { id: "products", header: "Products", accessorFn: (row) => productCounts.value[row.id] ?? 0 },
+  {
+    id: "signals",
+    header: "Signals",
+    accessorFn: (row) => specCount(row) + usesCount(row),
+  },
+  {
+    id: "products",
+    header: "Products",
+    accessorFn: (row) => productCounts.value[row.id] ?? 0,
+  },
   { id: "updated", header: "Updated", accessorFn: (row) => row.updated_at },
   { id: "actions", header: "" },
 ];
@@ -139,7 +148,10 @@ const pagination = ref({
     >
       <template #select-header>
         <div class="flex items-center justify-center">
-          <UCheckbox :model-value="allSelected" @update:model-value="toggleAll" />
+          <UCheckbox
+            :model-value="allSelected"
+            @update:model-value="toggleAll"
+          />
         </div>
       </template>
       <template #select-cell="{ row }">
@@ -166,7 +178,9 @@ const pagination = ref({
       <template #overview-cell="{ row }">
         <div class="max-w-md">
           <p class="line-clamp-2 text-slate-700">
-            {{ row.original.overview ?? row.original.description ?? "No overview" }}
+            {{
+              row.original.overview ?? row.original.description ?? "No overview"
+            }}
           </p>
           <p class="mt-1 text-xs text-slate-500">
             {{ row.original.description ?? "No short description" }}
