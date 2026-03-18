@@ -42,6 +42,12 @@ const links = [
     },
 
     {
+      label: "Warehouse",
+      icon: "i-lucide-package",
+      to: "/admin/warehouse",
+      onSelect: () => (open.value = false),
+    },
+    {
       label: "Orders",
       icon: "i-lucide-shopping-cart",
       to: "/admin/orders",
