@@ -1,7 +1,8 @@
-const currencyFormatter = new Intl.NumberFormat("en-US", {
+const currencyFormatter = new Intl.NumberFormat("en-PH", {
   style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
+  currency: "PHP",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 });
 
 const numberFormatter = new Intl.NumberFormat("en-US", {

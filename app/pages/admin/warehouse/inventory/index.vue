@@ -2,7 +2,11 @@
 import { storeToRefs } from "pinia";
 import type { UserRole } from "~/types/user";
 import AdminInventoryTable from "../_components/table/AdminInventoryTable.vue";
-import { getWarehouseForId, warehouseOptions as defaultWarehouses } from "~/utils/warehouse";
+import {
+  getWarehouseForId,
+  getWarehouseNameById,
+  warehouseOptions as defaultWarehouses,
+} from "~/utils/warehouse";
 
 definePageMeta({
   layout: "admin",
@@ -53,20 +57,6 @@ const warehouseById = computed(() => {
   return map;
 });
 
-const ensureProductWarehouses = (items: typeof products.value) => {
-  for (const product of items) {
-    if (!product.id) continue;
-    if (!inventoryMeta.value[product.id]?.warehouse) {
-      inventoryStore.updateInventoryWarehouse(
-        product.id,
-        getWarehouseForId(product.id, warehouseNameList.value),
-      );
-    }
-  }
-};
-
-watch(products, (value) => ensureProductWarehouses(value), { immediate: true });
-
 watch(
   () => [route.query.warehouse, warehouses.value],
   () => {
@@ -79,9 +69,14 @@ watch(
   { immediate: true },
 );
 
-const warehouseForProduct = (productId: string) =>
-  inventoryMeta.value[productId]?.warehouse ??
-  getWarehouseForId(productId, warehouseNameList.value);
+const warehouseForProduct = (productId: string) => {
+  const product = products.value.find((item) => item.id === productId);
+  return (
+    inventoryMeta.value[productId]?.warehouse ??
+    getWarehouseNameById(product?.warehouse_id, warehouses.value) ??
+    getWarehouseForId(productId, warehouseNameList.value)
+  );
+};
 
 const statusForProduct = (product: typeof products.value[number]) => {
   const metaStatus = product.id

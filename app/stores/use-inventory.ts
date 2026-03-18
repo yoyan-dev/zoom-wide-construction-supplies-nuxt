@@ -266,6 +266,13 @@ export const useInventoryStore = defineStore("inventory", () => {
     downloadText(`inventory-${id}.json`, payload, "application/json");
   };
 
+  const getLogsByReference = (referenceId: string, referenceType?: string) =>
+    allLogs.value.filter(
+      (entry) =>
+        entry.reference_id === referenceId &&
+        (referenceType ? entry.reference_type === referenceType : true),
+    );
+
   const deleteInventoryLog = async (id: string): Promise<H3Response<null>> => {
     try {
       isLoading.value = true;
@@ -325,6 +332,7 @@ export const useInventoryStore = defineStore("inventory", () => {
     updateInventoryWarehouse,
     duplicateInventoryLog,
     exportInventoryLog,
+    getLogsByReference,
     setSearch,
     setFilter,
     setPage,

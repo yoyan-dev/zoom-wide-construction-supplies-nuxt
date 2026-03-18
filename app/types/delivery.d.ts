@@ -2,7 +2,8 @@ export type DeliveryStatus =
   | "scheduled"
   | "in_transit"
   | "delivered"
-  | "failed";
+  | "failed"
+  | "cancelled";
 
 export interface Delivery {
   id: string;

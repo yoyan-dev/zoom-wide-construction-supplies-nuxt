@@ -11,16 +11,22 @@ definePageMeta({
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
 const supplierStore = useSupplierStore();
+const inventoryStore = useInventoryStore();
+const warehouseStore = useWarehouseStore();
 
 await Promise.all([
   productStore.fetchProducts(),
   categoryStore.fetchCategories(),
   supplierStore.fetchSuppliers(),
+  inventoryStore.fetchInventoryLogs(),
+  warehouseStore.fetchWarehouses(),
 ]);
 
 const { products, query } = storeToRefs(productStore);
 const { categories } = storeToRefs(categoryStore);
 const { suppliers } = storeToRefs(supplierStore);
+const { logs } = storeToRefs(inventoryStore);
+const { warehouses } = storeToRefs(warehouseStore);
 
 const stockStatus = ref("all");
 const status = ref("all");
@@ -50,7 +56,7 @@ const handleCategoryFilter = async (value: string) => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <ProductsStats :products="products" />
+      <ProductsStats :products="products" :inventory-logs="logs" />
       <ProductsFilters
         :search="search"
         :category-id="categoryId"
@@ -66,6 +72,8 @@ const handleCategoryFilter = async (value: string) => {
         :products="products"
         :categories="categories"
         :suppliers="suppliers"
+        :warehouses="warehouses"
+        :inventory-logs="logs"
         :search="search"
         :category-id="categoryId"
         :stock-status="stockStatus"

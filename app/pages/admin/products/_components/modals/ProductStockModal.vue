@@ -2,6 +2,8 @@
 import type { Product } from "~/types/product";
 import { storeToRefs } from "pinia";
 import { formatShortDate } from "~/utils/format";
+import { getInventoryBalance } from "~/utils/inventory-balance";
+import { getWarehouseNameById } from "~/utils/warehouse";
 
 const props = defineProps<{
   payload: Product | null;
@@ -9,11 +11,26 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [boolean] }>();
 const inventoryStore = useInventoryStore();
+const warehouseStore = useWarehouseStore();
 const { logs } = storeToRefs(inventoryStore);
+const { warehouses } = storeToRefs(warehouseStore);
+const currentStock = computed(() =>
+  getInventoryBalance(
+    logs.value,
+    props.payload?.id,
+    props.payload?.stock_quantity ?? 0,
+  ),
+);
+const warehouseName = computed(
+  () => getWarehouseNameById(props.payload?.warehouse_id, warehouses.value) ?? "Unassigned",
+);
 
 onMounted(async () => {
   if (!logs.value.length) {
     await inventoryStore.fetchInventoryLogs();
+  }
+  if (!warehouses.value.length) {
+    await warehouseStore.fetchWarehouses();
   }
 });
 
@@ -46,7 +63,7 @@ const movementLogs = computed(() =>
               Current stock
             </p>
             <p class="mt-2 text-lg font-semibold text-slate-800">
-              {{ props.payload?.stock_quantity ?? 0 }}
+              {{ currentStock }}
             </p>
           </div>
           <div class="rounded-lg border border-slate-200/70 p-3">
@@ -57,6 +74,14 @@ const movementLogs = computed(() =>
               {{ props.payload?.minimum_stock_quantity ?? 0 }}
             </p>
           </div>
+        </div>
+        <div class="rounded-lg border border-slate-200/70 p-3">
+          <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+            Stock warehouse
+          </p>
+          <p class="mt-2 text-sm font-semibold text-slate-800">
+            {{ warehouseName }}
+          </p>
         </div>
         <div>
           <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">

@@ -39,6 +39,7 @@ const toneMap: Record<Delivery["status"], BadgeColor> = {
   in_transit: "info",
   delivered: "success",
   failed: "error",
+  cancelled: "neutral",
 };
 </script>
 

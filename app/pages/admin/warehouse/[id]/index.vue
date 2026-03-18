@@ -2,7 +2,7 @@
 import { storeToRefs } from "pinia";
 import StockMovementTable from "~/pages/warehouse/_components/table/StockMovementTable.vue";
 import { formatNumber } from "~/utils/format";
-import { getWarehouseForId } from "~/utils/warehouse";
+import { getWarehouseForId, getWarehouseNameById } from "~/utils/warehouse";
 import WarehouseStaffModal from "../_components/modals/WarehouseStaffModal.vue";
 import { useModal } from "~/composables/admin/useModal";
 
@@ -25,28 +25,15 @@ await Promise.all([
   warehouseUsersStore.fetchUsers(),
   productStore.fetchProducts(),
   inventoryStore.fetchInventoryLogs(),
+  warehouseStore.fetchWarehouses(),
 ]);
 
-const { warehouse } = storeToRefs(warehouseStore);
+const { warehouse, warehouses } = storeToRefs(warehouseStore);
 const { users, assignments } = storeToRefs(warehouseUsersStore);
 const { products } = storeToRefs(productStore);
 const { logs, inventoryMeta } = storeToRefs(inventoryStore);
 
 const { openModal } = useModal();
-
-const ensureProductWarehouses = (items: typeof products.value) => {
-  for (const product of items) {
-    if (!product.id) continue;
-    if (!inventoryMeta.value[product.id]?.warehouse) {
-      inventoryStore.updateInventoryWarehouse(
-        product.id,
-        getWarehouseForId(product.id),
-      );
-    }
-  }
-};
-
-watch(products, (value) => ensureProductWarehouses(value), { immediate: true });
 
 const warehouseName = computed(() => warehouse.value?.name ?? "");
 
@@ -56,8 +43,14 @@ const staff = computed(() =>
   ),
 );
 
-const warehouseForProduct = (productId: string) =>
-  inventoryMeta.value[productId]?.warehouse ?? getWarehouseForId(productId);
+const warehouseForProduct = (productId: string) => {
+  const product = products.value.find((item) => item.id === productId);
+  return (
+    inventoryMeta.value[productId]?.warehouse ??
+    getWarehouseNameById(product?.warehouse_id, warehouses.value) ??
+    getWarehouseForId(productId)
+  );
+};
 
 const warehouseProducts = computed(() =>
   products.value.filter((product) =>

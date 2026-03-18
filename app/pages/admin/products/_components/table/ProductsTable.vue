@@ -2,9 +2,12 @@
 import type { TableColumn } from "@nuxt/ui";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { Category } from "~/types/category";
+import type { InventoryLog } from "~/types/inventory";
 import type { Product } from "~/types/product";
 import type { Supplier } from "~/types/supplier";
+import type { Warehouse } from "~/types/warehouse";
 import { formatCurrency, formatNumber, formatShortDate } from "~/utils/format";
+import { buildInventoryBalanceMap } from "~/utils/inventory-balance";
 import ProductHeader from "./ProductHeader.vue";
 import ProductRowActions from "./ProductRowActions.vue";
 import ProductBulkDeleteModal from "../modals/ProductBulkDeleteModal.vue";
@@ -23,6 +26,8 @@ const props = defineProps<{
   products: Product[];
   categories: Category[];
   suppliers: Supplier[];
+  warehouses: Warehouse[];
+  inventoryLogs: InventoryLog[];
   search: string;
   categoryId: string;
   stockStatus: string;
@@ -50,6 +55,18 @@ const supplierMap = computed(() => {
   return map;
 });
 
+const warehouseMap = computed(() => {
+  const map: Record<string, string> = {};
+  for (const warehouse of props.warehouses) {
+    map[warehouse.id] = warehouse.name;
+  }
+  return map;
+});
+
+const stockMap = computed(() =>
+  buildInventoryBalanceMap(props.inventoryLogs, props.products),
+);
+
 const filteredProducts = computed(() => {
   const query = props.search.trim().toLowerCase();
   return props.products.filter((product) => {
@@ -59,14 +76,15 @@ const filteredProducts = computed(() => {
       props.status === "all" ||
       (props.status === "active" && product.is_active) ||
       (props.status === "inactive" && !product.is_active);
+    const currentStock = stockMap.value[product.id ?? ""] ?? 0;
     const stockMatch =
       props.stockStatus === "all" ||
       (props.stockStatus === "low" &&
-        product.stock_quantity <= product.minimum_stock_quantity &&
-        product.stock_quantity > 0) ||
-      (props.stockStatus === "out" && product.stock_quantity === 0) ||
+        currentStock <= (product.minimum_stock_quantity ?? 0) &&
+        currentStock > 0) ||
+      (props.stockStatus === "out" && currentStock === 0) ||
       (props.stockStatus === "healthy" &&
-        product.stock_quantity > product.minimum_stock_quantity);
+        currentStock > (product.minimum_stock_quantity ?? 0));
 
     const supplierName = product.supplier_id
       ? (supplierMap.value[product.supplier_id] ?? "")
@@ -139,19 +157,26 @@ const columns: TableColumn<Product>[] = [
   { id: "image", header: "", accessorFn: (row) => row.image_url ?? "" },
   { id: "sku", header: "SKU", accessorFn: (row) => row.sku },
   { id: "name", header: "Product", accessorFn: (row) => row.name },
+
   { id: "category", header: "Category", accessorFn: (row) => row.category_id },
+  { id: "warehouse", header: "Warehouse", accessorFn: (row) => row.warehouse_id ?? "" },
   { id: "price", header: "Price", accessorFn: (row) => row.price },
-  { id: "stock", header: "Stock", accessorFn: (row) => row.stock_quantity },
+  {
+    id: "stock",
+    header: "Stock",
+    accessorFn: (row) => stockMap.value[row.id ?? ""] ?? 0,
+  },
   { id: "status", header: "Status", accessorFn: (row) => row.is_active },
   { id: "updated", header: "Updated", accessorFn: (row) => row.updated_at },
   { id: "actions", header: "" },
 ];
 
 const stockBadge = (product: Product): { color: BadgeColor; label: string } => {
-  if (product.stock_quantity === 0) {
+  const currentStock = stockMap.value[product.id ?? ""] ?? 0;
+  if (currentStock === 0) {
     return { color: "error", label: "Out of stock" };
   }
-  if (product.stock_quantity <= product.minimum_stock_quantity) {
+  if (currentStock <= (product.minimum_stock_quantity ?? 0)) {
     return { color: "warning", label: "Low stock" };
   }
   return { color: "success", label: "Healthy" };
@@ -250,13 +275,42 @@ const productInitials = (name?: string) => {
           </span>
         </div>
       </template>
+      <template #guide-cell="{ row }">
+        <div class="max-w-sm">
+          <p class="line-clamp-2 text-slate-700">
+            {{
+              row.original.handbook?.summary ??
+              row.original.description ??
+              "No guide content"
+            }}
+          </p>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <UBadge color="info" variant="subtle">
+              {{ row.original.handbook?.specifications?.length ?? 0 }} specs
+            </UBadge>
+            <UBadge color="neutral" variant="subtle">
+              {{ row.original.handbook?.applications?.length ?? 0 }} uses
+            </UBadge>
+          </div>
+        </div>
+      </template>
       <template #category-cell="{ row }">
+        <div class="flex flex-col">
+          <span class="text-slate-700">
+            {{
+              row.original.category_id
+                ? categoryMap[row.original.category_id]
+                : "Unassigned"
+            }}
+          </span>
+          <span class="text-xs text-slate-500">
+            {{ row.original.unit ?? "unit" }}
+          </span>
+        </div>
+      </template>
+      <template #warehouse-cell="{ row }">
         <span class="text-slate-600">
-          {{
-            row.original.category_id
-              ? categoryMap[row.original.category_id]
-              : "Unassigned"
-          }}
+          {{ warehouseMap[row.original.warehouse_id ?? ""] ?? "Unassigned" }}
         </span>
       </template>
       <template #price-cell="{ row }">
@@ -267,11 +321,7 @@ const productInitials = (name?: string) => {
       <template #stock-cell="{ row }">
         <div class="flex flex-col">
           <span class="font-medium">
-            {{
-              row.original.stock_quantity
-                ? formatNumber(row.original.stock_quantity)
-                : "_"
-            }}
+            {{ formatNumber(stockMap[row.original.id ?? ""] ?? 0) }}
             {{ row.original.unit }}
           </span>
           <span class="text-xs text-slate-500">

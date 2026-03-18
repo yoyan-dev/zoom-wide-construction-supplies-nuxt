@@ -13,6 +13,7 @@ const router = useRouter();
 const orderId = computed(() => String(route.params.id));
 
 const orderStore = useOrderStore();
+const deliveryStore = useDeliveryStore();
 const { openModal } = useModal();
 
 await orderStore.fetchOrderById(orderId.value);
@@ -49,6 +50,10 @@ watch(
 
 const handleSave = async () => {
   if (!order.value?.id) return;
+  const currentDelivery = deliveryStore.getDeliveryByOrderId(order.value.id);
+  if (draft.status === "cancelled" && currentDelivery) {
+    await deliveryStore.updateDeliveryStatus(currentDelivery.id, "cancelled");
+  }
   await orderStore.updateOrder(order.value.id, {
     status: draft.status,
     total_amount: draft.total_amount,

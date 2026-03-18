@@ -283,6 +283,13 @@ const statusActions = computed<ActionItem[]>(() => [
       deliveryStore.updateDeliveryStatus(deliveryId.value, "failed"),
   },
   {
+    label: "Cancel Delivery",
+    icon: "i-lucide-ban",
+    color: "error",
+    onClick: () =>
+      deliveryStore.updateDeliveryStatus(deliveryId.value, "cancelled"),
+  },
+  {
     label: "Return to Warehouse",
     icon: "i-lucide-rotate-ccw",
     onClick: () =>

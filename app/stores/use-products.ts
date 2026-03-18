@@ -10,7 +10,9 @@ import { ref } from "vue";
 import { products as seedProducts } from "~/seeds/products";
 import { categories } from "~/seeds/categories";
 import { suppliers } from "~/seeds/suppliers";
+import { warehouses } from "~/seeds/warehouses";
 import { downloadText, printText } from "~/utils/documents";
+import { getDefaultWarehouseIdForProduct } from "~/utils/warehouse";
 
 type ProductMeta = {
   archived?: boolean;
@@ -57,8 +59,15 @@ export const useProductStore = defineStore("products", () => {
   const attachRelations = (items: Product[]): Product[] => {
     return items.map((p) => ({
       ...p,
+      warehouse_id: p.warehouse_id ?? getDefaultWarehouseIdForProduct(p.id ?? ""),
       category: categories.find((c) => c.id === p.category_id),
       supplier: suppliers.find((s) => s.id === p.supplier_id) || undefined,
+      warehouse:
+        warehouses.find(
+          (warehouse) =>
+            warehouse.id ===
+            (p.warehouse_id ?? getDefaultWarehouseIdForProduct(p.id ?? "")),
+        ) || undefined,
     }));
   };
 
@@ -75,7 +84,22 @@ export const useProductStore = defineStore("products", () => {
           const supplierName = p.supplier_id
             ? suppliers.find((s) => s.id === p.supplier_id)?.name ?? ""
             : "";
-          return [p.name ?? "", p.sku ?? "", supplierName]
+          const warehouseName =
+            warehouses.find(
+              (warehouse) =>
+                warehouse.id ===
+                (p.warehouse_id ?? getDefaultWarehouseIdForProduct(p.id ?? "")),
+            )?.name ?? "";
+          const handbookText = [
+            p.handbook?.summary ?? "",
+            ...(p.handbook?.features ?? []),
+            ...(p.handbook?.applications ?? []),
+            ...(p.handbook?.specifications ?? []).flatMap((item) => [
+              item.label,
+              item.value,
+            ]),
+          ];
+          return [p.name ?? "", p.sku ?? "", supplierName, warehouseName, p.description ?? "", ...handbookText]
             .join(" ")
             .toLowerCase()
             .includes(term);
@@ -131,8 +155,15 @@ export const useProductStore = defineStore("products", () => {
 
       product.value = {
         ...found,
+        warehouse_id:
+          found.warehouse_id ?? getDefaultWarehouseIdForProduct(found.id ?? ""),
         category: categories.find((c) => c.id === found.category_id),
         supplier: suppliers.find((s) => s.id === found.supplier_id),
+        warehouse: warehouses.find(
+          (warehouse) =>
+            warehouse.id ===
+            (found.warehouse_id ?? getDefaultWarehouseIdForProduct(found.id ?? "")),
+        ),
       };
 
       return buildOkResponse(product.value, 1);
@@ -148,9 +179,12 @@ export const useProductStore = defineStore("products", () => {
     try {
       isLoading.value = true;
       const now = new Date().toISOString();
+      const productId = `prod-${Date.now()}`;
       const created: Product = {
         ...payload,
-        id: `prod-${Date.now()}`,
+        id: productId,
+        warehouse_id:
+          payload.warehouse_id ?? getDefaultWarehouseIdForProduct(productId),
         created_at: now,
         updated_at: now,
       };

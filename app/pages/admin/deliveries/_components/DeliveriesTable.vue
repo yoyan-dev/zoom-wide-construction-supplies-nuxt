@@ -34,6 +34,7 @@ const statusTone: Record<DeliveryStatus, BadgeColor> = {
   in_transit: "info",
   delivered: "success",
   failed: "error",
+  cancelled: "neutral",
 };
 
 const columns: TableColumn<Delivery>[] = [

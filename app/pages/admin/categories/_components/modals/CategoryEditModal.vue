@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Category } from "~/types/category";
+import CategoryForm from "../CategoryForm.vue";
 
 const props = defineProps<{
   payload: Category | null;
@@ -8,36 +9,14 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [boolean] }>();
 
 const categoryStore = useCategoryStore();
-const isSaving = ref(false);
-
-const form = reactive({
-  name: "",
-  description: "",
-  image_url: "",
-});
 
 const categoryId = computed(() => props.payload?.id ?? "");
 
-watch(
-  () => props.payload,
-  (value) => {
-    form.name = value?.name ?? "";
-    form.description = value?.description ?? "";
-    form.image_url = value?.image_url ?? "";
-  },
-  { immediate: true },
-);
-
-const handleSave = async () => {
+const handleSave = async (
+  payload: Omit<Category, "id" | "created_at" | "updated_at">,
+) => {
   if (!categoryId.value) return;
-  if (!form.name.trim()) return;
-  isSaving.value = true;
-  await categoryStore.updateCategory(categoryId.value, {
-    name: form.name.trim(),
-    description: form.description.trim(),
-    image_url: form.image_url.trim(),
-  });
-  isSaving.value = false;
+  await categoryStore.updateCategory(categoryId.value, payload);
   emit("close", false);
 };
 </script>
@@ -53,45 +32,13 @@ const handleSave = async () => {
       </div>
     </template>
     <template #body>
-      <div class="space-y-4">
-        <UFormField label="Category name">
-          <UInput
-            class="w-full"
-            v-model="form.name"
-            placeholder="Concrete & Cement"
-          />
-        </UFormField>
-        <UFormField label="Description">
-          <UTextarea
-            class="w-full"
-            v-model="form.description"
-            placeholder="Add a short description..."
-          />
-        </UFormField>
-        <UFormField label="Image URL">
-          <UInput
-            class="w-full"
-            v-model="form.image_url"
-            placeholder="https://example.com/category.jpg"
-          />
-        </UFormField>
-      </div>
-    </template>
-
-    <template #footer>
-      <div class="flex justify-end gap-2 w-full">
-        <UButton color="neutral" variant="ghost" @click="emit('close', false)">
-          Cancel
-        </UButton>
-        <UButton
-          color="primary"
-          :disabled="!categoryId || !form.name.trim()"
-          :loading="isSaving"
-          @click="handleSave"
-        >
-          Save Changes
-        </UButton>
-      </div>
+      <CategoryForm
+        :category="props.payload"
+        submit-label="Save Changes"
+        cancel-label="Cancel"
+        @submit="handleSave"
+        @cancel="emit('close', false)"
+      />
     </template>
   </UModal>
 </template>

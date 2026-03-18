@@ -8,6 +8,9 @@ import type {
 import type { H3Response } from "~/types/h3Response";
 import { deliveries as seedDeliveries } from "~/seeds/deliveries";
 import { downloadText, printText } from "~/utils/documents";
+import { useInventoryStore } from "./use-inventory";
+import { useOrderStore } from "./use-orders";
+import { useProductStore } from "./use-products";
 
 type DeliveryActivity = {
   action: string;
@@ -40,6 +43,9 @@ export const useDeliveryStore = defineStore("deliveries", () => {
   const error = ref<Error | null>(null);
   const delivery = ref<Delivery | null>(null);
   const isLoading = ref(false);
+  const inventoryStore = useInventoryStore();
+  const orderStore = useOrderStore();
+  const productStore = useProductStore();
 
   const allDeliveries = ref<Delivery[]>([...seedDeliveries]);
   const deliveries = ref<Delivery[]>([]);
@@ -148,6 +154,59 @@ export const useDeliveryStore = defineStore("deliveries", () => {
     };
   };
 
+  const syncInventoryForDeliveryStatus = async (
+    current: Delivery,
+    nextStatus: Delivery["status"],
+  ) => {
+    if (current.status === nextStatus) return;
+
+    const deliveryLogs = inventoryStore.getLogsByReference(current.id, "delivery");
+    const netMovement = deliveryLogs.reduce(
+      (sum, entry) => sum + (entry.quantity_change ?? 0),
+      0,
+    );
+
+    const shouldDispatch =
+      (nextStatus === "in_transit" || nextStatus === "delivered") &&
+      netMovement === 0;
+    const shouldRestore =
+      (nextStatus === "cancelled" || nextStatus === "failed") &&
+      netMovement < 0;
+
+    if (!shouldDispatch && !shouldRestore) return;
+
+    const items = orderStore.orderItems.filter(
+      (item) => item.order_id === current.order_id,
+    );
+
+    for (const item of items) {
+      const quantity = Math.abs(item.quantity ?? 0);
+      if (!quantity) continue;
+
+      const quantityChange = shouldDispatch ? -quantity : quantity;
+
+      await inventoryStore.createInventoryLog({
+        product_id: item.product_id,
+        movement_type: shouldDispatch ? "out" : "in",
+        quantity_change: quantityChange,
+        reference_type: "delivery",
+        reference_id: current.id,
+        note: shouldDispatch
+          ? `Stock released for delivery ${current.id} (${current.order_id}) after status changed from ${current.status} to ${nextStatus}.`
+          : `Stock returned from delivery ${current.id} (${current.order_id}) after status changed from ${current.status} to ${nextStatus}.`,
+        created_by: "system",
+      });
+
+      await productStore.adjustProductStock(item.product_id, quantityChange);
+    }
+
+    logDeliveryActivity(
+      current.id,
+      shouldDispatch ? "Inventory deducted" : "Inventory restored",
+      `Order ${current.order_id} ${shouldDispatch ? "deducted" : "restocked"} for ${nextStatus}`,
+    );
+  };
+
   const updateDeliveryMeta = (
     deliveryId: string,
     payload: Partial<DeliveryMeta>,
@@ -204,8 +263,9 @@ export const useDeliveryStore = defineStore("deliveries", () => {
         return buildOkResponse(null, 0);
       }
 
+      const current = allDeliveries.value[index];
       const updated: Delivery = {
-        ...allDeliveries.value[index],
+        ...current,
         ...payload,
         id,
         updated_at: new Date().toISOString(),
@@ -219,6 +279,10 @@ export const useDeliveryStore = defineStore("deliveries", () => {
 
       if (log) {
         logDeliveryActivity(id, log.action, log.detail);
+      }
+
+      if (payload.status) {
+        await syncInventoryForDeliveryStatus(current, updated.status);
       }
 
       await fetchDeliveries();

@@ -1,32 +1,21 @@
 <script setup lang="ts">
+import CategoryForm from "../CategoryForm.vue";
+
 defineProps<{ payload?: unknown }>();
 const emit = defineEmits<{ close: [boolean] }>();
 
 const categoryStore = useCategoryStore();
 const isSaving = ref(false);
 
-const form = reactive({
-  name: "",
-  description: "",
-  image_url: "",
-});
-
-const resetForm = () => {
-  form.name = "";
-  form.description = "";
-  form.image_url = "";
-};
-
-const handleSave = async () => {
-  if (!form.name.trim()) return;
+const handleSave = async (
+  payload: Omit<
+    import("~/types/category").Category,
+    "id" | "created_at" | "updated_at"
+  >,
+) => {
   isSaving.value = true;
-  await categoryStore.createCategory({
-    name: form.name.trim(),
-    description: form.description.trim(),
-    image_url: form.image_url.trim(),
-  });
+  await categoryStore.createCategory(payload);
   isSaving.value = false;
-  resetForm();
   emit("close", false);
 };
 </script>
@@ -42,44 +31,13 @@ const handleSave = async () => {
       </div>
     </template>
     <template #body>
-      <div class="space-y-4">
-        <UFormField label="Category name">
-          <UInput
-            class="w-full"
-            v-model="form.name"
-            placeholder="Concrete & Cement"
-          />
-        </UFormField>
-        <UFormField label="Description">
-          <UTextarea
-            class="w-full"
-            v-model="form.description"
-            placeholder="Add a short description..."
-          />
-        </UFormField>
-        <UFormField label="Image URL">
-          <UInput
-            class="w-full"
-            v-model="form.image_url"
-            placeholder="https://example.com/category.jpg"
-          />
-        </UFormField>
-      </div>
-    </template>
-    <template #footer>
-      <div class="flex justify-end gap-2 w-full">
-        <UButton color="neutral" variant="ghost" @click="emit('close', false)">
-          Cancel
-        </UButton>
-        <UButton
-          color="primary"
-          :disabled="!form.name.trim()"
-          :loading="isSaving"
-          @click="handleSave"
-        >
-          Save Changes
-        </UButton>
-      </div>
+      <CategoryForm
+        :category="null"
+        submit-label="Create Category"
+        cancel-label="Cancel"
+        @submit="handleSave"
+        @cancel="emit('close', false)"
+      />
     </template>
   </UModal>
 </template>

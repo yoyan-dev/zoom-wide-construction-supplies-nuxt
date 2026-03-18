@@ -59,7 +59,16 @@ export const useCategoryStore = defineStore("categories", () => {
       const term = query.value.q?.trim().toLowerCase();
       if (term) {
         filtered = filtered.filter((c) =>
-          [c.id, c.name, c.description ?? "", c.image_url ?? ""]
+          [
+            c.id,
+            c.name,
+            c.description ?? "",
+            c.image_url ?? "",
+            c.overview ?? "",
+            ...(c.typical_uses ?? []),
+            ...(c.buying_considerations ?? []),
+            ...(c.featured_specs ?? []).flatMap((item) => [item.label, item.value]),
+          ]
             .join(" ")
             .toLowerCase()
             .includes(term),

@@ -9,21 +9,36 @@ definePageMeta({
 
 const categoryStore = useCategoryStore();
 const supplierStore = useSupplierStore();
+const warehouseStore = useWarehouseStore();
 const productStore = useProductStore();
+const inventoryStore = useInventoryStore();
 const router = useRouter();
 
 await Promise.all([
   categoryStore.fetchCategories(),
   supplierStore.fetchSuppliers(),
+  warehouseStore.fetchWarehouses(),
 ]);
 
 const { categories } = storeToRefs(categoryStore);
 const { suppliers } = storeToRefs(supplierStore);
+const { warehouses } = storeToRefs(warehouseStore);
 
 type ProductDraft = Omit<Product, "id" | "created_at" | "updated_at">;
 
 const handleSubmit = async (payload: ProductDraft) => {
-  await productStore.createProduct(payload);
+  const created = await productStore.createProduct(payload);
+  if (created.data?.id && (payload.stock_quantity ?? 0) > 0) {
+    await inventoryStore.createInventoryLog({
+      product_id: created.data.id,
+      movement_type: "in",
+      quantity_change: payload.stock_quantity ?? 0,
+      reference_type: "opening_balance",
+      reference_id: created.data.id,
+      note: "Opening stock created with product setup.",
+      created_by: "admin",
+    });
+  }
   router.push("/admin/products");
 };
 </script>
@@ -54,6 +69,7 @@ const handleSubmit = async (payload: ProductDraft) => {
         :product="null"
         :categories="categories"
         :suppliers="suppliers"
+        :warehouses="warehouses"
         submit-label="Add Product"
         cancel-to="/admin/products"
         @submit="handleSubmit"

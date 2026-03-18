@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { Product } from "~/types/product";
 import { useModal } from "~/composables/admin/useModal";
+import { getInventoryBalance } from "~/utils/inventory-balance";
 import ActionConfirmModal from "../../../_components/modals/ActionConfirmModal.vue";
 import ActionFormModal from "../../../_components/modals/ActionFormModal.vue";
 import ProductDeleteModal from "../modals/ProductDeleteModal.vue";
-import ProductDetailsModal from "../modals/ProductDetailsModal.vue";
 import ProductSalesModal from "../modals/ProductSalesModal.vue";
 import ProductStockModal from "../modals/ProductStockModal.vue";
 
@@ -25,6 +25,19 @@ const productStore = useProductStore();
 const inventoryStore = useInventoryStore();
 
 const productId = computed(() => props.product.id ?? "");
+const currentStock = computed(() =>
+  getInventoryBalance(
+    inventoryStore.logs,
+    productId.value,
+    props.product.stock_quantity ?? 0,
+  ),
+);
+
+onMounted(async () => {
+  if (!inventoryStore.logs.length) {
+    await inventoryStore.fetchInventoryLogs();
+  }
+});
 
 const openConfirm = (payload: {
   title: string;
@@ -88,14 +101,24 @@ const openUpdateStock = (title: string) => {
         type: "number",
         placeholder: "0",
         required: true,
-        value: props.product.stock_quantity ?? 0,
+        value: currentStock.value,
       },
     ],
     onSubmit: async (values) => {
       if (!productId.value) return;
-      await productStore.updateProduct(productId.value, {
-        stock_quantity: Number(values.stock ?? 0),
+      const targetStock = Number(values.stock ?? 0);
+      const delta = targetStock - currentStock.value;
+      if (!Number.isFinite(targetStock) || delta === 0) return;
+      await inventoryStore.createInventoryLog({
+        product_id: productId.value,
+        movement_type: "adjustment",
+        quantity_change: delta,
+        reference_type: "manual",
+        reference_id: `prod-${productId.value}`,
+        note: `Stock set from ${currentStock.value} to ${targetStock}`,
+        created_by: "admin",
       });
+      await productStore.adjustProductStock(productId.value, delta);
     },
   });
 };
@@ -234,11 +257,6 @@ const viewActions = computed<ActionItem[]>(() => [
     to: `/admin/products/${productId.value}`,
   },
   {
-    label: "View Product Details",
-    icon: "i-lucide-clipboard",
-    onClick: () => openModal(ProductDetailsModal, props.product),
-  },
-  {
     label: "View Sales History",
     icon: "i-lucide-line-chart",
     onClick: () => openModal(ProductSalesModal, props.product),
@@ -326,7 +344,9 @@ const statusActions = computed<ActionItem[]>(() => [
         onConfirm: () => {
           if (!productId.value) return;
           productStore.setProductArchived(productId.value, true);
-          return productStore.updateProduct(productId.value, { is_active: false });
+          return productStore.updateProduct(productId.value, {
+            is_active: false,
+          });
         },
       }),
   },

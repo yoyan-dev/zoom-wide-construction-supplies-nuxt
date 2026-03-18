@@ -4,6 +4,7 @@ import type { Product } from "~/types/product";
 import ProductForm from "../../_components/ProductForm.vue";
 import { useModal } from "~/composables/admin/useModal";
 import ProductDeleteModal from "../../_components/modals/ProductDeleteModal.vue";
+import { getInventoryBalance } from "~/utils/inventory-balance";
 
 definePageMeta({
   layout: "admin",
@@ -17,22 +18,46 @@ const { openModal } = useModal();
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
 const supplierStore = useSupplierStore();
+const warehouseStore = useWarehouseStore();
+const inventoryStore = useInventoryStore();
 
 await Promise.all([
   productStore.fetchProductById(productId.value),
   categoryStore.fetchCategories(),
   supplierStore.fetchSuppliers(),
+  warehouseStore.fetchWarehouses(),
+  inventoryStore.fetchInventoryLogs(),
 ]);
 
 const { product } = storeToRefs(productStore);
 const { categories } = storeToRefs(categoryStore);
 const { suppliers } = storeToRefs(supplierStore);
+const { warehouses } = storeToRefs(warehouseStore);
+const { logs } = storeToRefs(inventoryStore);
 
 type ProductDraft = Omit<Product, "id" | "created_at" | "updated_at">;
 
 const handleSubmit = async (payload: ProductDraft) => {
   if (!product.value?.id) return;
+  const currentStock = getInventoryBalance(
+    logs.value,
+    product.value.id,
+    product.value.stock_quantity ?? 0,
+  );
+  const nextStock = payload.stock_quantity ?? 0;
+  const stockDelta = nextStock - currentStock;
   await productStore.updateProduct(product.value.id, payload);
+  if (stockDelta !== 0) {
+    await inventoryStore.createInventoryLog({
+      product_id: product.value.id,
+      movement_type: "adjustment",
+      quantity_change: stockDelta,
+      reference_type: "manual",
+      reference_id: product.value.id,
+      note: `Stock updated from ${currentStock} to ${nextStock} in product edit.`,
+      created_by: "admin",
+    });
+  }
   router.push("/admin/products");
 };
 </script>
@@ -72,6 +97,7 @@ const handleSubmit = async (payload: ProductDraft) => {
           :product="product"
           :categories="categories"
           :suppliers="suppliers"
+          :warehouses="warehouses"
           submit-label="Save Changes"
           cancel-to="/admin/products"
           @submit="handleSubmit"

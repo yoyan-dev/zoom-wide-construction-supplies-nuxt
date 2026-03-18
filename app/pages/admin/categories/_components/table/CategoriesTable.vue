@@ -28,10 +28,7 @@ const productCounts = computed(() => {
   return counts;
 });
 
-const selectableIds = computed(() =>
-  props.categories.map((category) => category.id),
-);
-
+const selectableIds = computed(() => props.categories.map((category) => category.id));
 const selectedCount = computed(() => selectedIds.value.size);
 
 const allSelected = computed(
@@ -74,6 +71,9 @@ const handleSearch = async (value: string) => {
   await categoryStore.setSearch(value);
 };
 
+const specCount = (category: Category) => category.featured_specs?.length ?? 0;
+const usesCount = (category: Category) => category.typical_uses?.length ?? 0;
+
 watch(selectableIds, (ids) => {
   const next = new Set<string>();
   for (const id of ids) {
@@ -83,35 +83,15 @@ watch(selectableIds, (ids) => {
 });
 
 const columns: TableColumn<Category>[] = [
-  {
-    id: "select",
-    header: "",
-  },
-  {
-    id: "name",
-    header: "Category",
-    accessorFn: (row) => row.name,
-  },
-  {
-    id: "description",
-    header: "Description",
-    accessorFn: (row) => row.description ?? "No description",
-  },
-  {
-    id: "products",
-    header: "Products",
-    accessorFn: (row) => productCounts.value[row.id] ?? 0,
-  },
-  {
-    id: "updated",
-    header: "Updated",
-    accessorFn: (row) => row.updated_at,
-  },
-  {
-    id: "actions",
-    header: "",
-  },
+  { id: "select", header: "" },
+  { id: "name", header: "Category", accessorFn: (row) => row.name },
+  { id: "overview", header: "Overview", accessorFn: (row) => row.overview ?? row.description },
+  { id: "signals", header: "Signals", accessorFn: (row) => specCount(row) + usesCount(row) },
+  { id: "products", header: "Products", accessorFn: (row) => productCounts.value[row.id] ?? 0 },
+  { id: "updated", header: "Updated", accessorFn: (row) => row.updated_at },
+  { id: "actions", header: "" },
 ];
+
 const pagination = ref({
   pageIndex: 0,
   pageSize: 5,
@@ -135,9 +115,6 @@ const pagination = ref({
           placeholder="Search categories"
           @update:model-value="handleSearch(String($event))"
         />
-        <UButton color="neutral" variant="ghost" icon="i-lucide-filter">
-          Filters
-        </UButton>
         <UButton
           v-if="selectedCount"
           color="error"
@@ -162,10 +139,7 @@ const pagination = ref({
     >
       <template #select-header>
         <div class="flex items-center justify-center">
-          <UCheckbox
-            :model-value="allSelected"
-            @update:model-value="toggleAll"
-          />
+          <UCheckbox :model-value="allSelected" @update:model-value="toggleAll" />
         </div>
       </template>
       <template #select-cell="{ row }">
@@ -177,18 +151,43 @@ const pagination = ref({
         </div>
       </template>
       <template #name-cell="{ row }">
-        <div class="flex flex-col">
-          <span class="font-medium">{{ row.original.name }}</span>
-          <span class="text-xs text-slate-500">{{ row.original.id }}</span>
+        <div class="flex items-center gap-3">
+          <img
+            :src="row.original.image_url"
+            :alt="row.original.name"
+            class="h-12 w-12 rounded-xl object-cover"
+          />
+          <div class="flex flex-col">
+            <span class="font-medium">{{ row.original.name }}</span>
+            <span class="text-xs text-slate-500">{{ row.original.id }}</span>
+          </div>
         </div>
       </template>
-      <template #description-cell="{ row }">
-        <span class="text-slate-600">
-          {{ row.original.description ?? "No description" }}
-        </span>
+      <template #overview-cell="{ row }">
+        <div class="max-w-md">
+          <p class="line-clamp-2 text-slate-700">
+            {{ row.original.overview ?? row.original.description ?? "No overview" }}
+          </p>
+          <p class="mt-1 text-xs text-slate-500">
+            {{ row.original.description ?? "No short description" }}
+          </p>
+        </div>
+      </template>
+      <template #signals-cell="{ row }">
+        <div class="flex flex-wrap gap-2">
+          <UBadge color="info" variant="subtle">
+            {{ row.original.typical_uses?.length ?? 0 }} uses
+          </UBadge>
+          <UBadge color="warning" variant="subtle">
+            {{ row.original.buying_considerations?.length ?? 0 }} notes
+          </UBadge>
+          <UBadge color="neutral" variant="subtle">
+            {{ row.original.featured_specs?.length ?? 0 }} specs
+          </UBadge>
+        </div>
       </template>
       <template #products-cell="{ row }">
-        <UBadge color="info" variant="subtle">
+        <UBadge color="success" variant="subtle">
           {{ productCounts[row.original.id] ?? 0 }} products
         </UBadge>
       </template>
@@ -203,7 +202,7 @@ const pagination = ref({
         </div>
       </template>
     </UTable>
-    <div class="flex justify-end border-t border-default pt-4 px-4">
+    <div class="flex justify-end border-t border-default px-4 pt-4">
       <UPagination
         :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
         :items-per-page="table?.tableApi?.getState().pagination.pageSize"

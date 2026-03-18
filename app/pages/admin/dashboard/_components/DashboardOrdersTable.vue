@@ -29,6 +29,7 @@ const deliveryTone: Record<DashboardOrderRow["delivery_status"], BadgeColor> = {
   in_transit: "info",
   delivered: "success",
   failed: "error",
+  cancelled: "neutral",
   unassigned: "neutral",
 };
 

@@ -10,10 +10,29 @@ export const products: Product[] = [
     name: "Ready-Mix Concrete 25MPa",
     description: "Premium 25MPa mix for structural slabs.",
     image_url: "https://placehold.co/80x80?text=CONC",
-    unit: "m³",
+    unit: "m3",
     price: 138,
     stock_quantity: 120,
     minimum_stock_quantity: 80,
+    handbook: {
+      summary:
+        "A structural ready-mix option aimed at slabs and reinforced concrete members requiring dependable compressive strength.",
+      features: [
+        "Consistent plant-mixed batching",
+        "Suitable for structural pours",
+        "Optimized for scheduled site delivery",
+      ],
+      applications: [
+        "Slabs and footings",
+        "Columns and beams",
+        "General structural pours",
+      ],
+      specifications: [
+        { label: "Strength Class", value: "25 MPa" },
+        { label: "Unit of Measure", value: "m3" },
+        { label: "Supply Format", value: "Delivered ready-mix" },
+      ],
+    },
     is_active: true,
     created_at: daysAgo(160),
     updated_at: daysAgo(2),
@@ -30,6 +49,21 @@ export const products: Product[] = [
     price: 9.5,
     stock_quantity: 520,
     minimum_stock_quantity: 300,
+    handbook: {
+      summary:
+        "General-purpose bagged cement for masonry, repair work, and on-site mixing where batching flexibility is needed.",
+      features: [
+        "Portable bag format",
+        "Suitable for manual batching",
+        "Versatile for repair and small pours",
+      ],
+      applications: ["Mortar mixing", "Patch work", "Small concrete jobs"],
+      specifications: [
+        { label: "Bag Size", value: "50kg" },
+        { label: "Unit", value: "bag" },
+        { label: "Storage Note", value: "Keep dry and sealed" },
+      ],
+    },
     is_active: true,
     created_at: daysAgo(200),
     updated_at: daysAgo(3),
@@ -46,6 +80,21 @@ export const products: Product[] = [
     price: 21.75,
     stock_quantity: 140,
     minimum_stock_quantity: 150,
+    handbook: {
+      summary:
+        "High-tensile reinforcement bar intended for concrete strengthening in mid-weight structural applications.",
+      features: [
+        "Deformed profile for bond strength",
+        "Long stock lengths for site cutting",
+        "Common structural reinforcement size",
+      ],
+      applications: ["Slabs", "Columns", "Footings"],
+      specifications: [
+        { label: "Diameter", value: "16mm" },
+        { label: "Length", value: "12m" },
+        { label: "Unit", value: "piece" },
+      ],
+    },
     is_active: true,
     created_at: daysAgo(170),
     updated_at: daysAgo(1),
@@ -62,6 +111,25 @@ export const products: Product[] = [
     price: 310,
     stock_quantity: 22,
     minimum_stock_quantity: 30,
+    handbook: {
+      summary:
+        "A structural beam profile used where high load transfer and rigid framing members are required.",
+      features: [
+        "Heavy-duty structural section",
+        "Useful for frame assemblies",
+        "Suitable for fabrication workflows",
+      ],
+      applications: [
+        "Industrial frames",
+        "Support members",
+        "Fabricated assemblies",
+      ],
+      specifications: [
+        { label: "Profile", value: "I-Beam" },
+        { label: "Depth", value: "200mm" },
+        { label: "Unit", value: "piece" },
+      ],
+    },
     is_active: true,
     created_at: daysAgo(150),
     updated_at: daysAgo(4),
@@ -78,6 +146,21 @@ export const products: Product[] = [
     price: 6.2,
     stock_quantity: 430,
     minimum_stock_quantity: 250,
+    handbook: {
+      summary:
+        "A standard framing member used for partitions, light structural work, and temporary site carpentry.",
+      features: [
+        "Construction-grade timber",
+        "Kiln-dried for improved stability",
+        "Easy to cut and fasten on site",
+      ],
+      applications: ["Wall framing", "Blocking", "Temporary site works"],
+      specifications: [
+        { label: "Nominal Size", value: "2x4" },
+        { label: "Length", value: "12ft" },
+        { label: "Unit", value: "piece" },
+      ],
+    },
     is_active: true,
     created_at: daysAgo(165),
     updated_at: daysAgo(5),
@@ -94,6 +177,21 @@ export const products: Product[] = [
     price: 28,
     stock_quantity: 94,
     minimum_stock_quantity: 120,
+    handbook: {
+      summary:
+        "Moisture-resistant panel stock suited for formwork, partitions, and substrate build-outs.",
+      features: [
+        "Stable 4x8 panel format",
+        "Useful for general construction panels",
+        "Adaptable for temporary or permanent use",
+      ],
+      applications: ["Formwork", "Partitions", "Substrates"],
+      specifications: [
+        { label: "Thickness", value: "18mm" },
+        { label: "Panel Size", value: "4x8" },
+        { label: "Unit", value: "sheet" },
+      ],
+    },
     is_active: true,
     created_at: daysAgo(140),
     updated_at: daysAgo(6),
@@ -110,6 +208,21 @@ export const products: Product[] = [
     price: 18.5,
     stock_quantity: 76,
     minimum_stock_quantity: 90,
+    handbook: {
+      summary:
+        "A pressure-rated pipe line suited to drainage and utility routing where durable rigid runs are required.",
+      features: [
+        "Standardized rigid lengths",
+        "Fast installation with matching fittings",
+        "Appropriate for common site drainage work",
+      ],
+      applications: ["Drainage lines", "Utility routing", "Service runs"],
+      specifications: [
+        { label: "Diameter", value: "110mm" },
+        { label: "Length", value: "6m" },
+        { label: "Unit", value: "piece" },
+      ],
+    },
     is_active: true,
     created_at: daysAgo(130),
     updated_at: daysAgo(2),
@@ -126,6 +239,25 @@ export const products: Product[] = [
     price: 42,
     stock_quantity: 34,
     minimum_stock_quantity: 40,
+    handbook: {
+      summary:
+        "A heavy-duty shutoff component used for controlled isolation in plumbing and utility systems.",
+      features: [
+        "Durable brass body",
+        "Manual shutoff control",
+        "Suitable for service isolation points",
+      ],
+      applications: [
+        "Water line isolation",
+        "Maintenance access",
+        "Utility control points",
+      ],
+      specifications: [
+        { label: "Valve Type", value: "Gate valve" },
+        { label: "Diameter", value: "50mm" },
+        { label: "Unit", value: "piece" },
+      ],
+    },
     is_active: true,
     created_at: daysAgo(120),
     updated_at: daysAgo(1),
@@ -142,6 +274,21 @@ export const products: Product[] = [
     price: 78,
     stock_quantity: 58,
     minimum_stock_quantity: 60,
+    handbook: {
+      summary:
+        "An insulated conductor spool for branch circuits, equipment feeds, and general installation work.",
+      features: [
+        "Flexible spool format",
+        "Suited for measured pull lengths",
+        "Common for site electrical distribution",
+      ],
+      applications: ["Branch wiring", "Panel connections", "Equipment feeds"],
+      specifications: [
+        { label: "Conductor Size", value: "10 AWG" },
+        { label: "Length", value: "100m" },
+        { label: "Unit", value: "roll" },
+      ],
+    },
     is_active: true,
     created_at: daysAgo(110),
     updated_at: daysAgo(3),
@@ -158,6 +305,25 @@ export const products: Product[] = [
     price: 4.2,
     stock_quantity: 210,
     minimum_stock_quantity: 160,
+    handbook: {
+      summary:
+        "A rigid conduit section for protecting and organizing cable runs in building and site installations.",
+      features: [
+        "Lightweight rigid protection",
+        "Suitable for clean cable routing",
+        "Pairs with standard conduit accessories",
+      ],
+      applications: [
+        "Wall runs",
+        "Ceiling routing",
+        "Surface-mounted cable protection",
+      ],
+      specifications: [
+        { label: "Diameter", value: "25mm" },
+        { label: "Length", value: "3m" },
+        { label: "Unit", value: "piece" },
+      ],
+    },
     is_active: true,
     created_at: daysAgo(105),
     updated_at: daysAgo(8),
@@ -174,6 +340,21 @@ export const products: Product[] = [
     price: 11.5,
     stock_quantity: 180,
     minimum_stock_quantity: 140,
+    handbook: {
+      summary:
+        "A standard gypsum board panel for internal wall and ceiling lining in dry interior spaces.",
+      features: [
+        "Fast panel installation",
+        "Common interior finishing board",
+        "Works well with standard framing systems",
+      ],
+      applications: ["Partitions", "Ceilings", "Interior lining"],
+      specifications: [
+        { label: "Thickness", value: "12mm" },
+        { label: "Panel Size", value: "4x8" },
+        { label: "Unit", value: "sheet" },
+      ],
+    },
     is_active: true,
     created_at: daysAgo(100),
     updated_at: daysAgo(6),
@@ -190,6 +371,25 @@ export const products: Product[] = [
     price: 56,
     stock_quantity: 26,
     minimum_stock_quantity: 35,
+    handbook: {
+      summary:
+        "A high-bond adhesive for interior fit-out, panel fixing, and multi-surface construction assembly work.",
+      features: [
+        "High-bond formulation",
+        "Useful across multiple substrates",
+        "Packaged for site-friendly handling",
+      ],
+      applications: [
+        "Panel fixing",
+        "Trim work",
+        "General construction bonding",
+      ],
+      specifications: [
+        { label: "Pack Size", value: "20L" },
+        { label: "Base", value: "Polyurethane" },
+        { label: "Unit", value: "pail" },
+      ],
+    },
     is_active: true,
     created_at: daysAgo(95),
     updated_at: daysAgo(4),

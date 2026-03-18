@@ -24,6 +24,7 @@ const statusOptions: Array<{ label: string; value: DeliveryStatus }> = [
   { label: "In Transit", value: "in_transit" },
   { label: "Delivered", value: "delivered" },
   { label: "Failed", value: "failed" },
+  { label: "Cancelled", value: "cancelled" },
 ];
 
 const draft = reactive({

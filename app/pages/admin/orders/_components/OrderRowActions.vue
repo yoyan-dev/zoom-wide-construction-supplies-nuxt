@@ -415,8 +415,13 @@ const statusActions = computed<ActionItem[]>(() => [
         description: `Cancel ${orderId.value}?`,
         confirmLabel: "Cancel order",
         confirmColor: "error",
-        onConfirm: () =>
-          orderStore.updateOrderStatus(orderId.value, "cancelled"),
+        onConfirm: async () => {
+          const currentDelivery = deliveryStore.getDeliveryByOrderId(orderId.value);
+          if (currentDelivery) {
+            await deliveryStore.updateDeliveryStatus(currentDelivery.id, "cancelled");
+          }
+          await orderStore.updateOrderStatus(orderId.value, "cancelled");
+        },
       }),
   },
   {
