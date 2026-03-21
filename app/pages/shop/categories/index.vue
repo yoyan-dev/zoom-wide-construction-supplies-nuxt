@@ -49,11 +49,11 @@ const productCounts = computed(() => {
           :to="`/shop/categories/${category.id}`"
           class="overflow-hidden rounded-[28px] bg-white shadow-sm ring-1 ring-slate-200/70 transition hover:-translate-y-0.5 hover:shadow-md"
         >
-          <img
-            :src="category.image_url"
-            :alt="category.name"
-            class="h-48 w-full object-cover"
-          />
+          <div
+            class="flex h-48 items-center justify-center bg-gradient-to-br from-amber-100 via-white to-slate-100 text-5xl font-semibold text-slate-700"
+          >
+            {{ category.name?.slice(0, 1) ?? "C" }}
+          </div>
           <div class="p-6">
             <div class="flex items-start justify-between gap-4">
               <div>

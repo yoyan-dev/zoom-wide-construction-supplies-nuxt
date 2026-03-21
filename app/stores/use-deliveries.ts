@@ -6,8 +6,10 @@ import type {
   FetchDeliveryParams,
 } from "~/types/delivery";
 import type { H3Response } from "~/types/h3Response";
+// TODO: Keep local seed-backed behavior until Nitro delivery routes are implemented.
 import { deliveries as seedDeliveries } from "~/seeds/deliveries";
 import { downloadText, printText } from "~/utils/documents";
+import { toErrorMessage } from "~/utils/api";
 import { useInventoryStore } from "./use-inventory";
 import { useOrderStore } from "./use-orders";
 import { useProductStore } from "./use-products";
@@ -36,11 +38,11 @@ const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
   status: "error",
   statusCode: 500,
   statusMessage: "internal server error",
-  message: err instanceof Error ? err.message : "Unknown error",
+  message: toErrorMessage(err),
 });
 
 export const useDeliveryStore = defineStore("deliveries", () => {
-  const error = ref<Error | null>(null);
+  const error = ref<string | null>(null);
   const delivery = ref<Delivery | null>(null);
   const isLoading = ref(false);
   const inventoryStore = useInventoryStore();
@@ -111,7 +113,7 @@ export const useDeliveryStore = defineStore("deliveries", () => {
       deliveries.value = filtered.slice(start, end);
       return buildOkResponse(deliveries.value, pagination.value.total);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Delivery[]>(err);
     } finally {
       isLoading.value = false;
@@ -132,7 +134,7 @@ export const useDeliveryStore = defineStore("deliveries", () => {
       delivery.value = found;
       return buildOkResponse(delivery.value, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Delivery | null>(err);
     }
   };
@@ -244,7 +246,7 @@ export const useDeliveryStore = defineStore("deliveries", () => {
 
       return buildOkResponse(created, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Delivery>(err);
     } finally {
       isLoading.value = false;
@@ -292,7 +294,7 @@ export const useDeliveryStore = defineStore("deliveries", () => {
 
       return buildOkResponse(updated, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Delivery | null>(err);
     } finally {
       isLoading.value = false;
@@ -313,7 +315,7 @@ export const useDeliveryStore = defineStore("deliveries", () => {
 
       return buildOkResponse(null, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<null>(err);
     } finally {
       isLoading.value = false;

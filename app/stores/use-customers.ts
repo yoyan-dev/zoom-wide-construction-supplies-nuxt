@@ -6,7 +6,9 @@ import type {
   FetchCustomerParams,
 } from "~/types/customer";
 import type { H3Response } from "~/types/h3Response";
+// TODO: Keep local seed-backed behavior until Nitro customer routes are implemented.
 import { customers as seedCustomers } from "~/seeds/customers";
+import { toErrorMessage } from "~/utils/api";
 
 const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
   status: "ok",
@@ -20,11 +22,11 @@ const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
   status: "error",
   statusCode: 500,
   statusMessage: "internal server error",
-  message: err instanceof Error ? err.message : "Unknown error",
+  message: toErrorMessage(err),
 });
 
 export const useCustomerStore = defineStore("customers", () => {
-  const error = ref<Error | null>(null);
+  const error = ref<string | null>(null);
   const customer = ref<Customer | null>(null);
   const isLoading = ref(false);
 
@@ -74,7 +76,7 @@ export const useCustomerStore = defineStore("customers", () => {
       customers.value = filtered.slice(start, end);
       return buildOkResponse(customers.value, pagination.value.total);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Customer[]>(err);
     } finally {
       isLoading.value = false;
@@ -95,7 +97,7 @@ export const useCustomerStore = defineStore("customers", () => {
       customer.value = found;
       return buildOkResponse(customer.value, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Customer | null>(err);
     }
   };

@@ -6,8 +6,10 @@ import type {
   PaymentPagination,
 } from "~/types/payment";
 import type { H3Response } from "~/types/h3Response";
+// TODO: Keep local seed-backed behavior until Nitro payment routes are implemented.
 import { payments as seedPayments } from "~/seeds/payments";
 import { downloadText, printText } from "~/utils/documents";
+import { toErrorMessage } from "~/utils/api";
 
 type PaymentActivity = {
   action: string;
@@ -27,11 +29,11 @@ const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
   status: "error",
   statusCode: 500,
   statusMessage: "internal server error",
-  message: err instanceof Error ? err.message : "Unknown error",
+  message: toErrorMessage(err),
 });
 
 export const usePaymentStore = defineStore("payments", () => {
-  const error = ref<Error | null>(null);
+  const error = ref<string | null>(null);
   const payment = ref<Payment | null>(null);
   const isLoading = ref(false);
 
@@ -96,7 +98,7 @@ export const usePaymentStore = defineStore("payments", () => {
       payments.value = filtered.slice(start, end);
       return buildOkResponse(payments.value, pagination.value.total);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Payment[]>(err);
     } finally {
       isLoading.value = false;
@@ -117,7 +119,7 @@ export const usePaymentStore = defineStore("payments", () => {
       payment.value = found;
       return buildOkResponse(payment.value, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Payment | null>(err);
     }
   };
@@ -163,7 +165,7 @@ export const usePaymentStore = defineStore("payments", () => {
 
       return buildOkResponse(created, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Payment>(err);
     } finally {
       isLoading.value = false;
@@ -208,7 +210,7 @@ export const usePaymentStore = defineStore("payments", () => {
 
       return buildOkResponse(updated, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Payment | null>(err);
     } finally {
       isLoading.value = false;
@@ -229,7 +231,7 @@ export const usePaymentStore = defineStore("payments", () => {
 
       return buildOkResponse(null, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<null>(err);
     } finally {
       isLoading.value = false;

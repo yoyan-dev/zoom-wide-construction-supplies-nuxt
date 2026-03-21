@@ -32,11 +32,11 @@ const categoryProducts = computed(() =>
         v-if="category"
         class="overflow-hidden rounded-[32px] bg-white shadow-sm ring-1 ring-slate-200/70"
       >
-        <img
-          :src="category.image_url"
-          :alt="category.name"
-          class="h-64 w-full object-cover"
-        />
+        <div
+          class="flex h-64 items-center justify-center bg-gradient-to-br from-amber-100 via-white to-slate-100 text-6xl font-semibold text-slate-700"
+        >
+          {{ category.name?.slice(0, 1) ?? "C" }}
+        </div>
         <div class="grid gap-6 p-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
           <div>
             <p class="text-xs uppercase tracking-[0.2em] text-slate-500">

@@ -6,7 +6,6 @@ type CategorySubmitValue = Omit<Category, "id" | "created_at" | "updated_at">;
 type CategoryDraft = {
   name: string;
   description: string;
-  image_url: string;
   overview: string;
   typical_uses: string;
   buying_considerations: string;
@@ -28,7 +27,6 @@ const emit = defineEmits<{
 const draft = ref<CategoryDraft>({
   name: "",
   description: "",
-  image_url: "",
   overview: "",
   typical_uses: "",
   buying_considerations: "",
@@ -70,7 +68,6 @@ watch(
     draft.value = {
       name: value?.name ?? "",
       description: value?.description ?? "",
-      image_url: value?.image_url ?? "",
       overview: value?.overview ?? "",
       typical_uses: toLineBlock(value?.typical_uses),
       buying_considerations: toLineBlock(value?.buying_considerations),
@@ -84,7 +81,7 @@ const handleSubmit = () => {
   emit("submit", {
     name: draft.value.name.trim(),
     description: draft.value.description.trim(),
-    image_url: draft.value.image_url.trim(),
+    image_url: props.category?.image_url ?? "",
     overview: draft.value.overview.trim() || undefined,
     typical_uses: parseLines(draft.value.typical_uses),
     buying_considerations: parseLines(draft.value.buying_considerations),
@@ -94,24 +91,15 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <div class="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
+  <div>
     <div class="space-y-6">
-      <div class="grid gap-6 md:grid-cols-2">
-        <UFormField class="w-full" label="Category name">
-          <UInput
-            class="w-full"
-            v-model="draft.name"
-            placeholder="Concrete & Cement"
-          />
-        </UFormField>
-        <UFormField class="w-full" label="Image URL">
-          <UInput
-            class="w-full"
-            v-model="draft.image_url"
-            placeholder="https://example.com/category.jpg"
-          />
-        </UFormField>
-      </div>
+      <UFormField class="w-full" label="Category name">
+        <UInput
+          class="w-full"
+          v-model="draft.name"
+          placeholder="Concrete & Cement"
+        />
+      </UFormField>
 
       <UFormField class="w-full" label="Short description">
         <UTextarea
@@ -138,7 +126,8 @@ const handleSubmit = () => {
             Buying and Usage Guidance
           </h3>
           <p class="mt-1 text-sm text-slate-600">
-            Capture the notes that should guide product setup and category review.
+            Capture the notes that should guide product setup and category
+            review.
           </p>
         </div>
 
@@ -182,83 +171,17 @@ const handleSubmit = () => {
         </div>
       </div>
     </div>
-
-    <div class="space-y-6">
-      <div
-        class="rounded-[28px] border border-slate-200/80 bg-gradient-to-br from-stone-50 via-white to-sky-50 p-6"
-      >
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">
-          Preview
-        </p>
-        <h3 class="mt-2 text-xl font-semibold text-slate-900">
-          {{ draft.name || "Category preview" }}
-        </h3>
-        <p class="mt-3 text-sm leading-6 text-slate-600">
-          {{
-            draft.overview ||
-            draft.description ||
-            "Your category overview will appear here as you write it."
-          }}
-        </p>
-
-        <div
-          v-if="draft.image_url"
-          class="mt-5 overflow-hidden rounded-2xl border border-white/70 bg-white"
-        >
-          <img
-            :src="draft.image_url"
-            :alt="draft.name || 'Category image preview'"
-            class="h-40 w-full object-cover"
-          />
-        </div>
-      </div>
-
-      <div class="grid gap-4">
-        <div class="rounded-2xl border border-slate-200/70 p-5">
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-            Typical Uses Preview
-          </p>
-          <ul class="mt-3 grid gap-2 text-sm text-slate-600">
-            <li v-for="item in parseLines(draft.typical_uses)" :key="item">
-              {{ item }}
-            </li>
-            <li v-if="!parseLines(draft.typical_uses).length" class="text-slate-400">
-              No usage notes yet.
-            </li>
-          </ul>
-        </div>
-
-        <div class="rounded-2xl border border-slate-200/70 p-5">
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-            Buying Notes Preview
-          </p>
-          <ul class="mt-3 grid gap-2 text-sm text-slate-600">
-            <li
-              v-for="item in parseLines(draft.buying_considerations)"
-              :key="item"
-            >
-              {{ item }}
-            </li>
-            <li
-              v-if="!parseLines(draft.buying_considerations).length"
-              class="text-slate-400"
-            >
-              No buying notes yet.
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
   </div>
 
-  <div
-    v-if="showActions !== false"
-    class="mt-6 flex items-center justify-end gap-2"
-  >
+  <div class="mt-6 flex items-center justify-end gap-2">
     <UButton color="neutral" variant="ghost" @click="emit('cancel')">
       {{ cancelLabel ?? "Cancel" }}
     </UButton>
-    <UButton color="primary" :disabled="!draft.name.trim()" @click="handleSubmit">
+    <UButton
+      color="primary"
+      :disabled="!draft.name.trim()"
+      @click="handleSubmit"
+    >
       {{ submitLabel }}
     </UButton>
   </div>

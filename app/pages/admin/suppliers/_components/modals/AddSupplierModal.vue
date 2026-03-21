@@ -3,6 +3,7 @@ defineProps<{ payload?: unknown }>();
 const emit = defineEmits<{ close: [boolean] }>();
 
 const supplierStore = useSupplierStore();
+const { notifyResponse } = useAdminResponseToast();
 const isSaving = ref(false);
 
 const form = reactive({
@@ -29,7 +30,7 @@ const normalize = (value: string) => {
 const handleSave = async () => {
   if (!form.name.trim()) return;
   isSaving.value = true;
-  await supplierStore.createSupplier({
+  const response = await supplierStore.createSupplier({
     name: normalize(form.name),
     contact_name: normalize(form.contact_name),
     phone: normalize(form.phone),
@@ -37,6 +38,17 @@ const handleSave = async () => {
     address: normalize(form.address),
   });
   isSaving.value = false;
+
+  if (
+    !notifyResponse(response, {
+      successTitle: "Supplier created",
+      successDescription: `Added ${form.name.trim()}.`,
+      errorTitle: "Supplier not created",
+    })
+  ) {
+    return;
+  }
+
   resetForm();
   emit("close", false);
 };

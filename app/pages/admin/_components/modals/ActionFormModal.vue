@@ -14,7 +14,9 @@ type ActionFormPayload = {
   fields: ActionFormField[];
   confirmLabel?: string;
   confirmColor?: string;
-  onSubmit?: (values: Record<string, string | number>) => Promise<void> | void;
+  onSubmit?: (
+    values: Record<string, string | number>,
+  ) => Promise<boolean | void> | boolean | void;
 };
 
 const props = defineProps<{
@@ -63,9 +65,12 @@ const handleSubmit = async () => {
   }
 
   isWorking.value = true;
-  await props.payload.onSubmit(values);
+  const shouldClose = (await props.payload.onSubmit(values)) !== false;
   isWorking.value = false;
-  emit("close", false);
+
+  if (shouldClose) {
+    emit("close", false);
+  }
 };
 </script>
 

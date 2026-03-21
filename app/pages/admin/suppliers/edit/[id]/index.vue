@@ -13,6 +13,8 @@ const router = useRouter();
 const supplierId = computed(() => String(route.params.id));
 
 const supplierStore = useSupplierStore();
+const { isSuccessResponse, notifyResponse, showError, showSuccess } =
+  useAdminResponseToast();
 const { openModal } = useModal();
 
 await supplierStore.fetchSupplierById(supplierId.value);
@@ -51,18 +53,25 @@ watch(
 
 const handleSave = async () => {
   if (!supplier.value?.id) return;
-  await supplierStore.updateSupplier(supplier.value.id, {
+  const response = await supplierStore.updateSupplier(supplier.value.id, {
     name: draft.name,
     contact_name: draft.contact_name,
     phone: draft.phone,
     email: draft.email,
     address: draft.address,
   } as Partial<Supplier>);
+
+  if (!isSuccessResponse(response)) {
+    showError("Supplier not updated", response.message ?? "Please try again.");
+    return;
+  }
+
   supplierStore.updateSupplierPaymentTerms(
     supplier.value.id,
     draft.payment_terms,
   );
   supplierStore.setSupplierStatus(supplier.value.id, draft.status as any);
+  showSuccess("Supplier updated", "Contact details, terms, and status were saved.");
   router.push("/admin/suppliers");
 };
 
@@ -74,8 +83,20 @@ const handleDelete = () => {
     confirmLabel: "Delete",
     confirmColor: "error",
     onConfirm: async () => {
-      await supplierStore.deleteSupplier(supplier.value!.id);
+      const response = await supplierStore.deleteSupplier(supplier.value!.id);
+
+      if (
+        !notifyResponse(response, {
+          successTitle: "Supplier deleted",
+          successDescription: `Removed ${supplier.value?.name ?? "the supplier"}.`,
+          errorTitle: "Supplier not deleted",
+        })
+      ) {
+        return false;
+      }
+
       router.push("/admin/suppliers");
+      return true;
     },
   });
 };

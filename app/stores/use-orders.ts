@@ -7,8 +7,10 @@ import type {
   OrderPagination,
 } from "~/types/order";
 import type { H3Response } from "~/types/h3Response";
+// TODO: Keep local seed-backed behavior until Nitro order and order-item routes are implemented.
 import { orders as seedOrders, orderItems as seedOrderItems } from "~/seeds/orders";
 import { downloadText, printText } from "~/utils/documents";
+import { toErrorMessage } from "~/utils/api";
 
 type OrderActivity = {
   action: string;
@@ -28,11 +30,11 @@ const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
   status: "error",
   statusCode: 500,
   statusMessage: "internal server error",
-  message: err instanceof Error ? err.message : "Unknown error",
+  message: toErrorMessage(err),
 });
 
 export const useOrderStore = defineStore("orders", () => {
-  const error = ref<Error | null>(null);
+  const error = ref<string | null>(null);
   const order = ref<Order | null>(null);
   const isLoading = ref(false);
 
@@ -95,7 +97,7 @@ export const useOrderStore = defineStore("orders", () => {
       orders.value = filtered.slice(start, end);
       return buildOkResponse(orders.value, pagination.value.total);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Order[]>(err);
     } finally {
       isLoading.value = false;
@@ -116,7 +118,7 @@ export const useOrderStore = defineStore("orders", () => {
       order.value = found;
       return buildOkResponse(order.value, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Order | null>(err);
     }
   };
@@ -128,7 +130,7 @@ export const useOrderStore = defineStore("orders", () => {
       const items = orderItems.value.filter((item) => item.order_id === orderId);
       return buildOkResponse(items, items.length);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<OrderItem[]>(err);
     }
   };
@@ -185,7 +187,7 @@ export const useOrderStore = defineStore("orders", () => {
 
       return buildOkResponse(updated, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Order | null>(err);
     } finally {
       isLoading.value = false;
@@ -207,7 +209,7 @@ export const useOrderStore = defineStore("orders", () => {
 
       return buildOkResponse(null, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<null>(err);
     } finally {
       isLoading.value = false;
@@ -297,7 +299,7 @@ export const useOrderStore = defineStore("orders", () => {
 
       return buildOkResponse(created, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<OrderItem>(err);
     } finally {
       isLoading.value = false;
@@ -343,7 +345,7 @@ export const useOrderStore = defineStore("orders", () => {
 
       return buildOkResponse(updated, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<OrderItem | null>(err);
     } finally {
       isLoading.value = false;
@@ -368,7 +370,7 @@ export const useOrderStore = defineStore("orders", () => {
 
       return buildOkResponse(null, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<null>(err);
     } finally {
       isLoading.value = false;
@@ -411,7 +413,7 @@ export const useOrderStore = defineStore("orders", () => {
 
       return buildOkResponse(duplicated, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Order | null>(err);
     } finally {
       isLoading.value = false;

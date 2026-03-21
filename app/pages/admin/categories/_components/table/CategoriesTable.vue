@@ -16,7 +16,7 @@ const props = defineProps<{
 }>();
 const { openModal } = useModal();
 const categoryStore = useCategoryStore();
-const { query } = storeToRefs(categoryStore);
+const { query, isLoading } = storeToRefs(categoryStore);
 const selectedIds = ref<Set<string>>(new Set());
 
 const productCounts = computed(() => {
@@ -145,6 +145,7 @@ const pagination = ref({
       :pagination-options="{
         getPaginationRowModel: getPaginationRowModel(),
       }"
+      :loading="isLoading"
     >
       <template #select-header>
         <div class="flex items-center justify-center">
@@ -164,11 +165,6 @@ const pagination = ref({
       </template>
       <template #name-cell="{ row }">
         <div class="flex items-center gap-3">
-          <img
-            :src="row.original.image_url"
-            :alt="row.original.name"
-            class="h-12 w-12 rounded-xl object-cover"
-          />
           <div class="flex flex-col">
             <span class="font-medium">{{ row.original.name }}</span>
             <span class="text-xs text-slate-500">{{ row.original.id }}</span>

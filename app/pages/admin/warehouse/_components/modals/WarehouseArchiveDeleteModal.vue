@@ -8,18 +8,44 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [boolean] }>();
 
 const warehouseStore = useWarehouseStore();
+const { notifyResponse } = useAdminResponseToast();
 
 const warehouseId = computed(() => props.payload?.id ?? "");
 
 const handleArchive = async () => {
   if (!warehouseId.value) return;
-  await warehouseStore.setWarehouseStatus(warehouseId.value, "archived");
+  const response = await warehouseStore.setWarehouseStatus(
+    warehouseId.value,
+    "archived",
+  );
+
+  if (
+    !notifyResponse(response, {
+      successTitle: "Warehouse archived",
+      successDescription: `Archived ${props.payload?.name ?? "the warehouse"}.`,
+      errorTitle: "Warehouse not archived",
+    })
+  ) {
+    return;
+  }
+
   emit("close", false);
 };
 
 const handleDelete = async () => {
   if (!warehouseId.value) return;
-  await warehouseStore.deleteWarehouse(warehouseId.value);
+  const response = await warehouseStore.deleteWarehouse(warehouseId.value);
+
+  if (
+    !notifyResponse(response, {
+      successTitle: "Warehouse deleted",
+      successDescription: `Removed ${props.payload?.name ?? "the warehouse"}.`,
+      errorTitle: "Warehouse not deleted",
+    })
+  ) {
+    return;
+  }
+
   emit("close", false);
 };
 </script>

@@ -13,7 +13,7 @@ type ActionItem = {
   icon: string;
   color?: string;
   to?: string;
-  onClick?: () => void | Promise<void>;
+  onClick?: () => boolean | void | Promise<boolean | void>;
 };
 
 const props = defineProps<{
@@ -21,6 +21,7 @@ const props = defineProps<{
 }>();
 
 const { openModal } = useModal();
+const { notifyResponse, showSuccess } = useAdminResponseToast();
 const productStore = useProductStore();
 const inventoryStore = useInventoryStore();
 
@@ -44,7 +45,7 @@ const openConfirm = (payload: {
   description?: string;
   confirmLabel?: string;
   confirmColor?: string;
-  onConfirm: () => Promise<void> | void;
+  onConfirm: () => Promise<boolean | void> | boolean | void;
 }) => {
   openModal(ActionConfirmModal, payload);
 };
@@ -62,7 +63,9 @@ const openForm = (payload: {
   }>;
   confirmLabel?: string;
   confirmColor?: string;
-  onSubmit: (values: Record<string, string | number>) => Promise<void> | void;
+  onSubmit: (
+    values: Record<string, string | number>,
+  ) => Promise<boolean | void> | boolean | void;
 }) => {
   openModal(ActionFormModal, payload);
 };
@@ -83,9 +86,15 @@ const openUpdatePrice = () => {
     ],
     onSubmit: async (values) => {
       if (!productId.value) return;
-      await productStore.updateProduct(productId.value, {
-        price: Number(values.price ?? 0),
-      });
+      return notifyResponse(
+        await productStore.updateProduct(productId.value, {
+          price: Number(values.price ?? 0),
+        }),
+        {
+          successTitle: "Price updated",
+          errorTitle: "Price not updated",
+        },
+      );
     },
   });
 };
@@ -109,7 +118,7 @@ const openUpdateStock = (title: string) => {
       const targetStock = Number(values.stock ?? 0);
       const delta = targetStock - currentStock.value;
       if (!Number.isFinite(targetStock) || delta === 0) return;
-      await inventoryStore.createInventoryLog({
+      const inventoryResponse = await inventoryStore.createInventoryLog({
         product_id: productId.value,
         movement_type: "adjustment",
         quantity_change: delta,
@@ -118,7 +127,21 @@ const openUpdateStock = (title: string) => {
         note: `Stock set from ${currentStock.value} to ${targetStock}`,
         created_by: "admin",
       });
-      await productStore.adjustProductStock(productId.value, delta);
+
+      if (!inventoryResponse || inventoryResponse.status === "error") {
+        return notifyResponse(inventoryResponse, {
+          successTitle: "Stock updated",
+          errorTitle: "Stock not updated",
+        });
+      }
+
+      return notifyResponse(
+        await productStore.adjustProductStock(productId.value, delta),
+        {
+          successTitle: "Stock updated",
+          errorTitle: "Stock not updated",
+        },
+      );
     },
   });
 };
@@ -138,9 +161,15 @@ const openUpdateSku = () => {
     ],
     onSubmit: async (values) => {
       if (!productId.value) return;
-      await productStore.updateProduct(productId.value, {
-        sku: String(values.sku ?? "").trim(),
-      });
+      return notifyResponse(
+        await productStore.updateProduct(productId.value, {
+          sku: String(values.sku ?? "").trim(),
+        }),
+        {
+          successTitle: "SKU updated",
+          errorTitle: "SKU not updated",
+        },
+      );
     },
   });
 };
@@ -160,9 +189,15 @@ const openUpdateDescription = () => {
     ],
     onSubmit: async (values) => {
       if (!productId.value) return;
-      await productStore.updateProduct(productId.value, {
-        description: String(values.description ?? ""),
-      });
+      return notifyResponse(
+        await productStore.updateProduct(productId.value, {
+          description: String(values.description ?? ""),
+        }),
+        {
+          successTitle: "Description updated",
+          errorTitle: "Description not updated",
+        },
+      );
     },
   });
 };
@@ -181,9 +216,15 @@ const openUpdateImages = () => {
     ],
     onSubmit: async (values) => {
       if (!productId.value) return;
-      await productStore.updateProduct(productId.value, {
-        image_url: String(values.image_url ?? ""),
-      });
+      return notifyResponse(
+        await productStore.updateProduct(productId.value, {
+          image_url: String(values.image_url ?? ""),
+        }),
+        {
+          successTitle: "Image updated",
+          errorTitle: "Image not updated",
+        },
+      );
     },
   });
 };
@@ -210,7 +251,7 @@ const openAddStock = (title: string, movementType: "in" | "out") => {
       if (!productId.value) return;
       const quantity = Number(values.quantity ?? 0);
       if (!Number.isFinite(quantity) || quantity === 0) return;
-      await inventoryStore.createInventoryLog({
+      const inventoryResponse = await inventoryStore.createInventoryLog({
         product_id: productId.value,
         movement_type: movementType,
         quantity_change: quantity,
@@ -219,9 +260,23 @@ const openAddStock = (title: string, movementType: "in" | "out") => {
         note: String(values.note ?? "") || null,
         created_by: "admin",
       });
-      await productStore.adjustProductStock(
-        productId.value,
-        movementType === "in" ? quantity : -quantity,
+
+      if (!inventoryResponse || inventoryResponse.status === "error") {
+        return notifyResponse(inventoryResponse, {
+          successTitle: "Stock updated",
+          errorTitle: "Stock not updated",
+        });
+      }
+
+      return notifyResponse(
+        await productStore.adjustProductStock(
+          productId.value,
+          movementType === "in" ? quantity : -quantity,
+        ),
+        {
+          successTitle: "Stock updated",
+          errorTitle: "Stock not updated",
+        },
       );
     },
   });
@@ -243,9 +298,15 @@ const openMinimumStock = () => {
     ],
     onSubmit: async (values) => {
       if (!productId.value) return;
-      await productStore.updateProduct(productId.value, {
-        minimum_stock_quantity: Number(values.minimum_stock_quantity ?? 0),
-      });
+      return notifyResponse(
+        await productStore.updateProduct(productId.value, {
+          minimum_stock_quantity: Number(values.minimum_stock_quantity ?? 0),
+        }),
+        {
+          successTitle: "Minimum stock updated",
+          errorTitle: "Minimum stock not updated",
+        },
+      );
     },
   });
 };
@@ -323,14 +384,26 @@ const statusActions = computed<ActionItem[]>(() => [
   {
     label: "Mark as Active / Published",
     icon: "i-lucide-check-circle",
-    onClick: () =>
-      productStore.updateProduct(productId.value, { is_active: true }),
+    onClick: async () =>
+      notifyResponse(
+        await productStore.updateProduct(productId.value, { is_active: true }),
+        {
+          successTitle: "Product activated",
+          errorTitle: "Product not activated",
+        },
+      ),
   },
   {
     label: "Mark as Inactive / Unpublished",
     icon: "i-lucide-x-circle",
-    onClick: () =>
-      productStore.updateProduct(productId.value, { is_active: false }),
+    onClick: async () =>
+      notifyResponse(
+        await productStore.updateProduct(productId.value, { is_active: false }),
+        {
+          successTitle: "Product deactivated",
+          errorTitle: "Product not deactivated",
+        },
+      ),
   },
   {
     label: "Archive Product",
@@ -341,12 +414,23 @@ const statusActions = computed<ActionItem[]>(() => [
         description: `Archive ${props.product.name ?? "product"}?`,
         confirmLabel: "Archive",
         confirmColor: "warning",
-        onConfirm: () => {
+        onConfirm: async () => {
           if (!productId.value) return;
-          productStore.setProductArchived(productId.value, true);
-          return productStore.updateProduct(productId.value, {
+          const response = await productStore.updateProduct(productId.value, {
             is_active: false,
           });
+
+          if (
+            !notifyResponse(response, {
+              successTitle: "Product archived",
+              errorTitle: "Product not archived",
+            })
+          ) {
+            return false;
+          }
+
+          productStore.setProductArchived(productId.value, true);
+          return true;
         },
       }),
   },
@@ -380,13 +464,21 @@ const adminActions = computed<ActionItem[]>(() => [
   {
     label: "Duplicate Product",
     icon: "i-lucide-copy",
-    onClick: () => productStore.duplicateProduct(productId.value),
+    onClick: async () =>
+      notifyResponse(await productStore.duplicateProduct(productId.value), {
+        successTitle: "Product duplicated",
+        errorTitle: "Product not duplicated",
+      }),
   },
 ]);
 
 const handleAction = async (action: ActionItem, close: () => void) => {
   if (action.onClick) {
-    await action.onClick();
+    const shouldClose = (await action.onClick()) !== false;
+
+    if (!shouldClose) {
+      return;
+    }
   }
   close();
 };

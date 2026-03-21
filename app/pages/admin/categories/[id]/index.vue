@@ -61,12 +61,17 @@ const editCategory = () => router.push(`/admin/categories/edit/${categoryId.valu
       <div v-if="category" class="space-y-6">
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.9fr)]">
           <UCard>
-            <div class="overflow-hidden rounded-[28px] border border-slate-200/70">
-              <img
-                :src="category.image_url"
-                :alt="category.name"
-                class="h-64 w-full object-cover"
-              />
+            <div
+              class="flex h-64 items-center justify-center rounded-[28px] border border-slate-200/70 bg-gradient-to-br from-slate-100 via-white to-amber-50"
+            >
+              <div class="text-center">
+                <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+                  Category
+                </p>
+                <p class="mt-3 text-5xl font-semibold text-slate-800">
+                  {{ category.name?.slice(0, 1) ?? "C" }}
+                </p>
+              </div>
             </div>
             <div class="mt-6 grid gap-4 md:grid-cols-3">
               <div>

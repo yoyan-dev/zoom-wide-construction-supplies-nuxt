@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import type {
   FetchWarehouseParams,
   Warehouse,
@@ -7,29 +7,20 @@ import type {
   WarehouseStatus,
 } from "~/types/warehouse";
 import type { H3Response } from "~/types/h3Response";
-import { warehouses as seedWarehouses } from "~/seeds/warehouses";
-
-const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
-  status: "ok",
-  statusCode: 200,
-  statusMessage: "ok",
-  data,
-  total,
-});
-
-const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
-  status: "error",
-  statusCode: 500,
-  statusMessage: "internal server error",
-  message: err instanceof Error ? err.message : "Unknown error",
-});
+import {
+  apiRequest,
+  buildErrorResponse,
+  buildOkResponse,
+  DEFAULT_API_PAGE_LIMIT,
+  getTotalPages,
+  toErrorMessage,
+} from "~/utils/api";
 
 export const useWarehouseStore = defineStore("warehouses", () => {
-  const error = ref<Error | null>(null);
+  const error = ref<string | null>(null);
   const warehouse = ref<Warehouse | null>(null);
-  const isLoading = ref(false);
 
-  const allWarehouses = ref<Warehouse[]>([...seedWarehouses]);
+  const allWarehouses = ref<Warehouse[]>([]);
   const warehouses = ref<Warehouse[]>([]);
 
   const query = ref<FetchWarehouseParams>({
@@ -40,47 +31,66 @@ export const useWarehouseStore = defineStore("warehouses", () => {
 
   const pagination = ref<WarehousePagination>({
     page: 1,
-    limit: seedWarehouses.length,
+    limit: DEFAULT_API_PAGE_LIMIT,
     total: 0,
     total_pages: 0,
   });
+  const isFetchingWarehouses = ref(false);
+  const isFetchingWarehouse = ref(false);
+
+  const isMutating = ref(false);
+  const isLoading = computed(
+    () =>
+      isFetchingWarehouses.value ||
+      isFetchingWarehouse.value ||
+      isMutating.value,
+  );
+
+  const syncPagination = (total: number, limit: number) => {
+    pagination.value = {
+      page: query.value.page ?? 1,
+      limit,
+      total,
+      total_pages: getTotalPages(total, limit),
+    };
+  };
+
+  const setCachedWarehouse = (value: Warehouse) => {
+    const next = allWarehouses.value.filter((item) => item.id !== value.id);
+    allWarehouses.value = [value, ...next];
+  };
 
   const fetchWarehouses = async (): Promise<H3Response<Warehouse[]>> => {
     try {
-      isLoading.value = true;
+      error.value = null;
+      isFetchingWarehouses.value = true;
+      const limit = pagination.value.limit ?? DEFAULT_API_PAGE_LIMIT;
+      const response = await apiRequest<Warehouse[]>("/warehouses", {
+        query: {
+          q: query.value.q,
+          status: query.value.status,
+          page: query.value.page ?? 1,
+          limit,
+        },
+      });
+      const items = response.data ?? [];
+      const total = response.total ?? items.length;
 
-      let filtered = [...allWarehouses.value];
+      allWarehouses.value = items;
+      warehouses.value = items;
+      syncPagination(total, limit);
 
-      if (query.value.q) {
-        const term = query.value.q.toLowerCase();
-        filtered = filtered.filter((item) => {
-          return [item.name, item.address, item.id]
-            .join(" ")
-            .toLowerCase()
-            .includes(term);
-        });
+      if (warehouse.value?.id) {
+        warehouse.value =
+          items.find((item) => item.id === warehouse.value?.id) ?? warehouse.value;
       }
 
-      if (query.value.status) {
-        filtered = filtered.filter((item) => item.status === query.value.status);
-      }
-
-      const start = (query.value.page! - 1) * pagination.value.limit!;
-      const end = start + pagination.value.limit!;
-
-      pagination.value.total = filtered.length;
-      pagination.value.total_pages = Math.ceil(
-        filtered.length / pagination.value.limit!,
-      );
-      pagination.value.page = query.value.page;
-
-      warehouses.value = filtered.slice(start, end);
-      return buildOkResponse(warehouses.value, pagination.value.total);
-    } catch (err: any) {
-      error.value = err;
+      return buildOkResponse(warehouses.value, total);
+    } catch (err: unknown) {
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Warehouse[]>(err);
     } finally {
-      isLoading.value = false;
+      isFetchingWarehouses.value = false;
     }
   };
 
@@ -88,18 +98,28 @@ export const useWarehouseStore = defineStore("warehouses", () => {
     id: string,
   ): Promise<H3Response<Warehouse | null>> => {
     try {
-      const found = allWarehouses.value.find((item) => item.id === id);
+      error.value = null;
+      isFetchingWarehouse.value = true;
+      const cached = allWarehouses.value.find((item) => item.id === id) ?? null;
 
-      if (!found) {
-        warehouse.value = null;
-        return buildOkResponse(null, 0);
+      if (cached) {
+        warehouse.value = cached;
+        return buildOkResponse(warehouse.value, 1);
       }
 
-      warehouse.value = found;
-      return buildOkResponse(warehouse.value, 1);
-    } catch (err: any) {
-      error.value = err;
+      const response = await apiRequest<Warehouse | null>(`/warehouses/${id}`);
+      warehouse.value = response.data ?? null;
+
+      if (warehouse.value) {
+        setCachedWarehouse(warehouse.value);
+      }
+
+      return buildOkResponse(warehouse.value, warehouse.value ? 1 : 0);
+    } catch (err: unknown) {
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Warehouse | null>(err);
+    } finally {
+      isFetchingWarehouse.value = false;
     }
   };
 
@@ -107,24 +127,25 @@ export const useWarehouseStore = defineStore("warehouses", () => {
     payload: Omit<Warehouse, "id" | "created_at" | "updated_at">,
   ): Promise<H3Response<Warehouse>> => {
     try {
-      isLoading.value = true;
-      const now = new Date().toISOString();
-      const created: Warehouse = {
-        ...payload,
-        id: `wh-${Date.now()}`,
-        created_at: now,
-        updated_at: now,
-      };
+      error.value = null;
+      isMutating.value = true;
 
-      allWarehouses.value = [created, ...allWarehouses.value];
+      const response = await apiRequest<Warehouse>("/warehouses", {
+        method: "POST",
+        body: payload,
+      });
+      const created = response.data as Warehouse;
+
+      setCachedWarehouse(created);
+      warehouse.value = created;
       await fetchWarehouses();
 
       return buildOkResponse(created, 1);
-    } catch (err: any) {
-      error.value = err;
+    } catch (err: unknown) {
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Warehouse>(err);
     } finally {
-      isLoading.value = false;
+      isMutating.value = false;
     }
   };
 
@@ -133,22 +154,20 @@ export const useWarehouseStore = defineStore("warehouses", () => {
     payload: Partial<Warehouse>,
   ): Promise<H3Response<Warehouse | null>> => {
     try {
-      isLoading.value = true;
-      const index = allWarehouses.value.findIndex((item) => item.id === id);
+      error.value = null;
+      isMutating.value = true;
 
-      if (index === -1) return buildOkResponse(null, 0);
+      const response = await apiRequest<Warehouse | null>(`/warehouses/${id}`, {
+        method: "PATCH",
+        body: payload,
+      });
+      const updated = response.data ?? null;
 
-      const current = allWarehouses.value[index];
-      if (!current) return buildOkResponse(null, 0);
+      if (!updated) {
+        return buildOkResponse(null, 0);
+      }
 
-      const updated: Warehouse = {
-        ...current,
-        ...payload,
-        id,
-        updated_at: new Date().toISOString(),
-      };
-
-      allWarehouses.value.splice(index, 1, updated);
+      setCachedWarehouse(updated);
 
       if (warehouse.value?.id === id) {
         warehouse.value = updated;
@@ -156,18 +175,25 @@ export const useWarehouseStore = defineStore("warehouses", () => {
 
       await fetchWarehouses();
       return buildOkResponse(updated, 1);
-    } catch (err: any) {
-      error.value = err;
+    } catch (err: unknown) {
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Warehouse | null>(err);
     } finally {
-      isLoading.value = false;
+      isMutating.value = false;
     }
   };
 
   const deleteWarehouse = async (id: string): Promise<H3Response<null>> => {
     try {
-      isLoading.value = true;
+      error.value = null;
+      isMutating.value = true;
+
+      await apiRequest<null>(`/warehouses/${id}`, {
+        method: "DELETE",
+      });
+
       allWarehouses.value = allWarehouses.value.filter((item) => item.id !== id);
+      warehouses.value = warehouses.value.filter((item) => item.id !== id);
 
       if (warehouse.value?.id === id) {
         warehouse.value = null;
@@ -175,11 +201,11 @@ export const useWarehouseStore = defineStore("warehouses", () => {
 
       await fetchWarehouses();
       return buildOkResponse(null, 1);
-    } catch (err: any) {
-      error.value = err;
+    } catch (err: unknown) {
+      error.value = toErrorMessage(err);
       return buildErrorResponse<null>(err);
     } finally {
-      isLoading.value = false;
+      isMutating.value = false;
     }
   };
 

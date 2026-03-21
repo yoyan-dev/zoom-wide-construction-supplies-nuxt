@@ -12,6 +12,7 @@ export type BuyerCartItem = {
 };
 
 export const useCartStore = defineStore("cart", () => {
+  // TODO: Keep cart local until checkout and backend cart persistence are implemented.
   const items = ref<BuyerCartItem[]>([]);
 
   const itemCount = computed(() =>

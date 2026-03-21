@@ -3,6 +3,7 @@ import { ref } from "vue";
 import type { User } from "~/types/user";
 import type { H3Response } from "~/types/h3Response";
 import { warehouseUsers, warehouseUserAssignments } from "~/seeds/warehouse-users";
+import { toErrorMessage } from "~/utils/api";
 
 const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
   status: "ok",
@@ -16,11 +17,11 @@ const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
   status: "error",
   statusCode: 500,
   statusMessage: "internal server error",
-  message: err instanceof Error ? err.message : "Unknown error",
+  message: toErrorMessage(err),
 });
 
 export const useWarehouseUsersStore = defineStore("warehouseUsers", () => {
-  const error = ref<Error | null>(null);
+  const error = ref<string | null>(null);
   const isLoading = ref(false);
 
   const allUsers = ref<User[]>([...warehouseUsers]);
@@ -49,7 +50,7 @@ export const useWarehouseUsersStore = defineStore("warehouseUsers", () => {
       users.value = filtered;
       return buildOkResponse(users.value, users.value.length);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<User[]>(err);
     } finally {
       isLoading.value = false;

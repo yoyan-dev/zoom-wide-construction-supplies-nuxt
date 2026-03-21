@@ -13,6 +13,8 @@ const warehouseStore = useWarehouseStore();
 const productStore = useProductStore();
 const inventoryStore = useInventoryStore();
 const router = useRouter();
+const { isSuccessResponse, notifyResponse, showError, showSuccess } =
+  useAdminResponseToast();
 
 await Promise.all([
   categoryStore.fetchCategories(),
@@ -28,8 +30,17 @@ type ProductDraft = Omit<Product, "id" | "created_at" | "updated_at">;
 
 const handleSubmit = async (payload: ProductDraft) => {
   const created = await productStore.createProduct(payload);
+
+  if (!isSuccessResponse(created)) {
+    notifyResponse(created, {
+      successTitle: "Product created",
+      errorTitle: "Product not created",
+    });
+    return;
+  }
+
   if (created.data?.id && (payload.stock_quantity ?? 0) > 0) {
-    await inventoryStore.createInventoryLog({
+    const inventoryResponse = await inventoryStore.createInventoryLog({
       product_id: created.data.id,
       movement_type: "in",
       quantity_change: payload.stock_quantity ?? 0,
@@ -38,7 +49,17 @@ const handleSubmit = async (payload: ProductDraft) => {
       note: "Opening stock created with product setup.",
       created_by: "admin",
     });
+
+    if (!isSuccessResponse(inventoryResponse)) {
+      showError(
+        "Product created, but stock log failed",
+        "The product was saved, but the opening stock movement could not be recorded.",
+      );
+      return;
+    }
   }
+
+  showSuccess("Product created", `Added ${payload.name ?? "the product"}.`);
   router.push("/admin/products");
 };
 </script>
