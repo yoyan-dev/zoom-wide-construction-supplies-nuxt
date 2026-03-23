@@ -129,7 +129,7 @@ export const useCategoryStore = defineStore("categories", () => {
   };
 
   const createCategory = async (
-    payload: FormData | Omit<Category, "id" | "created_at" | "updated_at">,
+    payload: FormData,
   ): Promise<H3Response<Category>> => {
     try {
       error.value = null;

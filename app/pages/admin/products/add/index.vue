@@ -2,6 +2,7 @@
 import { storeToRefs } from "pinia";
 import type { Product } from "~/types/product";
 import ProductForm from "../_components/ProductForm.vue";
+import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast";
 
 definePageMeta({
   layout: "admin",

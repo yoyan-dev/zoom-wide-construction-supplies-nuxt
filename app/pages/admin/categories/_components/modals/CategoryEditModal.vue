@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast";
 import type { Category, CategorySpecHighlight } from "~/types/category";
 
 const props = defineProps<{
@@ -83,7 +84,10 @@ const handleSave = async () => {
     featured_specs: parseSpecs(draft.featured_specs),
   };
 
-  const response = await categoryStore.updateCategory(categoryId.value, payload);
+  const response = await categoryStore.updateCategory(
+    categoryId.value,
+    payload,
+  );
 
   if (
     !notifyResponse(response, {
