@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useTimeoutFn } from "@vueuse/core";
 import type { Product } from "~/types/product";
 import { formatCurrency } from "~/utils/format";
 
@@ -19,9 +18,12 @@ const props = defineProps<{
 
 const cartStore = useCartStore();
 const added = ref(false);
-const { start } = useTimeoutFn(() => {
-  added.value = false;
-}, 1400, { immediate: false });
+let addedTimeout: ReturnType<typeof setTimeout> | null = null;
+
+onBeforeUnmount(() => {
+  if (!addedTimeout) return;
+  clearTimeout(addedTimeout);
+});
 
 const stockMeta = computed(() => {
   if (props.stock <= 0) {
@@ -42,7 +44,15 @@ const shortSpec = computed(() => {
 const addToCart = () => {
   cartStore.addToCart(props.product, 1);
   added.value = true;
-  start();
+
+  if (addedTimeout) {
+    clearTimeout(addedTimeout);
+  }
+
+  addedTimeout = setTimeout(() => {
+    added.value = false;
+    addedTimeout = null;
+  }, 1400);
 };
 </script>
 

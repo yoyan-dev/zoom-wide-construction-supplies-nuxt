@@ -30,14 +30,11 @@ const props = defineProps<{
         class="group overflow-hidden rounded-[28px] border border-slate-200/70 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
       >
         <div class="relative h-40 overflow-hidden">
-          <NuxtImg
-            :src="item.category.image_url || 'https://placehold.co/640x420?text=Supply'"
-            :alt="item.category.name"
-            class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-            width="640"
-            height="420"
-          />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent" />
+          <div
+            class="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-100 via-white to-slate-100 text-4xl font-semibold text-slate-700 transition duration-300 group-hover:scale-[1.03]"
+          >
+            {{ item.category.name?.slice(0, 1) ?? "C" }}
+          </div>
           <UBadge
             color="warning"
             variant="solid"

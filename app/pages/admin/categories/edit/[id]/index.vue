@@ -14,6 +14,7 @@ const router = useRouter();
 const categoryId = computed(() => String(route.params.id));
 
 const categoryStore = useCategoryStore();
+const { notifyResponse } = useAdminResponseToast();
 const { openModal } = useModal();
 
 await categoryStore.fetchCategoryById(categoryId.value);
@@ -24,7 +25,18 @@ const handleSave = async (
   payload: Omit<Category, "id" | "created_at" | "updated_at">,
 ) => {
   if (!category.value?.id) return;
-  await categoryStore.updateCategory(category.value.id, payload);
+  const response = await categoryStore.updateCategory(category.value.id, payload);
+
+  if (
+    !notifyResponse(response, {
+      successTitle: "Category updated",
+      successDescription: `Saved changes to ${payload.name}.`,
+      errorTitle: "Category not updated",
+    })
+  ) {
+    return;
+  }
+
   router.push("/admin/categories");
 };
 
@@ -36,8 +48,20 @@ const handleDelete = () => {
     confirmLabel: "Delete",
     confirmColor: "error",
     onConfirm: async () => {
-      await categoryStore.deleteCategory(category.value!.id);
+      const response = await categoryStore.deleteCategory(category.value!.id);
+
+      if (
+        !notifyResponse(response, {
+          successTitle: "Category deleted",
+          successDescription: `Removed ${category.value?.name ?? "the category"}.`,
+          errorTitle: "Category not deleted",
+        })
+      ) {
+        return false;
+      }
+
       router.push("/admin/categories");
+      return true;
     },
   });
 };

@@ -20,6 +20,8 @@ const categoryStore = useCategoryStore();
 const supplierStore = useSupplierStore();
 const warehouseStore = useWarehouseStore();
 const inventoryStore = useInventoryStore();
+const { isSuccessResponse, showError, showSuccess } =
+  useAdminResponseToast();
 
 await Promise.all([
   productStore.fetchProductById(productId.value),
@@ -46,9 +48,15 @@ const handleSubmit = async (payload: ProductDraft) => {
   );
   const nextStock = payload.stock_quantity ?? 0;
   const stockDelta = nextStock - currentStock;
-  await productStore.updateProduct(product.value.id, payload);
+  const response = await productStore.updateProduct(product.value.id, payload);
+
+  if (!isSuccessResponse(response)) {
+    showError("Product not updated", response.message ?? "Please try again.");
+    return;
+  }
+
   if (stockDelta !== 0) {
-    await inventoryStore.createInventoryLog({
+    const inventoryResponse = await inventoryStore.createInventoryLog({
       product_id: product.value.id,
       movement_type: "adjustment",
       quantity_change: stockDelta,
@@ -57,7 +65,17 @@ const handleSubmit = async (payload: ProductDraft) => {
       note: `Stock updated from ${currentStock} to ${nextStock} in product edit.`,
       created_by: "admin",
     });
+
+    if (!isSuccessResponse(inventoryResponse)) {
+      showError(
+        "Product updated, but stock log failed",
+        "The catalog changes were saved, but the stock adjustment log could not be recorded.",
+      );
+      return;
+    }
   }
+
+  showSuccess("Product updated", `Saved changes to ${payload.name ?? "the product"}.`);
   router.push("/admin/products");
 };
 </script>

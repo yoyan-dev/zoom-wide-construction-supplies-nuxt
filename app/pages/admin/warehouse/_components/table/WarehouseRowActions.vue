@@ -11,7 +11,7 @@ type ActionItem = {
   icon: string;
   color?: string;
   to?: string;
-  onClick?: () => void | Promise<void>;
+  onClick?: () => boolean | void | Promise<boolean | void>;
 };
 
 const props = defineProps<{
@@ -20,6 +20,7 @@ const props = defineProps<{
 }>();
 
 const { openModal } = useModal();
+const { notifyResponse } = useAdminResponseToast();
 const warehouseStore = useWarehouseStore();
 
 const warehouseId = computed(() => props.warehouse.id);
@@ -30,7 +31,20 @@ const openStatusModal = (nextStatus: "active" | "inactive") => {
     description: `${nextStatus === "active" ? "Activate" : "Deactivate"} ${props.warehouse.name}?`,
     confirmLabel: nextStatus === "active" ? "Activate" : "Deactivate",
     confirmColor: nextStatus === "active" ? "primary" : "warning",
-    onConfirm: () => warehouseStore.setWarehouseStatus(warehouseId.value, nextStatus),
+    onConfirm: async () =>
+      notifyResponse(
+        await warehouseStore.setWarehouseStatus(warehouseId.value, nextStatus),
+        {
+          successTitle:
+            nextStatus === "active"
+              ? "Warehouse activated"
+              : "Warehouse deactivated",
+          errorTitle:
+            nextStatus === "active"
+              ? "Warehouse not activated"
+              : "Warehouse not deactivated",
+        },
+      ),
   });
 };
 
@@ -101,7 +115,11 @@ const archiveActions = computed<ActionItem[]>(() => [
 
 const handleAction = async (action: ActionItem, close: () => void) => {
   if (action.onClick) {
-    await action.onClick();
+    const shouldClose = (await action.onClick()) !== false;
+
+    if (!shouldClose) {
+      return;
+    }
   }
   close();
 };

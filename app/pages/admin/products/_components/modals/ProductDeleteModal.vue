@@ -7,12 +7,24 @@ const props = defineProps<{
 
 const product = ref<Product | null>(props.payload);
 const productStore = useProductStore();
+const { notifyResponse } = useAdminResponseToast();
 
 const emit = defineEmits<{ close: [boolean] }>();
 
 const handleDelete = async () => {
   if (!product.value?.id) return;
-  await productStore.deleteProduct(product.value.id);
+  const response = await productStore.deleteProduct(product.value.id);
+
+  if (
+    !notifyResponse(response, {
+      successTitle: "Product deleted",
+      successDescription: `Removed ${product.value.name ?? "the product"}.`,
+      errorTitle: "Product not deleted",
+    })
+  ) {
+    return;
+  }
+
   emit("close", false);
 };
 </script>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { buildInventoryBalanceMap } from "~/utils/inventory-balance";
-import { orderItems as seedOrderItems } from "~/seeds/orders";
 import {
   storefrontPromoBanners,
   storefrontQuickTerms,
@@ -27,6 +26,7 @@ const router = useRouter();
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
 const inventoryStore = useInventoryStore();
+const orderStore = useOrderStore();
 
 await Promise.all([
   productStore.fetchProducts(),
@@ -37,6 +37,7 @@ await Promise.all([
 const { products } = storeToRefs(productStore);
 const { categories } = storeToRefs(categoryStore);
 const { logs } = storeToRefs(inventoryStore);
+const { orderItems } = storeToRefs(orderStore);
 
 const search = ref(typeof route.query.q === "string" ? route.query.q : "");
 
@@ -94,7 +95,7 @@ const productMap = computed(() => {
 
 const rankedBestSellerIds = computed(() => {
   const counts: Record<string, number> = {};
-  for (const item of seedOrderItems) {
+  for (const item of orderItems.value) {
     counts[item.product_id] = (counts[item.product_id] ?? 0) + item.quantity;
   }
 

@@ -7,14 +7,26 @@ const props = defineProps<{
 
 const category = ref<Category | null>(props.payload);
 const categoryStore = useCategoryStore();
+const { notifyResponse } = useAdminResponseToast();
 const isDeleting = ref(false);
 const emit = defineEmits<{ close: [boolean] }>();
 
 const handleDelete = async () => {
   if (!category.value?.id) return;
   isDeleting.value = true;
-  await categoryStore.deleteCategory(category.value.id);
+  const response = await categoryStore.deleteCategory(category.value.id);
   isDeleting.value = false;
+
+  if (
+    !notifyResponse(response, {
+      successTitle: "Category deleted",
+      successDescription: `Removed ${category.value.name ?? "the category"}.`,
+      errorTitle: "Category not deleted",
+    })
+  ) {
+    return;
+  }
+
   emit("close", false);
 };
 </script>

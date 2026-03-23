@@ -12,7 +12,7 @@ type ActionItem = {
   icon: string;
   color?: string;
   to?: string;
-  onClick?: () => void | Promise<void>;
+  onClick?: () => boolean | void | Promise<boolean | void>;
 };
 
 const props = defineProps<{
@@ -20,6 +20,7 @@ const props = defineProps<{
 }>();
 
 const { openModal } = useModal();
+const { notifyResponse, showSuccess } = useAdminResponseToast();
 const inventoryStore = useInventoryStore();
 const productStore = useProductStore();
 
@@ -30,7 +31,7 @@ const openConfirm = (payload: {
   description?: string;
   confirmLabel?: string;
   confirmColor?: string;
-  onConfirm: () => Promise<void> | void;
+  onConfirm: () => Promise<boolean | void> | boolean | void;
 }) => {
   openModal(ActionConfirmModal, payload);
 };
@@ -48,7 +49,9 @@ const openForm = (payload: {
   }>;
   confirmLabel?: string;
   confirmColor?: string;
-  onSubmit: (values: Record<string, string | number>) => Promise<void> | void;
+  onSubmit: (
+    values: Record<string, string | number>,
+  ) => Promise<boolean | void> | boolean | void;
 }) => {
   openModal(ActionFormModal, payload);
 };
@@ -74,7 +77,7 @@ const openAdjustStock = (title: string, movementType: "in" | "out") => {
     onSubmit: async (values) => {
       const quantity = Number(values.quantity ?? 0);
       if (!Number.isFinite(quantity) || quantity === 0) return;
-      await inventoryStore.createInventoryLog({
+      const inventoryResponse = await inventoryStore.createInventoryLog({
         product_id: props.log.product_id,
         movement_type: movementType,
         quantity_change: quantity,
@@ -83,9 +86,23 @@ const openAdjustStock = (title: string, movementType: "in" | "out") => {
         note: String(values.note ?? "") || null,
         created_by: "admin",
       });
-      await productStore.adjustProductStock(
-        props.log.product_id,
-        movementType === "in" ? quantity : -quantity,
+
+      if (inventoryResponse.status === "error") {
+        return notifyResponse(inventoryResponse, {
+          successTitle: "Stock updated",
+          errorTitle: "Stock not updated",
+        });
+      }
+
+      return notifyResponse(
+        await productStore.adjustProductStock(
+          props.log.product_id,
+          movementType === "in" ? quantity : -quantity,
+        ),
+        {
+          successTitle: "Stock updated",
+          errorTitle: "Stock not updated",
+        },
       );
     },
   });
@@ -119,7 +136,7 @@ const openTransferStock = () => {
       if (!Number.isFinite(quantity) || quantity === 0) return;
       const note = `Transfer ${values.from_location ?? ""} -> ${values.to_location ?? ""}`;
 
-      await inventoryStore.createInventoryLog({
+      const outboundResponse = await inventoryStore.createInventoryLog({
         product_id: props.log.product_id,
         movement_type: "out",
         quantity_change: quantity,
@@ -128,7 +145,15 @@ const openTransferStock = () => {
         note: note || null,
         created_by: "admin",
       });
-      await inventoryStore.createInventoryLog({
+
+      if (outboundResponse.status === "error") {
+        return notifyResponse(outboundResponse, {
+          successTitle: "Stock transferred",
+          errorTitle: "Stock transfer failed",
+        });
+      }
+
+      const inboundResponse = await inventoryStore.createInventoryLog({
         product_id: props.log.product_id,
         movement_type: "in",
         quantity_change: quantity,
@@ -137,9 +162,20 @@ const openTransferStock = () => {
         note: note || null,
         created_by: "admin",
       });
+
+      if (inboundResponse.status === "error") {
+        return notifyResponse(inboundResponse, {
+          successTitle: "Stock transferred",
+          errorTitle: "Stock transfer failed",
+        });
+      }
+
       if (values.to_location) {
         inventoryStore.updateInventoryLocation(logId.value, String(values.to_location));
       }
+
+      showSuccess("Stock transferred");
+      return true;
     },
   });
 };
@@ -158,9 +194,15 @@ const openMinimumStock = () => {
       },
     ],
     onSubmit: async (values) => {
-      await productStore.updateProduct(props.log.product_id, {
-        minimum_stock_quantity: Number(values.minimum_stock_quantity ?? 0),
-      });
+      return notifyResponse(
+        await productStore.updateProduct(props.log.product_id, {
+          minimum_stock_quantity: Number(values.minimum_stock_quantity ?? 0),
+        }),
+        {
+          successTitle: "Minimum stock alert updated",
+          errorTitle: "Minimum stock alert not updated",
+        },
+      );
     },
   });
 };
@@ -257,13 +299,21 @@ const adminActions = computed<ActionItem[]>(() => [
   {
     label: "Duplicate Inventory Record",
     icon: "i-lucide-copy",
-    onClick: () => inventoryStore.duplicateInventoryLog(logId.value),
+    onClick: async () =>
+      notifyResponse(await inventoryStore.duplicateInventoryLog(logId.value), {
+        successTitle: "Inventory record duplicated",
+        errorTitle: "Inventory record not duplicated",
+      }),
   },
 ]);
 
 const handleAction = async (action: ActionItem, close: () => void) => {
   if (action.onClick) {
-    await action.onClick();
+    const shouldClose = (await action.onClick()) !== false;
+
+    if (!shouldClose) {
+      return;
+    }
   }
   close();
 };

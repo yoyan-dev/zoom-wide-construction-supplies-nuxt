@@ -6,9 +6,11 @@ import type {
   InventoryPagination,
 } from "~/types/inventory";
 import type { H3Response } from "~/types/h3Response";
+// TODO: Keep local seed-backed behavior until the backend supports the signed adjustment flow used by the current UI.
 import { inventoryLogs as seedInventoryLogs } from "~/seeds/inventory";
 import { products as seedProducts } from "~/seeds/products";
 import { downloadText } from "~/utils/documents";
+import { toErrorMessage } from "~/utils/api";
 
 type InventoryMeta = {
   status?: "available" | "unavailable" | "archived";
@@ -28,11 +30,11 @@ const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
   status: "error",
   statusCode: 500,
   statusMessage: "internal server error",
-  message: err instanceof Error ? err.message : "Unknown error",
+  message: toErrorMessage(err),
 });
 
 export const useInventoryStore = defineStore("inventory", () => {
-  const error = ref<Error | null>(null);
+  const error = ref<string | null>(null);
   const log = ref<InventoryLog | null>(null);
   const isLoading = ref(false);
 
@@ -111,7 +113,7 @@ export const useInventoryStore = defineStore("inventory", () => {
       logs.value = filtered.slice(start, end);
       return buildOkResponse(logs.value, pagination.value.total);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<InventoryLog[]>(err);
     } finally {
       isLoading.value = false;
@@ -132,7 +134,7 @@ export const useInventoryStore = defineStore("inventory", () => {
       log.value = found;
       return buildOkResponse(log.value, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<InventoryLog | null>(err);
     }
   };
@@ -160,7 +162,7 @@ export const useInventoryStore = defineStore("inventory", () => {
 
       return buildOkResponse(created, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<InventoryLog>(err);
     } finally {
       isLoading.value = false;
@@ -200,7 +202,7 @@ export const useInventoryStore = defineStore("inventory", () => {
 
       return buildOkResponse(updated, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<InventoryLog | null>(err);
     } finally {
       isLoading.value = false;
@@ -257,7 +259,7 @@ export const useInventoryStore = defineStore("inventory", () => {
 
       return buildOkResponse(duplicated, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<InventoryLog | null>(err);
     } finally {
       isLoading.value = false;
@@ -291,7 +293,7 @@ export const useInventoryStore = defineStore("inventory", () => {
 
       return buildOkResponse(null, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<null>(err);
     } finally {
       isLoading.value = false;

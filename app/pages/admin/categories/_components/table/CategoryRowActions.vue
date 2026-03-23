@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Category } from "~/types/category";
+import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast";
 import { useModal } from "~/composables/admin/useModal";
 import ActionConfirmModal from "../../../_components/modals/ActionConfirmModal.vue";
 import ActionFormModal from "../../../_components/modals/ActionFormModal.vue";
@@ -12,7 +13,7 @@ type ActionItem = {
   icon: string;
   color?: string;
   to?: string;
-  onClick?: () => void | Promise<void>;
+  onClick?: () => boolean | void | Promise<boolean | void>;
 };
 
 const props = defineProps<{
@@ -20,6 +21,7 @@ const props = defineProps<{
 }>();
 
 const { openModal } = useModal();
+const { notifyResponse, showSuccess } = useAdminResponseToast();
 const categoryStore = useCategoryStore();
 
 const categoryId = computed(() => props.category.id);
@@ -29,7 +31,7 @@ const openConfirm = (payload: {
   description?: string;
   confirmLabel?: string;
   confirmColor?: string;
-  onConfirm: () => Promise<void> | void;
+  onConfirm: () => Promise<boolean | void> | boolean | void;
 }) => {
   openModal(ActionConfirmModal, payload);
 };
@@ -47,7 +49,9 @@ const openForm = (payload: {
   }>;
   confirmLabel?: string;
   confirmColor?: string;
-  onSubmit: (values: Record<string, string | number>) => Promise<void> | void;
+  onSubmit: (
+    values: Record<string, string | number>,
+  ) => Promise<boolean | void> | boolean | void;
 }) => {
   openModal(ActionFormModal, payload);
 };
@@ -68,6 +72,8 @@ const openChangeParent = () => {
         categoryId.value,
         String(values.parent_id ?? "").trim() || null,
       );
+      showSuccess("Category parent updated", "Parent category reference saved.");
+      return true;
     },
   });
 };
@@ -86,29 +92,15 @@ const openUpdateDescription = () => {
       },
     ],
     onSubmit: async (values) => {
-      await categoryStore.updateCategory(categoryId.value, {
-        description: String(values.description ?? ""),
-      });
-    },
-  });
-};
-
-const openUpdateImage = () => {
-  openForm({
-    title: "Update Category Image",
-    confirmLabel: "Update",
-    fields: [
-      {
-        key: "image_url",
-        label: "Image URL",
-        placeholder: "https://example.com/category.jpg",
-        value: props.category.image_url ?? "",
-      },
-    ],
-    onSubmit: async (values) => {
-      await categoryStore.updateCategory(categoryId.value, {
-        image_url: String(values.image_url ?? ""),
-      });
+      return notifyResponse(
+        await categoryStore.updateCategory(categoryId.value, {
+          description: String(values.description ?? ""),
+        }),
+        {
+          successTitle: "Category description updated",
+          errorTitle: "Category description not updated",
+        },
+      );
     },
   });
 };
@@ -147,23 +139,24 @@ const editActions = computed<ActionItem[]>(() => [
     icon: "i-lucide-align-left",
     onClick: openUpdateDescription,
   },
-  {
-    label: "Update Category Image",
-    icon: "i-lucide-image",
-    onClick: openUpdateImage,
-  },
 ]);
 
 const statusActions = computed<ActionItem[]>(() => [
   {
     label: "Mark as Active",
     icon: "i-lucide-check-circle",
-    onClick: () => categoryStore.setCategoryStatus(categoryId.value, "active"),
+    onClick: () => {
+      categoryStore.setCategoryStatus(categoryId.value, "active");
+      showSuccess("Category marked active");
+    },
   },
   {
     label: "Mark as Inactive",
     icon: "i-lucide-x-circle",
-    onClick: () => categoryStore.setCategoryStatus(categoryId.value, "inactive"),
+    onClick: () => {
+      categoryStore.setCategoryStatus(categoryId.value, "inactive");
+      showSuccess("Category marked inactive");
+    },
   },
   {
     label: "Archive Category",
@@ -174,8 +167,11 @@ const statusActions = computed<ActionItem[]>(() => [
         description: `Archive ${props.category.name}?`,
         confirmLabel: "Archive",
         confirmColor: "warning",
-        onConfirm: () =>
-          categoryStore.setCategoryStatus(categoryId.value, "archived"),
+        onConfirm: () => {
+          categoryStore.setCategoryStatus(categoryId.value, "archived");
+          showSuccess("Category archived");
+          return true;
+        },
       }),
   },
 ]);
@@ -190,13 +186,21 @@ const adminActions = computed<ActionItem[]>(() => [
   {
     label: "Duplicate Category",
     icon: "i-lucide-copy",
-    onClick: () => categoryStore.duplicateCategory(categoryId.value),
+    onClick: async () =>
+      notifyResponse(await categoryStore.duplicateCategory(categoryId.value), {
+        successTitle: "Category duplicated",
+        errorTitle: "Category not duplicated",
+      }),
   },
 ]);
 
 const handleAction = async (action: ActionItem, close: () => void) => {
   if (action.onClick) {
-    await action.onClick();
+    const shouldClose = (await action.onClick()) !== false;
+
+    if (!shouldClose) {
+      return;
+    }
   }
   close();
 };

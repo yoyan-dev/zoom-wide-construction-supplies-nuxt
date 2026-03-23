@@ -7,14 +7,26 @@ const props = defineProps<{
 
 const supplier = ref<Supplier | null>(props.payload);
 const supplierStore = useSupplierStore();
+const { notifyResponse } = useAdminResponseToast();
 const isDeleting = ref(false);
 const emit = defineEmits<{ close: [boolean] }>();
 
 const handleDelete = async () => {
   if (!supplier.value?.id) return;
   isDeleting.value = true;
-  await supplierStore.deleteSupplier(supplier.value.id);
+  const response = await supplierStore.deleteSupplier(supplier.value.id);
   isDeleting.value = false;
+
+  if (
+    !notifyResponse(response, {
+      successTitle: "Supplier deleted",
+      successDescription: `Removed ${supplier.value.name ?? "the supplier"}.`,
+      errorTitle: "Supplier not deleted",
+    })
+  ) {
+    return;
+  }
+
   emit("close", false);
 };
 </script>

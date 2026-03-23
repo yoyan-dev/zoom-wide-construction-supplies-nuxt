@@ -4,7 +4,7 @@ type ActionConfirmPayload = {
   description?: string;
   confirmLabel?: string;
   confirmColor?: string;
-  onConfirm?: () => Promise<void> | void;
+  onConfirm?: () => Promise<boolean | void> | boolean | void;
 };
 
 const props = defineProps<{
@@ -21,9 +21,12 @@ const handleConfirm = async () => {
   }
 
   isWorking.value = true;
-  await props.payload.onConfirm();
+  const shouldClose = (await props.payload.onConfirm()) !== false;
   isWorking.value = false;
-  emit("close", false);
+
+  if (shouldClose) {
+    emit("close", false);
+  }
 };
 </script>
 

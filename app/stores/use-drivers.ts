@@ -7,6 +7,7 @@ import type {
 } from "~/types/driver";
 import type { H3Response } from "~/types/h3Response";
 import { drivers as seedDrivers } from "~/seeds/drivers";
+import { toErrorMessage } from "~/utils/api";
 
 const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
   status: "ok",
@@ -20,11 +21,11 @@ const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
   status: "error",
   statusCode: 500,
   statusMessage: "internal server error",
-  message: err instanceof Error ? err.message : "Unknown error",
+  message: toErrorMessage(err),
 });
 
 export const useDriverStore = defineStore("drivers", () => {
-  const error = ref<Error | null>(null);
+  const error = ref<string | null>(null);
   const driver = ref<Driver | null>(null);
   const isLoading = ref(false);
 
@@ -78,7 +79,7 @@ export const useDriverStore = defineStore("drivers", () => {
       drivers.value = filtered.slice(start, end);
       return buildOkResponse(drivers.value, pagination.value.total);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Driver[]>(err);
     } finally {
       isLoading.value = false;
@@ -99,7 +100,7 @@ export const useDriverStore = defineStore("drivers", () => {
       driver.value = found;
       return buildOkResponse(driver.value, 1);
     } catch (err: any) {
-      error.value = err;
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Driver | null>(err);
     }
   };

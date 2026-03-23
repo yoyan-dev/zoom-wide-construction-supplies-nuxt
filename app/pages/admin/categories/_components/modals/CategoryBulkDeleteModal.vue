@@ -6,6 +6,7 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [boolean] }>();
 
 const categoryStore = useCategoryStore();
+const { isSuccessResponse, showError, showSuccess } = useAdminResponseToast();
 const isDeleting = ref(false);
 
 const count = computed(() => props.payload?.ids?.length ?? 0);
@@ -13,10 +14,28 @@ const count = computed(() => props.payload?.ids?.length ?? 0);
 const handleDelete = async () => {
   if (!props.payload?.ids?.length) return;
   isDeleting.value = true;
+  let deleted = 0;
+
   for (const id of props.payload.ids) {
-    await categoryStore.deleteCategory(id);
+    const response = await categoryStore.deleteCategory(id);
+
+    if (!isSuccessResponse(response)) {
+      isDeleting.value = false;
+      showError(
+        "Categories not deleted",
+        `Deleted ${deleted} of ${count.value} categories before the request failed.`,
+      );
+      return;
+    }
+
+    deleted += 1;
   }
+
   isDeleting.value = false;
+  showSuccess(
+    "Categories deleted",
+    `Deleted ${deleted} selected ${deleted === 1 ? "category" : "categories"}.`,
+  );
   props.payload.onDeleted?.();
   emit("close", false);
 };

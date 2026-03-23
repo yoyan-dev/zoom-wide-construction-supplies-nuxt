@@ -8,6 +8,7 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [boolean] }>();
 
 const supplierStore = useSupplierStore();
+const { notifyResponse } = useAdminResponseToast();
 const isSaving = ref(false);
 
 const form = reactive({
@@ -41,7 +42,7 @@ const handleSave = async () => {
   if (!supplierId.value) return;
   if (!form.name.trim()) return;
   isSaving.value = true;
-  await supplierStore.updateSupplier(supplierId.value, {
+  const response = await supplierStore.updateSupplier(supplierId.value, {
     name: normalize(form.name),
     contact_name: normalize(form.contact_name),
     phone: normalize(form.phone),
@@ -49,6 +50,17 @@ const handleSave = async () => {
     address: normalize(form.address),
   });
   isSaving.value = false;
+
+  if (
+    !notifyResponse(response, {
+      successTitle: "Supplier updated",
+      successDescription: `Saved changes to ${form.name.trim()}.`,
+      errorTitle: "Supplier not updated",
+    })
+  ) {
+    return;
+  }
+
   emit("close", false);
 };
 </script>

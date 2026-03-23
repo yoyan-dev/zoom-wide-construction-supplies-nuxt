@@ -11,7 +11,7 @@ type ActionItem = {
   icon: string;
   color?: string;
   to?: string;
-  onClick?: () => void | Promise<void>;
+  onClick?: () => boolean | void | Promise<boolean | void>;
 };
 
 const props = defineProps<{
@@ -19,6 +19,7 @@ const props = defineProps<{
 }>();
 
 const { openModal } = useModal();
+const { notifyResponse, showSuccess } = useAdminResponseToast();
 const supplierStore = useSupplierStore();
 
 const supplierId = computed(() => props.supplier.id ?? "");
@@ -36,7 +37,9 @@ const openForm = (payload: {
   }>;
   confirmLabel?: string;
   confirmColor?: string;
-  onSubmit: (values: Record<string, string | number>) => Promise<void> | void;
+  onSubmit: (
+    values: Record<string, string | number>,
+  ) => Promise<boolean | void> | boolean | void;
 }) => {
   openModal(ActionFormModal, payload);
 };
@@ -57,6 +60,8 @@ const openUpdatePaymentTerms = () => {
         supplierId.value,
         String(values.payment_terms ?? ""),
       );
+      showSuccess("Supplier payment terms updated");
+      return true;
     },
   });
 };
@@ -86,11 +91,17 @@ const openUpdateContact = () => {
       },
     ],
     onSubmit: async (values) => {
-      await supplierStore.updateSupplier(supplierId.value, {
-        contact_name: String(values.contact_name ?? ""),
-        phone: String(values.phone ?? ""),
-        email: String(values.email ?? ""),
-      });
+      return notifyResponse(
+        await supplierStore.updateSupplier(supplierId.value, {
+          contact_name: String(values.contact_name ?? ""),
+          phone: String(values.phone ?? ""),
+          email: String(values.email ?? ""),
+        }),
+        {
+          successTitle: "Supplier contact updated",
+          errorTitle: "Supplier contact not updated",
+        },
+      );
     },
   });
 };
@@ -135,12 +146,18 @@ const statusActions = computed<ActionItem[]>(() => [
   {
     label: "Mark as Active",
     icon: "i-lucide-check-circle",
-    onClick: () => supplierStore.setSupplierStatus(supplierId.value, "active"),
+    onClick: () => {
+      supplierStore.setSupplierStatus(supplierId.value, "active");
+      showSuccess("Supplier marked active");
+    },
   },
   {
     label: "Mark as Inactive",
     icon: "i-lucide-x-circle",
-    onClick: () => supplierStore.setSupplierStatus(supplierId.value, "inactive"),
+    onClick: () => {
+      supplierStore.setSupplierStatus(supplierId.value, "inactive");
+      showSuccess("Supplier marked inactive");
+    },
   },
 ]);
 
@@ -154,13 +171,21 @@ const adminActions = computed<ActionItem[]>(() => [
   {
     label: "Duplicate Supplier",
     icon: "i-lucide-copy",
-    onClick: () => supplierStore.duplicateSupplier(supplierId.value),
+    onClick: async () =>
+      notifyResponse(await supplierStore.duplicateSupplier(supplierId.value), {
+        successTitle: "Supplier duplicated",
+        errorTitle: "Supplier not duplicated",
+      }),
   },
 ]);
 
 const handleAction = async (action: ActionItem, close: () => void) => {
   if (action.onClick) {
-    await action.onClick();
+    const shouldClose = (await action.onClick()) !== false;
+
+    if (!shouldClose) {
+      return;
+    }
   }
   close();
 };

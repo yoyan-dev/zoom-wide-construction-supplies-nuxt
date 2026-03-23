@@ -6,6 +6,7 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [boolean] }>();
 
 const supplierStore = useSupplierStore();
+const { isSuccessResponse, showError, showSuccess } = useAdminResponseToast();
 const isDeleting = ref(false);
 
 const count = computed(() => props.payload?.ids?.length ?? 0);
@@ -13,10 +14,26 @@ const count = computed(() => props.payload?.ids?.length ?? 0);
 const handleDelete = async () => {
   if (!props.payload?.ids?.length) return;
   isDeleting.value = true;
+  let deleted = 0;
   for (const id of props.payload.ids) {
-    await supplierStore.deleteSupplier(id);
+    const response = await supplierStore.deleteSupplier(id);
+
+    if (!isSuccessResponse(response)) {
+      isDeleting.value = false;
+      showError(
+        "Suppliers not deleted",
+        `Deleted ${deleted} of ${count.value} suppliers before the request failed.`,
+      );
+      return;
+    }
+
+    deleted += 1;
   }
   isDeleting.value = false;
+  showSuccess(
+    "Suppliers deleted",
+    `Deleted ${deleted} selected ${deleted === 1 ? "supplier" : "suppliers"}.`,
+  );
   props.payload.onDeleted?.();
   emit("close", false);
 };

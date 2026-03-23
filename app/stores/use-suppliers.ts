@@ -1,40 +1,31 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import type {
   FetchSupplierParams,
   Supplier,
   SupplierPagination,
 } from "~/types/supplier";
 import type { H3Response } from "~/types/h3Response";
-import { suppliers as seedSuppliers } from "~/seeds/suppliers";
 import { downloadText } from "~/utils/documents";
+import {
+  apiRequest,
+  buildErrorResponse,
+  buildOkResponse,
+  DEFAULT_API_PAGE_LIMIT,
+  getTotalPages,
+  toErrorMessage,
+} from "~/utils/api";
 
 type SupplierMeta = {
   status?: "active" | "inactive";
   payment_terms?: string;
 };
 
-const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
-  status: "ok",
-  statusCode: 200,
-  statusMessage: "ok",
-  data,
-  total,
-});
-
-const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
-  status: "error",
-  statusCode: 500,
-  statusMessage: "internal server error",
-  message: err instanceof Error ? err.message : "Unknown error",
-});
-
 export const useSupplierStore = defineStore("suppliers", () => {
-  const error = ref<Error | null>(null);
+  const error = ref<string | null>(null);
   const supplier = ref<Supplier | null>(null);
-  const isLoading = ref(false);
 
-  const allSuppliers = ref<Supplier[]>([...seedSuppliers]);
+  const allSuppliers = ref<Supplier[]>([]);
   const suppliers = ref<Supplier[]>([]);
   const supplierMeta = ref<Record<string, SupplierMeta>>({});
 
@@ -45,50 +36,65 @@ export const useSupplierStore = defineStore("suppliers", () => {
 
   const pagination = ref<SupplierPagination>({
     page: 1,
-    limit: seedSuppliers.length,
+    limit: DEFAULT_API_PAGE_LIMIT,
     total: 0,
     total_pages: 0,
   });
+  const isFetchingSuppliers = ref(false);
+  const isFetchingSupplier = ref(false);
+
+  const isMutating = ref(false);
+  const isLoading = computed(
+    () =>
+      isFetchingSuppliers.value ||
+      isFetchingSupplier.value ||
+      isMutating.value,
+  );
+
+  const syncPagination = (total: number, limit: number) => {
+    pagination.value = {
+      page: query.value.page ?? 1,
+      limit,
+      total,
+      total_pages: getTotalPages(total, limit),
+    };
+  };
+
+  const setCachedSupplier = (value: Supplier) => {
+    const next = allSuppliers.value.filter((item) => item.id !== value.id);
+    allSuppliers.value = [value, ...next];
+  };
 
   const fetchSuppliers = async (): Promise<H3Response<Supplier[]>> => {
     try {
-      isLoading.value = true;
+      error.value = null;
+      isFetchingSuppliers.value = true;
+      const limit = pagination.value.limit ?? DEFAULT_API_PAGE_LIMIT;
+      const response = await apiRequest<Supplier[]>("/suppliers", {
+        query: {
+          q: query.value.q,
+          page: query.value.page ?? 1,
+          limit,
+        },
+      });
+      const items = response.data ?? [];
+      const total = response.total ?? items.length;
 
-      let filtered = [...allSuppliers.value];
+      allSuppliers.value = items;
+      suppliers.value = items;
+      syncPagination(total, limit);
 
-      const term = query.value.q?.trim().toLowerCase();
-      if (term) {
-        filtered = filtered.filter((s) =>
-          [
-            s.id ?? "",
-            s.name ?? "",
-            s.contact_name ?? "",
-            s.email ?? "",
-            s.phone ?? "",
-            s.address ?? "",
-          ]
-            .join(" ")
-            .toLowerCase()
-            .includes(term),
-        );
+      if (supplier.value?.id) {
+        supplier.value =
+          items.find((item) => item.id === supplier.value?.id) ?? supplier.value;
       }
 
-      const start = (query.value.page! - 1) * pagination.value.limit!;
-      const end = start + pagination.value.limit!;
-
-      pagination.value.total = filtered.length;
-      pagination.value.total_pages = Math.ceil(
-        filtered.length / pagination.value.limit!,
-      );
-      pagination.value.page = query.value.page;
-
-      suppliers.value = filtered.slice(start, end);
-      return buildOkResponse(suppliers.value, pagination.value.total);
-    } catch (err: any) {
-      error.value = err;
+      return buildOkResponse(suppliers.value, total);
+    } catch (err: unknown) {
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Supplier[]>(err);
     } finally {
-      isLoading.value = false;
+      isFetchingSuppliers.value = false;
     }
   };
 
@@ -96,18 +102,28 @@ export const useSupplierStore = defineStore("suppliers", () => {
     id: string,
   ): Promise<H3Response<Supplier | null>> => {
     try {
-      const found = allSuppliers.value.find((s) => s.id === id);
+      error.value = null;
+      isFetchingSupplier.value = true;
+      const cached = allSuppliers.value.find((item) => item.id === id) ?? null;
 
-      if (!found) {
-        supplier.value = null;
-        return buildOkResponse(null, 0);
+      if (cached) {
+        supplier.value = cached;
+        return buildOkResponse(supplier.value, 1);
       }
 
-      supplier.value = found;
-      return buildOkResponse(supplier.value, 1);
-    } catch (err: any) {
-      error.value = err;
+      const response = await apiRequest<Supplier | null>(`/suppliers/${id}`);
+      supplier.value = response.data ?? null;
+
+      if (supplier.value) {
+        setCachedSupplier(supplier.value);
+      }
+
+      return buildOkResponse(supplier.value, supplier.value ? 1 : 0);
+    } catch (err: unknown) {
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Supplier | null>(err);
+    } finally {
+      isFetchingSupplier.value = false;
     }
   };
 
@@ -115,24 +131,25 @@ export const useSupplierStore = defineStore("suppliers", () => {
     payload: Omit<Supplier, "id" | "created_at" | "updated_at">,
   ): Promise<H3Response<Supplier>> => {
     try {
-      isLoading.value = true;
-      const now = new Date().toISOString();
-      const created: Supplier = {
-        ...payload,
-        id: `sup-${Date.now()}`,
-        created_at: now,
-        updated_at: now,
-      };
+      error.value = null;
+      isMutating.value = true;
 
-      allSuppliers.value = [created, ...allSuppliers.value];
+      const response = await apiRequest<Supplier>("/suppliers", {
+        method: "POST",
+        body: payload,
+      });
+      const created = response.data as Supplier;
+
+      setCachedSupplier(created);
+      supplier.value = created;
       await fetchSuppliers();
 
       return buildOkResponse(created, 1);
-    } catch (err: any) {
-      error.value = err;
+    } catch (err: unknown) {
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Supplier>(err);
     } finally {
-      isLoading.value = false;
+      isMutating.value = false;
     }
   };
 
@@ -141,21 +158,20 @@ export const useSupplierStore = defineStore("suppliers", () => {
     payload: Partial<Supplier>,
   ): Promise<H3Response<Supplier | null>> => {
     try {
-      isLoading.value = true;
-      const index = allSuppliers.value.findIndex((s) => s.id === id);
+      error.value = null;
+      isMutating.value = true;
 
-      if (index === -1) {
+      const response = await apiRequest<Supplier | null>(`/suppliers/${id}`, {
+        method: "PATCH",
+        body: payload,
+      });
+      const updated = response.data ?? null;
+
+      if (!updated) {
         return buildOkResponse(null, 0);
       }
 
-      const updated: Supplier = {
-        ...allSuppliers.value[index],
-        ...payload,
-        id,
-        updated_at: new Date().toISOString(),
-      };
-
-      allSuppliers.value.splice(index, 1, updated);
+      setCachedSupplier(updated);
 
       if (supplier.value?.id === id) {
         supplier.value = updated;
@@ -164,11 +180,11 @@ export const useSupplierStore = defineStore("suppliers", () => {
       await fetchSuppliers();
 
       return buildOkResponse(updated, 1);
-    } catch (err: any) {
-      error.value = err;
+    } catch (err: unknown) {
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Supplier | null>(err);
     } finally {
-      isLoading.value = false;
+      isMutating.value = false;
     }
   };
 
@@ -196,33 +212,31 @@ export const useSupplierStore = defineStore("suppliers", () => {
     id: string,
   ): Promise<H3Response<Supplier | null>> => {
     try {
-      isLoading.value = true;
       const current = allSuppliers.value.find((item) => item.id === id);
-      if (!current) return buildOkResponse(null, 0);
 
-      const now = new Date().toISOString();
-      const duplicated: Supplier = {
-        ...current,
-        id: `sup-${Date.now()}`,
+      if (!current) {
+        return buildOkResponse(null, 0);
+      }
+
+      const response = await createSupplier({
         name: `${current.name ?? "Supplier"} (Copy)`,
-        created_at: now,
-        updated_at: now,
-      };
+        contact_name: current.contact_name,
+        phone: current.phone,
+        email: current.email,
+        address: current.address,
+      });
 
-      allSuppliers.value = [duplicated, ...allSuppliers.value];
-      await fetchSuppliers();
-
-      return buildOkResponse(duplicated, 1);
-    } catch (err: any) {
-      error.value = err;
+      return buildOkResponse(response.data ?? null, response.total ?? 0);
+    } catch (err: unknown) {
+      error.value = toErrorMessage(err);
       return buildErrorResponse<Supplier | null>(err);
-    } finally {
-      isLoading.value = false;
     }
   };
 
   const exportSupplier = (id: string) => {
-    const current = allSuppliers.value.find((item) => item.id === id);
+    const current =
+      allSuppliers.value.find((item) => item.id === id) ??
+      (supplier.value?.id === id ? supplier.value : null);
     if (!current) return;
     const payload = JSON.stringify(current, null, 2);
     downloadText(`supplier-${id}.json`, payload, "application/json");
@@ -230,8 +244,15 @@ export const useSupplierStore = defineStore("suppliers", () => {
 
   const deleteSupplier = async (id: string): Promise<H3Response<null>> => {
     try {
-      isLoading.value = true;
-      allSuppliers.value = allSuppliers.value.filter((s) => s.id !== id);
+      error.value = null;
+      isMutating.value = true;
+
+      await apiRequest<null>(`/suppliers/${id}`, {
+        method: "DELETE",
+      });
+
+      allSuppliers.value = allSuppliers.value.filter((item) => item.id !== id);
+      suppliers.value = suppliers.value.filter((item) => item.id !== id);
 
       if (supplier.value?.id === id) {
         supplier.value = null;
@@ -240,11 +261,11 @@ export const useSupplierStore = defineStore("suppliers", () => {
       await fetchSuppliers();
 
       return buildOkResponse(null, 1);
-    } catch (err: any) {
-      error.value = err;
+    } catch (err: unknown) {
+      error.value = toErrorMessage(err);
       return buildErrorResponse<null>(err);
     } finally {
-      isLoading.value = false;
+      isMutating.value = false;
     }
   };
 

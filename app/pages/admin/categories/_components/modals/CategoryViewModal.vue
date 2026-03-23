@@ -24,17 +24,6 @@ const emit = defineEmits<{ close: [boolean] }>();
 
     <template #body>
       <div class="space-y-5 text-sm text-slate-600">
-        <div
-          v-if="category?.image_url"
-          class="overflow-hidden rounded-2xl border border-slate-200/70"
-        >
-          <img
-            :src="category.image_url"
-            :alt="category.name"
-            class="h-44 w-full object-cover"
-          />
-        </div>
-
         <div>
           <p class="text-xs uppercase tracking-[0.18em] text-slate-500">ID</p>
           <p class="mt-1 font-medium text-slate-700">

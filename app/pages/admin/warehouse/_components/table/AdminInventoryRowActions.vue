@@ -11,7 +11,7 @@ type ActionItem = {
   icon: string;
   color?: string;
   to?: string;
-  onClick?: () => void | Promise<void>;
+  onClick?: () => boolean | void | Promise<boolean | void>;
 };
 
 const props = defineProps<{
@@ -20,6 +20,7 @@ const props = defineProps<{
 }>();
 
 const { openModal } = useModal();
+const { notifyResponse, showSuccess } = useAdminResponseToast();
 const productStore = useProductStore();
 const inventoryStore = useInventoryStore();
 
@@ -41,9 +42,15 @@ const openMinimumStock = () => {
       },
     ],
     onSubmit: async (values) => {
-      await productStore.updateProduct(productId.value, {
-        minimum_stock_quantity: Number(values.minimum_stock_quantity ?? 0),
-      });
+      return notifyResponse(
+        await productStore.updateProduct(productId.value, {
+          minimum_stock_quantity: Number(values.minimum_stock_quantity ?? 0),
+        }),
+        {
+          successTitle: "Minimum stock alert updated",
+          errorTitle: "Minimum stock alert not updated",
+        },
+      );
     },
   });
 };
@@ -76,6 +83,8 @@ const archiveItem = () => {
     onConfirm: () => {
       inventoryStore.setInventoryStatus(productId.value, "archived");
       productStore.setProductArchived(productId.value, true);
+      showSuccess("Inventory item archived");
+      return true;
     },
   });
 };
@@ -130,7 +139,11 @@ const archiveActions = computed<ActionItem[]>(() => [
 
 const handleAction = async (action: ActionItem, close: () => void) => {
   if (action.onClick) {
-    await action.onClick();
+    const shouldClose = (await action.onClick()) !== false;
+
+    if (!shouldClose) {
+      return;
+    }
   }
   close();
 };

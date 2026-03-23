@@ -11,6 +11,7 @@ const router = useRouter();
 const warehouseId = computed(() => String(route.params.id));
 
 const warehouseStore = useWarehouseStore();
+const { notifyResponse } = useAdminResponseToast();
 
 await warehouseStore.fetchWarehouseById(warehouseId.value);
 
@@ -42,12 +43,23 @@ const statusOptions = [
 
 const handleSave = async () => {
   if (!warehouse.value?.id) return;
-  await warehouseStore.updateWarehouse(warehouse.value.id, {
+  const response = await warehouseStore.updateWarehouse(warehouse.value.id, {
     name: form.name.trim(),
     address: form.address.trim(),
     capacity: form.capacity,
     status: form.status,
   });
+
+  if (
+    !notifyResponse(response, {
+      successTitle: "Warehouse updated",
+      successDescription: `Saved changes to ${form.name.trim()}.`,
+      errorTitle: "Warehouse not updated",
+    })
+  ) {
+    return;
+  }
+
   router.push("/admin/warehouse");
 };
 </script>
