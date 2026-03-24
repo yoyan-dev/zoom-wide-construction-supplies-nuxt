@@ -21,9 +21,16 @@ export interface FetchCategoryParams {
   page?: number;
 }
 
-export interface CategoryPagination {
-  page?: number;
-  limit?: number;
+export interface CategoryListResponse {
+  data?: Category[];
   total?: number;
-  total_pages?: number;
+  pagination?: CategoryPagination;
+  message?: string;
+  statusMessage?: string;
+}
+
+export interface CategorySingleResponse {
+  data?: Category;
+  message?: string;
+  statusMessage?: string;
 }

@@ -1,26 +1,76 @@
-export interface H3Response<T = any> {
-  status?: string;
-  message?: string;
-  body?: any;
-  statusCode?: number;
-  statusMessage?: StatusMessage;
-  data?: T;
-  total?: number;
+import type { PaginationMeta } from "./pagination";
+
+export type ApiStatus = "ok" | "error";
+
+export type HttpStatusCode =
+  | 200
+  | 201
+  | 204
+  | 400
+  | 401
+  | 403
+  | 404
+  | 405
+  | 409
+  | 422
+  | 500
+  | 501
+  | 503;
+
+export type StatusMessage =
+  | "ok"
+  | "created"
+  | "accepted"
+  | "no content"
+  | "bad request"
+  | "unauthorized"
+  | "forbidden"
+  | "not found"
+  | "method not allowed"
+  | "conflict"
+  | "unprocessable entity"
+  | "internal server error"
+  | "not implemented"
+  | "service unavailable";
+
+export type AppErrorCode =
+  | "bad_request"
+  | "unauthorized"
+  | "forbidden"
+  | "not_found"
+  | "method_not_allowed"
+  | "conflict"
+  | "unprocessable_entity"
+  | "internal_error"
+  | "not_implemented"
+  | "service_unavailable";
+
+export interface ApiErrorPayload {
+  code: AppErrorCode | string;
+  message: string;
+  details?: unknown;
 }
 
-type StatusMessage =
-  | "ok" // 200
-  | "created" // 201
-  | "accepted" // 202
-  | "no content" // 204
-  | "bad request" // 400
-  | "unauthorized" // 401
-  | "forbidden" // 403
-  | "not found" // 404
-  | "method not allowed" // 405
-  | "conflict" // 409
-  | "unprocessable entity" // 422
-  | "internal server error" // 500
-  | "not implemented" // 501
-  | "service unavailable" // 503
-  | null;
+export interface ApiSuccessResponse<T = unknown> {
+  status: "ok";
+  statusCode: HttpStatusCode;
+  statusMessage: StatusMessage;
+  data: T;
+  message?: string;
+  total?: number;
+  meta?: PaginationMeta;
+}
+
+export interface ApiErrorResponse {
+  status: "error";
+  statusCode: HttpStatusCode;
+  statusMessage: StatusMessage;
+  data: null;
+  message: string;
+  error: ApiErrorPayload;
+}
+
+export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
+
+export type ApiPaginationMeta = PaginationMeta;
+export type H3Response<T = unknown> = ApiResponse<T>;

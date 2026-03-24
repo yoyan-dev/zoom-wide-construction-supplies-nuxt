@@ -1,308 +1,250 @@
+import { ref } from "vue";
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
-import type {
-  Category,
-  CategoryPagination,
-  FetchCategoryParams,
-} from "~/types/category";
+import type { FetchCategoryParams, Category } from "~/types/category";
 import type { H3Response } from "~/types/h3Response";
-import { downloadText } from "~/utils/documents";
-import {
-  apiRequest,
-  buildErrorResponse,
-  buildOkResponse,
-  DEFAULT_API_PAGE_LIMIT,
-  getTotalPages,
-  toErrorMessage,
-} from "~/utils/api";
+import type { PaginationMeta } from "~/types/pagination";
+import type { StoreResponse } from "~/types/store-response";
 
-type CategoryMeta = {
-  status?: "active" | "inactive" | "archived";
-  parent_id?: string | null;
-};
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const useCategoryStore = defineStore("categories", () => {
-  const error = ref<string | null>(null);
-  const category = ref<Category | null>(null);
-
-  const allCategories = ref<Category[]>([]);
   const categories = ref<Category[]>([]);
-  const categoryMeta = ref<Record<string, CategoryMeta>>({});
+  const category = ref<Category | null>(null);
+  const totalCategories = ref(0);
+  const isLoading = ref(false);
 
   const query = ref<FetchCategoryParams>({
     q: "",
     page: 1,
   });
 
-  const pagination = ref<CategoryPagination>({
+  const pagination = ref<PaginationMeta>({
     page: 1,
-    limit: DEFAULT_API_PAGE_LIMIT,
+    limit: 10,
     total: 0,
-    total_pages: 0,
+    totalPages: 0,
   });
-  const isFetchingCategories = ref(false);
-  const isFetchingCategory = ref(false);
 
-  const isMutating = ref(false);
-  const isLoading = computed(
-    () =>
-      isFetchingCategories.value ||
-      isFetchingCategory.value ||
-      isMutating.value,
-  );
+  function buildQueryString(params?: FetchCategoryParams) {
+    const searchParams = new URLSearchParams();
 
-  const syncPagination = (total: number, limit: number) => {
-    pagination.value = {
-      page: query.value.page ?? 1,
-      limit,
-      total,
-      total_pages: getTotalPages(total, limit),
-    };
-  };
+    if (!params) return searchParams.toString();
 
-  const setCachedCategory = (value: Category) => {
-    const next = allCategories.value.filter((item) => item.id !== value.id);
-    allCategories.value = [value, ...next];
-  };
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        searchParams.append(key, String(value));
+      }
+    });
 
-  const fetchCategories = async (): Promise<H3Response<Category[]>> => {
+    return searchParams.toString();
+  }
+
+  async function fetchCategories(params?: FetchCategoryParams) {
+    isLoading.value = true;
+
     try {
-      error.value = null;
-      isFetchingCategories.value = true;
-      const limit = pagination.value.limit ?? DEFAULT_API_PAGE_LIMIT;
-      const response = await apiRequest<Category[]>("/categories", {
-        query: {
-          q: query.value.q,
-          page: query.value.page ?? 1,
-          limit,
-        },
-      });
-      const items = response.data ?? [];
-      const total = response.total ?? items.length;
-
-      allCategories.value = items;
-      categories.value = items;
-      syncPagination(total, limit);
-
-      if (category.value?.id) {
-        category.value =
-          items.find((item) => item.id === category.value?.id) ??
-          category.value;
+      if (params) {
+        query.value = {
+          ...query.value,
+          ...params,
+        };
       }
 
-      return buildOkResponse(categories.value, total);
-    } catch (err: unknown) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Category[]>(err);
+      const queryString = buildQueryString(query.value);
+      const response = await fetch(`${BASE_URL}/categories?${queryString}`);
+      const result: H3Response<Category[]> = await response.json();
+
+      if (!response.ok || result.status === "error") {
+        throw new Error(result.message || "Failed to fetch categories");
+      }
+
+      categories.value = result.data || [];
+      totalCategories.value = result.total || result.meta?.total || 0;
+
+      pagination.value = {
+        page: result.meta?.page || 1,
+        limit: result.meta?.limit || 10,
+        total: result.meta?.total || result.total || 0,
+        totalPages: result.meta?.totalPages || 0,
+      };
+
+      return {
+        status: "success",
+        message: result.message || "Categories fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch categories",
+        statusMessage: "internal server error",
+      } as StoreResponse;
     } finally {
-      isFetchingCategories.value = false;
+      isLoading.value = false;
     }
-  };
+  }
 
-  const fetchCategoryById = async (
-    id: string,
-  ): Promise<H3Response<Category | null>> => {
+  async function fetchCategoryById(id: string) {
+    isLoading.value = true;
+
     try {
-      error.value = null;
-      isFetchingCategory.value = true;
-      const cached = allCategories.value.find((item) => item.id === id) ?? null;
+      const response = await fetch(`${BASE_URL}/categories/${id}`);
+      const result: H3Response<Category> = await response.json();
 
-      if (cached) {
-        category.value = cached;
-        return buildOkResponse(category.value, 1);
+      if (!response.ok || result.status === "error") {
+        throw new Error(result.message || "Failed to fetch category");
       }
 
-      const response = await apiRequest<Category | null>(`/categories/${id}`);
-      category.value = response.data ?? null;
+      category.value = result.data;
 
-      if (category.value) {
-        setCachedCategory(category.value);
-      }
+      return {
+        status: "success",
+        message: result.message || "Category fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching category:", error);
+      category.value = null;
 
-      return buildOkResponse(category.value, category.value ? 1 : 0);
-    } catch (err: unknown) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Category | null>(err);
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch category",
+        statusMessage: "internal server error",
+      } as StoreResponse;
     } finally {
-      isFetchingCategory.value = false;
+      isLoading.value = false;
     }
-  };
+  }
 
-  const createCategory = async (
-    payload: FormData,
-  ): Promise<H3Response<Category>> => {
+  async function addCategory(payload: FormData): Promise<StoreResponse> {
+    isLoading.value = true;
+
     try {
-      error.value = null;
-      isMutating.value = true;
-
-      const response = await apiRequest<Category>("/categories", {
+      const response = await fetch(`${BASE_URL}/categories`, {
         method: "POST",
         body: payload,
       });
-      const created = response.data as Category;
 
-      setCachedCategory(created);
-      category.value = created;
+      const result: H3Response<Category> = await response.json();
+
+      if (!response.ok || result.status === "error") {
+        throw new Error(result.message || "Failed to add category");
+      }
+
       await fetchCategories();
 
-      return buildOkResponse(created, 1);
-    } catch (err: unknown) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Category>(err);
+      return {
+        status: "success",
+        message: result.message || "Category created successfully",
+        statusMessage: result.statusMessage || "created",
+      };
+    } catch (error) {
+      console.error("Error adding category:", error);
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to add category",
+        statusMessage: "internal server error",
+      };
     } finally {
-      isMutating.value = false;
+      isLoading.value = false;
     }
-  };
+  }
 
-  const updateCategory = async (
+  async function updateCategory(
     id: string,
-    payload: Partial<Category>,
-  ): Promise<H3Response<Category | null>> => {
-    try {
-      error.value = null;
-      isMutating.value = true;
+    payload: Category,
+  ): Promise<StoreResponse> {
+    isLoading.value = true;
 
-      const response = await apiRequest<Category | null>(`/categories/${id}`, {
+    try {
+      const response = await fetch(`${BASE_URL}/categories/${id}`, {
         method: "PATCH",
-        body: payload,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
-      const updated = response.data ?? null;
 
-      if (!updated) {
-        return buildOkResponse(null, 0);
-      }
+      const result: H3Response<Category> = await response.json();
 
-      setCachedCategory(updated);
-
-      if (category.value?.id === id) {
-        category.value = updated;
+      if (!response.ok || result.status === "error") {
+        throw new Error(result.message || "Failed to update category");
       }
 
       await fetchCategories();
 
-      return buildOkResponse(updated, 1);
-    } catch (err: unknown) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Category | null>(err);
+      return {
+        status: "success",
+        message: result.message || "Category updated successfully",
+        statusMessage: result.statusMessage || "accepted",
+      };
+    } catch (error) {
+      console.error("Error updating category:", error);
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to update category",
+        statusMessage: "internal server error",
+      };
     } finally {
-      isMutating.value = false;
+      isLoading.value = false;
     }
-  };
+  }
 
-  const setCategoryStatus = (id: string, status: CategoryMeta["status"]) => {
-    categoryMeta.value = {
-      ...categoryMeta.value,
-      [id]: {
-        ...(categoryMeta.value[id] ?? {}),
-        status,
-      },
-    };
-  };
+  async function deleteCategory(id: string): Promise<StoreResponse> {
+    isLoading.value = true;
 
-  const changeCategoryParent = (id: string, parentId: string | null) => {
-    categoryMeta.value = {
-      ...categoryMeta.value,
-      [id]: {
-        ...(categoryMeta.value[id] ?? {}),
-        parent_id: parentId,
-      },
-    };
-  };
-
-  const duplicateCategory = async (
-    id: string,
-  ): Promise<H3Response<Category | null>> => {
     try {
-      const current = allCategories.value.find((item) => item.id === id);
-
-      if (!current) {
-        return buildOkResponse(null, 0);
-      }
-
-      const response = await createCategory({
-        name: `${current.name} (Copy)`,
-        description: current.description,
-        image_url: current.image_url,
-        overview: current.overview,
-        typical_uses: current.typical_uses,
-        buying_considerations: current.buying_considerations,
-        featured_specs: current.featured_specs,
-      });
-
-      return buildOkResponse(response.data ?? null, response.total ?? 0);
-    } catch (err: unknown) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Category | null>(err);
-    }
-  };
-
-  const exportCategory = (id: string) => {
-    const current =
-      allCategories.value.find((item) => item.id === id) ??
-      (category.value?.id === id ? category.value : null);
-    if (!current) return;
-    const payload = JSON.stringify(current, null, 2);
-    downloadText(`category-${id}.json`, payload, "application/json");
-  };
-
-  const deleteCategory = async (id: string): Promise<H3Response<null>> => {
-    try {
-      error.value = null;
-      isMutating.value = true;
-
-      await apiRequest<null>(`/categories/${id}`, {
+      const response = await fetch(`${BASE_URL}/categories/${id}`, {
         method: "DELETE",
       });
 
-      allCategories.value = allCategories.value.filter(
-        (item) => item.id !== id,
-      );
-      categories.value = categories.value.filter((item) => item.id !== id);
+      let result: H3Response<null> | null = null;
 
-      if (category.value?.id === id) {
-        category.value = null;
+      if (response.status !== 204) {
+        result = await response.json();
       }
 
-      await fetchCategories();
+      if (!response.ok || (result && result.status === "error")) {
+        throw new Error(result?.message || "Failed to delete category");
+      }
 
-      return buildOkResponse(null, 1);
-    } catch (err: unknown) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<null>(err);
+      categories.value = categories.value.filter((item) => item.id !== id);
+      totalCategories.value = Math.max(0, totalCategories.value - 1);
+
+      return {
+        status: "success",
+        message: result?.message || "Category deleted successfully",
+        statusMessage: result?.statusMessage || "no content",
+      };
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to delete category",
+        statusMessage: "internal server error",
+      };
     } finally {
-      isMutating.value = false;
+      isLoading.value = false;
     }
-  };
-
-  const setSearch = async (value: string) => {
-    query.value.q = value;
-    query.value.page = 1;
-    return await fetchCategories();
-  };
-
-  const setPage = async (page: number) => {
-    query.value.page = page;
-    return await fetchCategories();
-  };
+  }
 
   return {
-    category,
     categories,
-    categoryMeta,
+    category,
+    totalCategories,
+    isLoading,
     query,
     pagination,
-    isLoading,
-    error,
     fetchCategories,
     fetchCategoryById,
-    createCategory,
+    addCategory,
     updateCategory,
     deleteCategory,
-    setCategoryStatus,
-    changeCategoryParent,
-    duplicateCategory,
-    exportCategory,
-    setSearch,
-    setPage,
   };
 });
