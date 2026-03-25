@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast";
+
 const props = defineProps<{
   payload: { ids: string[]; onDeleted?: () => void } | null;
 }>();

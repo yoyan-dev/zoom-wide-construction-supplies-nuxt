@@ -46,9 +46,7 @@ export const useSupplierStore = defineStore("suppliers", () => {
   const isMutating = ref(false);
   const isLoading = computed(
     () =>
-      isFetchingSuppliers.value ||
-      isFetchingSupplier.value ||
-      isMutating.value,
+      isFetchingSuppliers.value || isFetchingSupplier.value || isMutating.value,
   );
 
   const syncPagination = (total: number, limit: number) => {
@@ -86,7 +84,8 @@ export const useSupplierStore = defineStore("suppliers", () => {
 
       if (supplier.value?.id) {
         supplier.value =
-          items.find((item) => item.id === supplier.value?.id) ?? supplier.value;
+          items.find((item) => item.id === supplier.value?.id) ??
+          supplier.value;
       }
 
       return buildOkResponse(suppliers.value, total);
@@ -128,7 +127,7 @@ export const useSupplierStore = defineStore("suppliers", () => {
   };
 
   const createSupplier = async (
-    payload: Omit<Supplier, "id" | "created_at" | "updated_at">,
+    payload: FormData,
   ): Promise<H3Response<Supplier>> => {
     try {
       error.value = null;

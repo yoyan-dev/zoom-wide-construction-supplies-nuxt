@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { useModal } from "~/composables/admin/useModal";
+import AddSupplierModal from "../modals/AddSupplierModal.vue";
+
 const props = defineProps<{
   total: number;
 }>();
 
-const emit = defineEmits<{
-  (e: "create"): void;
-}>();
+const { openModal } = useModal();
 </script>
 
 <template>
@@ -27,9 +28,12 @@ const emit = defineEmits<{
         <UBadge color="primary" variant="subtle">
           {{ props.total }} suppliers
         </UBadge>
-        <UButton color="primary" icon="i-lucide-plus" @click="emit('create')">
-          New Supplier
-        </UButton>
+        <UButton
+          color="primary"
+          icon="i-lucide-plus"
+          @click="openModal(AddSupplierModal)"
+          label="New Supplier"
+        />
       </div>
     </div>
   </section>

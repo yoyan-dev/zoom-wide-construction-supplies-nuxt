@@ -5,6 +5,8 @@ import ActionFormModal from "../../../_components/modals/ActionFormModal.vue";
 import SupplierViewModal from "../modals/SupplierViewModal.vue";
 import SupplierDeleteModal from "../modals/SupplierDeleteModal.vue";
 import SupplierOrdersModal from "../modals/SupplierOrdersModal.vue";
+import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast";
+import SupplierEditModal from "../modals/SupplierEditModal.vue";
 
 type ActionItem = {
   label: string;
@@ -108,19 +110,9 @@ const openUpdateContact = () => {
 
 const viewActions = computed<ActionItem[]>(() => [
   {
-    label: "View Supplier",
-    icon: "i-lucide-eye",
-    to: `/admin/suppliers/${supplierId.value}`,
-  },
-  {
     label: "View Supplier Details",
     icon: "i-lucide-clipboard",
     onClick: () => openModal(SupplierViewModal, props.supplier),
-  },
-  {
-    label: "View Supplier Orders",
-    icon: "i-lucide-shopping-cart",
-    onClick: () => openModal(SupplierOrdersModal, props.supplier),
   },
 ]);
 
@@ -128,17 +120,7 @@ const editActions = computed<ActionItem[]>(() => [
   {
     label: "Edit Supplier",
     icon: "i-lucide-pencil",
-    to: `/admin/suppliers/edit/${supplierId.value}`,
-  },
-  {
-    label: "Update Payment Terms",
-    icon: "i-lucide-clipboard-check",
-    onClick: openUpdatePaymentTerms,
-  },
-  {
-    label: "Update Contact Info",
-    icon: "i-lucide-user-circle",
-    onClick: openUpdateContact,
+    onClick: () => openModal(SupplierEditModal, props.supplier),
   },
 ]);
 
@@ -167,15 +149,6 @@ const adminActions = computed<ActionItem[]>(() => [
     icon: "i-lucide-trash",
     color: "error",
     onClick: () => openModal(SupplierDeleteModal, props.supplier),
-  },
-  {
-    label: "Duplicate Supplier",
-    icon: "i-lucide-copy",
-    onClick: async () =>
-      notifyResponse(await supplierStore.duplicateSupplier(supplierId.value), {
-        successTitle: "Supplier duplicated",
-        errorTitle: "Supplier not duplicated",
-      }),
   },
 ]);
 

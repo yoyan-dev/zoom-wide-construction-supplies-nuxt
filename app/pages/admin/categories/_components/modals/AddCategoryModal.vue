@@ -90,19 +90,17 @@ const handleSave = async () => {
   formData.append("featured_specs", JSON.stringify(payload.featured_specs));
 
   isSaving.value = true;
-  const response = await categoryStore.createCategory(formData);
+  const response = await categoryStore.addCategory(formData);
   isSaving.value = false;
-
   if (
     !notifyResponse(response, {
-      successTitle: "Category created",
-      successDescription: `Added ${payload.name}.`,
-      errorTitle: "Category not created",
+      successTitle: "Category Added",
+      successDescription: `New Category ${payload.name} created.`,
+      errorTitle: "Category not added",
     })
   ) {
     return;
   }
-
   resetDraft();
   emit("close", false);
 };

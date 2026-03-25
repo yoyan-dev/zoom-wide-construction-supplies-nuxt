@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast";
+
 defineProps<{ payload?: unknown }>();
 const emit = defineEmits<{ close: [boolean] }>();
 
@@ -14,42 +16,40 @@ const form = reactive({
   address: "",
 });
 
-const resetForm = () => {
-  form.name = "";
-  form.contact_name = "";
-  form.phone = "";
-  form.email = "";
-  form.address = "";
-};
-
-const normalize = (value: string) => {
+const appendIfPresent = (formData: FormData, key: string, value: string) => {
   const trimmed = value.trim();
-  return trimmed.length ? trimmed : undefined;
+
+  if (trimmed) {
+    formData.append(key, trimmed);
+  }
 };
 
 const handleSave = async () => {
-  if (!form.name.trim()) return;
+  const name = form.name.trim();
+
+  if (!name) return;
+
+  const formData = new FormData();
+  formData.append("name", name);
+  appendIfPresent(formData, "contact_name", form.contact_name);
+  appendIfPresent(formData, "phone", form.phone);
+  appendIfPresent(formData, "email", form.email);
+  appendIfPresent(formData, "address", form.address);
+
   isSaving.value = true;
-  const response = await supplierStore.createSupplier({
-    name: normalize(form.name),
-    contact_name: normalize(form.contact_name),
-    phone: normalize(form.phone),
-    email: normalize(form.email),
-    address: normalize(form.address),
-  });
+  const response = await supplierStore.createSupplier(formData);
   isSaving.value = false;
 
   if (
     !notifyResponse(response, {
       successTitle: "Supplier created",
-      successDescription: `Added ${form.name.trim()}.`,
+      successDescription: `Added ${name}.`,
       errorTitle: "Supplier not created",
     })
   ) {
     return;
   }
 
-  resetForm();
   emit("close", false);
 };
 </script>
@@ -68,11 +68,17 @@ const handleSave = async () => {
     <template #body>
       <div class="space-y-4">
         <UFormField label="Supplier name">
-          <UInput v-model="form.name" class="w-full" placeholder="Atlas Aggregates" />
+          <UInput
+            v-model="form.name"
+            name="name"
+            class="w-full"
+            placeholder="Atlas Aggregates"
+          />
         </UFormField>
         <UFormField label="Contact name">
           <UInput
             v-model="form.contact_name"
+            name="contact_name"
             class="w-full"
             placeholder="Kim Warren"
           />
@@ -81,6 +87,7 @@ const handleSave = async () => {
           <UFormField label="Phone">
             <UInput
               v-model="form.phone"
+              name="phone"
               class="w-full"
               placeholder="+1-555-555-5555"
             />
@@ -88,6 +95,7 @@ const handleSave = async () => {
           <UFormField label="Email">
             <UInput
               v-model="form.email"
+              name="email"
               class="w-full"
               placeholder="contact@supplier.com"
             />
@@ -96,25 +104,28 @@ const handleSave = async () => {
         <UFormField label="Address">
           <UTextarea
             v-model="form.address"
+            name="address"
             class="w-full"
             placeholder="Street, City, State"
           />
         </UFormField>
-      </div>
-    </template>
-    <template #footer>
-      <div class="flex justify-end gap-2 w-full">
-        <UButton color="neutral" variant="ghost" @click="emit('close', false)">
-          Cancel
-        </UButton>
-        <UButton
-          color="primary"
-          :disabled="!form.name.trim()"
-          :loading="isSaving"
-          @click="handleSave"
-        >
-          Save
-        </UButton>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="emit('close', false)"
+          >
+            Cancel
+          </UButton>
+          <UButton
+            color="primary"
+            :disabled="!form.name.trim()"
+            :loading="isSaving"
+            @click="handleSave"
+          >
+            Save
+          </UButton>
+        </div>
       </div>
     </template>
   </UModal>

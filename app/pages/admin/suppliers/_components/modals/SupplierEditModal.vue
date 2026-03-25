@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast";
 import type { Supplier } from "~/types/supplier";
 
 const props = defineProps<{

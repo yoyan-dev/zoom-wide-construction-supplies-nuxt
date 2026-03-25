@@ -7,6 +7,7 @@ import ActionFormModal from "../../../_components/modals/ActionFormModal.vue";
 import CategoryViewModal from "../modals/CategoryViewModal.vue";
 import CategoryDeleteModal from "../modals/CategoryDeleteModal.vue";
 import CategoryStatsModal from "../modals/CategoryStatsModal.vue";
+import CategoryEditModal from "../modals/CategoryEditModal.vue";
 
 type ActionItem = {
   label: string;
@@ -72,7 +73,10 @@ const openChangeParent = () => {
         categoryId.value,
         String(values.parent_id ?? "").trim() || null,
       );
-      showSuccess("Category parent updated", "Parent category reference saved.");
+      showSuccess(
+        "Category parent updated",
+        "Parent category reference saved.",
+      );
       return true;
     },
   });
@@ -127,17 +131,7 @@ const editActions = computed<ActionItem[]>(() => [
   {
     label: "Edit Category",
     icon: "i-lucide-pencil",
-    to: `/admin/categories/edit/${categoryId.value}`,
-  },
-  {
-    label: "Change Category Parent",
-    icon: "i-lucide-git-branch",
-    onClick: openChangeParent,
-  },
-  {
-    label: "Update Description",
-    icon: "i-lucide-align-left",
-    onClick: openUpdateDescription,
+    onClick: () => openModal(CategoryEditModal, props.category),
   },
 ]);
 
@@ -158,22 +152,6 @@ const statusActions = computed<ActionItem[]>(() => [
       showSuccess("Category marked inactive");
     },
   },
-  {
-    label: "Archive Category",
-    icon: "i-lucide-archive",
-    onClick: () =>
-      openConfirm({
-        title: "Archive category",
-        description: `Archive ${props.category.name}?`,
-        confirmLabel: "Archive",
-        confirmColor: "warning",
-        onConfirm: () => {
-          categoryStore.setCategoryStatus(categoryId.value, "archived");
-          showSuccess("Category archived");
-          return true;
-        },
-      }),
-  },
 ]);
 
 const adminActions = computed<ActionItem[]>(() => [
@@ -182,15 +160,6 @@ const adminActions = computed<ActionItem[]>(() => [
     icon: "i-lucide-trash",
     color: "error",
     onClick: () => openModal(CategoryDeleteModal, props.category),
-  },
-  {
-    label: "Duplicate Category",
-    icon: "i-lucide-copy",
-    onClick: async () =>
-      notifyResponse(await categoryStore.duplicateCategory(categoryId.value), {
-        successTitle: "Category duplicated",
-        errorTitle: "Category not duplicated",
-      }),
   },
 ]);
 
