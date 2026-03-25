@@ -1,13 +1,19 @@
+<script setup lang="ts">
+import AdminPageHeader from "../../../_components/AdminPageHeader.vue";
+
+const props = defineProps<{
+  total: number;
+}>();
+</script>
+
 <template>
-  <div class="mb-4 flex items-center justify-between">
-    <div>
-      <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-        Catalog Inventory
-      </p>
-      <p class="mt-1 text-lg font-semibold">Product management</p>
-    </div>
-    <UButton color="primary" icon="i-lucide-plus" to="/admin/products/add">
-      Add Product
-    </UButton>
-  </div>
+  <AdminPageHeader
+    eyebrow="Catalog Inventory"
+    title="Product Management"
+    description="Manage catalog items, pricing, supplier context, and stock visibility."
+    :total="props.total"
+    total-label="products"
+    action-label="Add Product"
+    action-to="/admin/products/add"
+  />
 </template>

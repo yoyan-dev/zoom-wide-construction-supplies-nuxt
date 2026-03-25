@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
-import { storeToRefs } from "pinia";
 import type { Product } from "~/types/product";
 import type { Supplier } from "~/types/supplier";
-import { formatShortDate } from "~/utils/format";
+import { formatShortDateOrFallback } from "~/utils/format";
 import SupplierBulkDeleteModal from "../modals/SupplierBulkDeleteModal.vue";
 import { useModal } from "~/composables/admin/useModal";
+import AdminTableEmptyState from "../../../_components/AdminTableEmptyState.vue";
+import AdminTableSelectionBar from "../../../_components/AdminTableSelectionBar.vue";
 import SupplierRowActions from "./SupplierRowActions.vue";
 
 const table = useTemplateRef("table");
 const props = defineProps<{
   suppliers: Supplier[];
   products: Product[];
+  isLoading: boolean;
 }>();
 
 const { openModal } = useModal();
-const supplierStore = useSupplierStore();
-const { query } = storeToRefs(supplierStore);
 
 const selectedIds = ref<Set<string>>(new Set());
 
@@ -37,6 +37,7 @@ const selectableIds = computed(() =>
 );
 
 const selectedCount = computed(() => selectedIds.value.size);
+const hasRows = computed(() => props.suppliers.length > 0);
 
 const allSelected = computed(
   () =>
@@ -44,9 +45,10 @@ const allSelected = computed(
     selectableIds.value.every((id) => selectedIds.value.has(id)),
 );
 
-const toggleAll = (value: boolean) => {
+const toggleAll = (value: boolean | "indeterminate") => {
+  const shouldSelect = value === true;
   const next = new Set(selectedIds.value);
-  if (value) {
+  if (shouldSelect) {
     selectableIds.value.forEach((id) => next.add(id));
   } else {
     selectableIds.value.forEach((id) => next.delete(id));
@@ -54,10 +56,14 @@ const toggleAll = (value: boolean) => {
   selectedIds.value = next;
 };
 
-const toggleOne = (id: string | undefined, value: boolean) => {
+const toggleOne = (
+  id: string | undefined,
+  value: boolean | "indeterminate",
+) => {
   if (!id) return;
+  const shouldSelect = value === true;
   const next = new Set(selectedIds.value);
-  if (value) {
+  if (shouldSelect) {
     next.add(id);
   } else {
     next.delete(id);
@@ -73,10 +79,6 @@ const handleBulkDelete = async () => {
       selectedIds.value = new Set();
     },
   });
-};
-
-const handleSearch = async (value: string) => {
-  await supplierStore.setSearch(value);
 };
 
 watch(selectableIds, (ids) => {
@@ -117,6 +119,7 @@ const columns: TableColumn<Supplier>[] = [
     header: "",
   },
 ];
+
 const pagination = ref({
   pageIndex: 0,
   pageSize: 5,
@@ -125,37 +128,15 @@ const pagination = ref({
 
 <template>
   <UCard>
-    <div class="mb-4 flex items-center justify-between">
-      <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Catalog Structure
-        </p>
-        <p class="mt-1 text-lg font-semibold">Supplier overview</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <UInput
-          :model-value="query.q ?? ''"
-          class="w-56"
-          icon="i-lucide-search"
-          placeholder="Search suppliers"
-          @update:model-value="handleSearch(String($event))"
-        />
-        <UButton color="neutral" variant="ghost" icon="i-lucide-filter">
-          Filters
-        </UButton>
-        <UButton
-          v-if="selectedCount"
-          color="error"
-          variant="outline"
-          icon="i-lucide-trash-2"
-          @click="handleBulkDelete"
-        >
-          Delete selected ({{ selectedCount }})
-        </UButton>
-      </div>
-    </div>
+    <AdminTableSelectionBar
+      v-if="selectedCount"
+      :count="selectedCount"
+      item-label="suppliers"
+      @action="handleBulkDelete"
+    />
 
     <UTable
+      v-if="props.isLoading || hasRows"
       ref="table"
       v-model:pagination="pagination"
       :data="props.suppliers"
@@ -164,6 +145,7 @@ const pagination = ref({
       :pagination-options="{
         getPaginationRowModel: getPaginationRowModel(),
       }"
+      :loading="props.isLoading"
     >
       <template #select-header>
         <div class="flex items-center justify-center">
@@ -205,11 +187,7 @@ const pagination = ref({
       </template>
       <template #updated-cell="{ row }">
         <span class="text-slate-600">
-          {{
-            row.original.updated_at
-              ? formatShortDate(row.original.updated_at)
-              : "—"
-          }}
+          {{ formatShortDateOrFallback(row.original.updated_at) }}
         </span>
       </template>
       <template #actions-cell="{ row }">
@@ -218,7 +196,17 @@ const pagination = ref({
         </div>
       </template>
     </UTable>
-    <div class="flex justify-end border-t border-default pt-4 px-4">
+
+    <AdminTableEmptyState
+      v-else
+      title="No suppliers yet"
+      description="Add a supplier to track contacts and connect products to purchasing sources."
+    />
+
+    <div
+      v-if="hasRows"
+      class="flex justify-end border-t border-default px-4 pt-4"
+    >
       <UPagination
         :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
         :items-per-page="table?.tableApi?.getState().pagination.pageSize"

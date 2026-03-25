@@ -36,6 +36,11 @@ export interface Product {
   updated_at?: string;
 }
 
+export interface ProductFormSubmitValue {
+  product: Omit<Product, "id" | "created_at" | "updated_at">;
+  imageFile: File | null;
+}
+
 export interface FetchProductParams {
   q?: string;
   category_id?: string;

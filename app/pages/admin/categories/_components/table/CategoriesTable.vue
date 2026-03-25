@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
-import { storeToRefs } from "pinia";
 import type { Category } from "~/types/category";
 import type { Product } from "~/types/product";
-import { formatShortDate } from "~/utils/format";
+import { formatShortDateOrFallback } from "~/utils/format";
 import { useModal } from "~/composables/admin/useModal";
+import AdminTableEmptyState from "../../../_components/AdminTableEmptyState.vue";
+import AdminTableSelectionBar from "../../../_components/AdminTableSelectionBar.vue";
 import CategoryBulkDeleteModal from "../modals/CategoryBulkDeleteModal.vue";
 import CategoryRowActions from "./CategoryRowActions.vue";
 
@@ -13,10 +14,9 @@ const table = useTemplateRef("table");
 const props = defineProps<{
   categories: Category[];
   products: Product[];
+  isLoading: boolean;
 }>();
 const { openModal } = useModal();
-const categoryStore = useCategoryStore();
-const { query, isLoading } = storeToRefs(categoryStore);
 const selectedIds = ref<Set<string>>(new Set());
 
 const productCounts = computed(() => {
@@ -32,6 +32,7 @@ const selectableIds = computed(() =>
   props.categories.map((category) => category.id),
 );
 const selectedCount = computed(() => selectedIds.value.size);
+const hasRows = computed(() => props.categories.length > 0);
 
 const allSelected = computed(
   () =>
@@ -39,9 +40,10 @@ const allSelected = computed(
     selectableIds.value.every((id) => selectedIds.value.has(id)),
 );
 
-const toggleAll = (value: boolean) => {
+const toggleAll = (value: boolean | "indeterminate") => {
+  const shouldSelect = value === true;
   const next = new Set(selectedIds.value);
-  if (value) {
+  if (shouldSelect) {
     selectableIds.value.forEach((id) => next.add(id));
   } else {
     selectableIds.value.forEach((id) => next.delete(id));
@@ -49,9 +51,10 @@ const toggleAll = (value: boolean) => {
   selectedIds.value = next;
 };
 
-const toggleOne = (id: string, value: boolean) => {
+const toggleOne = (id: string, value: boolean | "indeterminate") => {
+  const shouldSelect = value === true;
   const next = new Set(selectedIds.value);
-  if (value) {
+  if (shouldSelect) {
     next.add(id);
   } else {
     next.delete(id);
@@ -67,10 +70,6 @@ const handleBulkDelete = async () => {
       selectedIds.value = new Set();
     },
   });
-};
-
-const handleSearch = async (value: string) => {
-  await categoryStore.setSearch(value);
 };
 
 const specCount = (category: Category) => category.featured_specs?.length ?? 0;
@@ -109,34 +108,15 @@ const pagination = ref({
 
 <template>
   <UCard>
-    <div class="mb-4 flex items-center justify-between">
-      <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Catalog Structure
-        </p>
-        <p class="mt-1 text-lg font-semibold">Category overview</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <UInput
-          :model-value="query.q ?? ''"
-          class="w-56"
-          icon="i-lucide-search"
-          placeholder="Search categories"
-          @update:model-value="handleSearch(String($event))"
-        />
-        <UButton
-          v-if="selectedCount"
-          color="error"
-          variant="outline"
-          icon="i-lucide-trash-2"
-          @click="handleBulkDelete"
-        >
-          Delete selected ({{ selectedCount }})
-        </UButton>
-      </div>
-    </div>
+    <AdminTableSelectionBar
+      v-if="selectedCount"
+      :count="selectedCount"
+      item-label="categories"
+      @action="handleBulkDelete"
+    />
 
     <UTable
+      v-if="props.isLoading || hasRows"
       ref="table"
       v-model:pagination="pagination"
       :data="props.categories"
@@ -145,7 +125,7 @@ const pagination = ref({
       :pagination-options="{
         getPaginationRowModel: getPaginationRowModel(),
       }"
-      :loading="isLoading"
+      :loading="props.isLoading"
     >
       <template #select-header>
         <div class="flex items-center justify-center">
@@ -171,18 +151,6 @@ const pagination = ref({
           </div>
         </div>
       </template>
-      <template #overview-cell="{ row }">
-        <div class="max-w-md">
-          <p class="line-clamp-2 text-slate-700">
-            {{
-              row.original.overview ?? row.original.description ?? "No overview"
-            }}
-          </p>
-          <p class="mt-1 text-xs text-slate-500">
-            {{ row.original.description ?? "No short description" }}
-          </p>
-        </div>
-      </template>
       <template #signals-cell="{ row }">
         <div class="flex flex-wrap gap-2">
           <UBadge color="info" variant="subtle">
@@ -203,7 +171,7 @@ const pagination = ref({
       </template>
       <template #updated-cell="{ row }">
         <span class="text-slate-600">
-          {{ formatShortDate(row.original.updated_at) }}
+          {{ formatShortDateOrFallback(row.original.updated_at) }}
         </span>
       </template>
       <template #actions-cell="{ row }">
@@ -212,7 +180,15 @@ const pagination = ref({
         </div>
       </template>
     </UTable>
-    <div class="flex justify-end border-t border-default px-4 pt-4">
+    <AdminTableEmptyState
+      v-else
+      title="No categories yet"
+      description="Create a category to start organizing the product catalog."
+    />
+    <div
+      v-if="hasRows"
+      class="flex justify-end border-t border-default px-4 pt-4"
+    >
       <UPagination
         :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
         :items-per-page="table?.tableApi?.getState().pagination.pageSize"

@@ -1,9 +1,19 @@
 <script setup lang="ts">
+type ActionColor =
+  | "primary"
+  | "secondary"
+  | "success"
+  | "info"
+  | "warning"
+  | "error"
+  | "neutral";
+
 type ActionConfirmPayload = {
+  eyebrow?: string;
   title: string;
   description?: string;
   confirmLabel?: string;
-  confirmColor?: string;
+  confirmColor?: ActionColor;
   onConfirm?: () => Promise<boolean | void> | boolean | void;
 };
 
@@ -35,7 +45,7 @@ const handleConfirm = async () => {
     <template #header>
       <div>
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Confirmation
+          {{ props.payload?.eyebrow ?? "Confirmation" }}
         </p>
         <h3 class="mt-2 text-lg font-semibold">
           {{ props.payload?.title ?? "Confirm action" }}

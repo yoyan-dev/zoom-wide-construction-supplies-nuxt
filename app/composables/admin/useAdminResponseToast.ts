@@ -1,11 +1,9 @@
 import type { H3Response } from "~/types/h3Response";
-import {
-  getH3ResponseToastDescription,
-  getH3ResponseToastTitle,
-  isH3ResponseSuccess,
-} from "~/utils/api";
+import type { StoreResponse } from "~/types/store-response";
+import { formatH3StatusMessage } from "~/utils/api";
 
-type ResponseText<T> = string | ((response: H3Response<T>) => string | undefined);
+type AdminResponse<T> = H3Response<T> | StoreResponse<T>;
+type ResponseText<T> = string | ((response: AdminResponse<T>) => string | undefined);
 
 type NotifyResponseOptions<T> = {
   successTitle?: ResponseText<T>;
@@ -16,16 +14,66 @@ type NotifyResponseOptions<T> = {
 
 const resolveText = <T>(
   value: ResponseText<T> | undefined,
-  response: H3Response<T>,
+  response: AdminResponse<T>,
 ) => {
   if (!value) return undefined;
   return typeof value === "function" ? value(response) : value;
 };
 
+const isSuccessResponse = <T>(response?: AdminResponse<T> | null) =>
+  !!response &&
+  response.status !== "error" &&
+  (!("statusCode" in response) ||
+    response.statusCode === undefined ||
+    response.statusCode < 400);
+
+const normalizeResponseText = (value?: string | null) => {
+  const text = value?.trim();
+  return text ? text : undefined;
+};
+
+const getResponseTitle = <T>(
+  response?: AdminResponse<T> | null,
+  fallback?: string,
+) => {
+  if (!response) {
+    return fallback ?? "Request completed";
+  }
+
+  return (
+    normalizeResponseText(response.message) ??
+    formatH3StatusMessage(response.statusMessage) ??
+    fallback ??
+    (isSuccessResponse(response) ? "Request completed" : "Request failed")
+  );
+};
+
+const getResponseDescription = <T>(
+  response?: AdminResponse<T> | null,
+  title?: string,
+) => {
+  if (!response) return undefined;
+
+  const message = normalizeResponseText(response.message);
+  const statusLabel = formatH3StatusMessage(response.statusMessage);
+
+  if (message && message !== title && statusLabel && statusLabel !== title) {
+    return statusLabel;
+  }
+
+  if (message && message !== title) {
+    return message;
+  }
+
+  if (statusLabel && statusLabel !== title) {
+    return statusLabel;
+  }
+
+  return undefined;
+};
+
 export function useAdminResponseToast() {
   const toast = useToast();
-
-  const isSuccessResponse = isH3ResponseSuccess;
 
   const showSuccess = (title: string, description?: string) => {
     toast.add({
@@ -46,30 +94,30 @@ export function useAdminResponseToast() {
   };
 
   const notifyResponse = <T>(
-    response: H3Response<T>,
+    response: AdminResponse<T>,
     options: NotifyResponseOptions<T> = {},
   ) => {
     if (isSuccessResponse(response)) {
       const title =
         resolveText(options.successTitle, response) ??
-        getH3ResponseToastTitle(response, "Request completed");
+        getResponseTitle(response, "Request completed");
 
       showSuccess(
         title,
         resolveText(options.successDescription, response) ??
-          getH3ResponseToastDescription(response, title),
+          getResponseDescription(response, title),
       );
       return true;
     }
 
     const title =
       resolveText(options.errorTitle, response) ??
-      getH3ResponseToastTitle(response, "Request failed");
+      getResponseTitle(response, "Request failed");
 
     showError(
       title,
       resolveText(options.errorDescription, response) ??
-        getH3ResponseToastDescription(response, title) ??
+        getResponseDescription(response, title) ??
         "Please try again.",
     );
     return false;

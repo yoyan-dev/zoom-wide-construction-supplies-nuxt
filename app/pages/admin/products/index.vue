@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import AdminPageStateCard from "../_components/AdminPageStateCard.vue";
 import ProductsFilters from "./_components/ProductsFilters.vue";
 import ProductsStats from "./_components/ProductsStats.vue";
+import ProductHeader from "./_components/table/ProductHeader.vue";
 import ProductsTable from "./_components/table/ProductsTable.vue";
+import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
+import type { InventoryLog } from "~/types/inventory";
+import type { Warehouse } from "~/types/warehouse";
 
 definePageMeta({
   layout: "admin",
@@ -11,28 +16,41 @@ definePageMeta({
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
 const supplierStore = useSupplierStore();
-const inventoryStore = useInventoryStore();
-const warehouseStore = useWarehouseStore();
+const { getLoadErrorMessage } = useAdminPageLoadState();
+const pageError = ref<string | null>(null);
+const isRetrying = ref(false);
 
-await Promise.all([
-  productStore.fetchProducts(),
-  categoryStore.fetchCategories(),
-  supplierStore.fetchSuppliers(),
-  inventoryStore.fetchInventoryLogs(),
-  warehouseStore.fetchWarehouses(),
-]);
+const loadPage = async () => {
+  const [productsResponse, categoriesResponse, suppliersResponse] =
+    await Promise.all([
+      productStore.fetchProducts(),
+      categoryStore.fetchCategories(),
+      supplierStore.fetchSuppliers(),
+    ]);
 
-const { products, query } = storeToRefs(productStore);
+  pageError.value =
+    productsResponse.status === "success" &&
+    categoriesResponse.status === "success" &&
+    suppliersResponse.status === "success"
+      ? null
+      : getLoadErrorMessage(
+          [productsResponse, categoriesResponse, suppliersResponse],
+          "The products list could not be loaded right now.",
+        );
+};
+
+await loadPage();
+
+const { products, isLoading } = storeToRefs(productStore);
 const { categories } = storeToRefs(categoryStore);
 const { suppliers } = storeToRefs(supplierStore);
-const { logs } = storeToRefs(inventoryStore);
-const { warehouses } = storeToRefs(warehouseStore);
+const logs = ref<InventoryLog[]>([]);
+const warehouses = ref<Warehouse[]>([]);
 
+const search = ref("");
+const categoryId = ref("all");
 const stockStatus = ref("all");
 const status = ref("all");
-
-const search = computed(() => query.value.q ?? "");
-const categoryId = computed(() => query.value.category_id || "all");
 
 const categoryOptions = computed(() => [
   { label: "All categories", value: "all" },
@@ -43,42 +61,61 @@ const categoryOptions = computed(() => [
 ]);
 
 const handleSearch = async (value: string) => {
-  await productStore.setSearch(value);
+  search.value = value;
 };
 
 const handleCategoryFilter = async (value: string) => {
-  await productStore.setFilter({
-    category_id: value === "all" ? "" : value,
-  });
+  categoryId.value = value;
+};
+
+const handleRetry = async () => {
+  isRetrying.value = true;
+  await loadPage();
+  isRetrying.value = false;
 };
 </script>
 
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <ProductsStats :products="products" :inventory-logs="logs" />
-      <ProductsFilters
-        :search="search"
-        :category-id="categoryId"
-        :stock-status="stockStatus"
-        :status="status"
-        :category-options="categoryOptions"
-        @update:search="handleSearch"
-        @update:category-id="handleCategoryFilter"
-        @update:stock-status="stockStatus = $event"
-        @update:status="status = $event"
-      />
-      <ProductsTable
-        :products="products"
-        :categories="categories"
-        :suppliers="suppliers"
-        :warehouses="warehouses"
-        :inventory-logs="logs"
-        :search="search"
-        :category-id="categoryId"
-        :stock-status="stockStatus"
-        :status="status"
-      />
+      <ProductHeader :total="products.length" />
+      <template v-if="pageError">
+        <AdminPageStateCard
+          eyebrow="Products"
+          title="Products unavailable"
+          :description="pageError"
+          tone="error"
+          action-label="Retry"
+          :action-loading="isRetrying"
+          @action="handleRetry"
+        />
+      </template>
+      <template v-else>
+        <ProductsStats :products="products" :inventory-logs="logs" />
+        <ProductsFilters
+          :search="search"
+          :category-id="categoryId"
+          :stock-status="stockStatus"
+          :status="status"
+          :category-options="categoryOptions"
+          @update:search="handleSearch"
+          @update:category-id="handleCategoryFilter"
+          @update:stock-status="stockStatus = $event"
+          @update:status="status = $event"
+        />
+        <ProductsTable
+          :products="products"
+          :categories="categories"
+          :suppliers="suppliers"
+          :warehouses="warehouses"
+          :inventory-logs="logs"
+          :search="search"
+          :category-id="categoryId"
+          :stock-status="stockStatus"
+          :status="status"
+          :is-loading="isLoading"
+        />
+      </template>
     </div>
   </div>
 </template>

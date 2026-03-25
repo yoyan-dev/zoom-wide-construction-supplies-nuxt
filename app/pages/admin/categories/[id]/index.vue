@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import AdminPageStateCard from "../../_components/AdminPageStateCard.vue";
+import CategoryEditModal from "../_components/modals/CategoryEditModal.vue";
+import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
+import { useModal } from "~/composables/admin/useModal";
 import { formatLongDate } from "~/utils/format";
 
 definePageMeta({
@@ -12,11 +16,31 @@ const categoryId = computed(() => String(route.params.id));
 
 const categoryStore = useCategoryStore();
 const productStore = useProductStore();
+const { openModal } = useModal();
+const { getLoadErrorMessage, isMissingResourceResponse } =
+  useAdminPageLoadState();
+const pageError = ref<string | null>(null);
+const isMissingCategory = ref(false);
+const isRetrying = ref(false);
 
-await Promise.all([
-  categoryStore.fetchCategoryById(categoryId.value),
-  productStore.fetchProducts(),
-]);
+const loadPage = async () => {
+  const [categoryResponse, productsResponse] = await Promise.all([
+    categoryStore.fetchCategoryById(categoryId.value),
+    productStore.fetchProducts(),
+  ]);
+
+  isMissingCategory.value = isMissingResourceResponse(categoryResponse);
+  pageError.value =
+    (categoryResponse.status === "error" && !isMissingCategory.value) ||
+    productsResponse.status === "error"
+      ? getLoadErrorMessage(
+          [categoryResponse, productsResponse],
+          "The category details could not be loaded right now.",
+        )
+      : null;
+};
+
+await loadPage();
 
 const { category } = storeToRefs(categoryStore);
 const { products } = storeToRefs(productStore);
@@ -25,8 +49,20 @@ const linkedProducts = computed(() =>
   products.value.filter((item) => item.category_id === categoryId.value),
 );
 
-const goBack = () => router.push("/admin/categories");
-const editCategory = () => router.push(`/admin/categories/edit/${categoryId.value}`);
+const goBack = () => {
+  void router.push("/admin/categories");
+};
+
+const editCategory = () => {
+  if (!category.value) return;
+  void openModal(CategoryEditModal, category.value);
+};
+
+const retryLoad = async () => {
+  isRetrying.value = true;
+  await loadPage();
+  isRetrying.value = false;
+};
 </script>
 
 <template>
@@ -51,14 +87,36 @@ const editCategory = () => router.push(`/admin/categories/edit/${categoryId.valu
             <UButton color="neutral" variant="outline" @click="goBack">
               Back to Categories
             </UButton>
-            <UButton color="primary" @click="editCategory">
+            <UButton v-if="category?.id" color="primary" @click="editCategory">
               Edit Category
             </UButton>
           </div>
         </div>
       </section>
 
-      <div v-if="category" class="space-y-6">
+      <AdminPageStateCard
+        v-if="pageError"
+        eyebrow="Category Details"
+        title="Category unavailable"
+        :description="pageError"
+        tone="error"
+        action-label="Retry"
+        :action-loading="isRetrying"
+        @action="retryLoad"
+      />
+
+      <AdminPageStateCard
+        v-else-if="isMissingCategory || !category"
+        eyebrow="Category Details"
+        title="Category not found"
+        description="Check the URL or return to the categories list."
+        action-label="Back to Categories"
+        action-color="neutral"
+        action-icon="i-lucide-arrow-left"
+        @action="goBack"
+      />
+
+      <div v-else class="space-y-6">
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.9fr)]">
           <UCard>
             <div
@@ -230,11 +288,6 @@ const editCategory = () => router.push(`/admin/categories/edit/${categoryId.valu
         </UCard>
       </div>
 
-      <UCard v-else>
-        <p class="text-sm text-slate-600">
-          Category not found. Check the URL or return to the categories list.
-        </p>
-      </UCard>
     </div>
   </div>
 </template>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<!-- <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import type { DashboardResponse } from "~/types/dashboard";
 import DashboardDeliveryOverview from "./_components/DashboardDeliveryOverview.vue";
@@ -62,4 +62,12 @@ const dashboard = computed(() => data.value ?? empty);
       </div>
     </div>
   </div>
+</template> -->
+<script setup lang="ts">
+definePageMeta({
+  layout: "admin",
+});
+</script>
+<template>
+  <div>Admin</div>
 </template>

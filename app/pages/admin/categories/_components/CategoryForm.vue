@@ -17,6 +17,7 @@ const props = defineProps<{
   submitLabel: string;
   cancelLabel?: string;
   showActions?: boolean;
+  isSubmitting?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -78,6 +79,8 @@ watch(
 );
 
 const handleSubmit = () => {
+  if (!draft.value.name.trim()) return;
+
   emit("submit", {
     name: draft.value.name.trim(),
     description: draft.value.description.trim(),
@@ -91,7 +94,7 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <div>
+  <UForm @submit.prevent="handleSubmit">
     <div class="space-y-6">
       <UFormField class="w-full" label="Category name">
         <UInput
@@ -171,18 +174,27 @@ const handleSubmit = () => {
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="mt-6 flex items-center justify-end gap-2">
-    <UButton color="neutral" variant="ghost" @click="emit('cancel')">
-      {{ cancelLabel ?? "Cancel" }}
-    </UButton>
-    <UButton
-      color="primary"
-      :disabled="!draft.name.trim()"
-      @click="handleSubmit"
+    <div
+      v-if="props.showActions !== false"
+      class="mt-6 flex items-center justify-end gap-2"
     >
-      {{ submitLabel }}
-    </UButton>
-  </div>
+      <UButton
+        color="neutral"
+        variant="ghost"
+        type="button"
+        @click="emit('cancel')"
+      >
+        {{ cancelLabel ?? "Cancel" }}
+      </UButton>
+      <UButton
+        color="primary"
+        type="submit"
+        :disabled="!draft.name.trim()"
+        :loading="props.isSubmitting"
+      >
+        {{ submitLabel }}
+      </UButton>
+    </div>
+  </UForm>
 </template>

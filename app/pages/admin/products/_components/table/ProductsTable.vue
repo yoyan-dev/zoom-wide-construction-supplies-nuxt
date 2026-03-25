@@ -6,12 +6,17 @@ import type { InventoryLog } from "~/types/inventory";
 import type { Product } from "~/types/product";
 import type { Supplier } from "~/types/supplier";
 import type { Warehouse } from "~/types/warehouse";
-import { formatCurrency, formatNumber, formatShortDate } from "~/utils/format";
+import {
+  formatCurrency,
+  formatNumber,
+  formatShortDateOrFallback,
+} from "~/utils/format";
 import { buildInventoryBalanceMap } from "~/utils/inventory-balance";
-import ProductHeader from "./ProductHeader.vue";
 import ProductRowActions from "./ProductRowActions.vue";
 import ProductBulkDeleteModal from "../modals/ProductBulkDeleteModal.vue";
 import { useModal } from "~/composables/admin/useModal";
+import AdminTableEmptyState from "../../../_components/AdminTableEmptyState.vue";
+import AdminTableSelectionBar from "../../../_components/AdminTableSelectionBar.vue";
 
 type BadgeColor =
   | "primary"
@@ -32,10 +37,10 @@ const props = defineProps<{
   categoryId: string;
   stockStatus: string;
   status: string;
+  isLoading: boolean;
 }>();
 
 const table = useTemplateRef("table");
-const productStore = useProductStore();
 const { openModal } = useModal();
 const selectedIds = ref<Set<string>>(new Set());
 
@@ -50,7 +55,8 @@ const categoryMap = computed(() => {
 const supplierMap = computed(() => {
   const map: Record<string, string> = {};
   for (const supplier of props.suppliers) {
-    map[supplier.id] = supplier.name;
+    if (!supplier.id) continue;
+    map[supplier.id] = supplier.name ?? "Unknown supplier";
   }
   return map;
 });
@@ -58,6 +64,7 @@ const supplierMap = computed(() => {
 const warehouseMap = computed(() => {
   const map: Record<string, string> = {};
   for (const warehouse of props.warehouses) {
+    if (!warehouse.id) continue;
     map[warehouse.id] = warehouse.name;
   }
   return map;
@@ -89,10 +96,12 @@ const filteredProducts = computed(() => {
     const supplierName = product.supplier_id
       ? (supplierMap.value[product.supplier_id] ?? "")
       : "";
+    const productName = product.name?.toLowerCase() ?? "";
+    const productSku = product.sku?.toLowerCase() ?? "";
     const searchMatch =
       !query ||
-      product.name.toLowerCase().includes(query) ||
-      product.sku.toLowerCase().includes(query) ||
+      productName.includes(query) ||
+      productSku.includes(query) ||
       supplierName.toLowerCase().includes(query);
 
     return categoryMatch && statusMatch && stockMatch && searchMatch;
@@ -106,6 +115,7 @@ const selectableIds = computed(() =>
 );
 
 const selectedCount = computed(() => selectedIds.value.size);
+const hasRows = computed(() => filteredProducts.value.length > 0);
 
 const allSelected = computed(
   () =>
@@ -113,9 +123,10 @@ const allSelected = computed(
     selectableIds.value.every((id) => selectedIds.value.has(id)),
 );
 
-const toggleAll = (value: boolean) => {
+const toggleAll = (value: boolean | "indeterminate") => {
+  const shouldSelect = value === true;
   const next = new Set(selectedIds.value);
-  if (value) {
+  if (shouldSelect) {
     selectableIds.value.forEach((id) => next.add(id));
   } else {
     selectableIds.value.forEach((id) => next.delete(id));
@@ -123,10 +134,14 @@ const toggleAll = (value: boolean) => {
   selectedIds.value = next;
 };
 
-const toggleOne = (id: string | undefined, value: boolean) => {
+const toggleOne = (
+  id: string | undefined,
+  value: boolean | "indeterminate",
+) => {
   if (!id) return;
+  const shouldSelect = value === true;
   const next = new Set(selectedIds.value);
-  if (value) {
+  if (shouldSelect) {
     next.add(id);
   } else {
     next.delete(id);
@@ -195,29 +210,23 @@ const pagination = ref({
 const productInitials = (name?: string) => {
   if (!name) return "NA";
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
+  const firstPart = parts[0] ?? "";
+  if (parts.length === 1) return firstPart.slice(0, 2).toUpperCase();
+  return `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase() || "NA";
 };
 </script>
 
 <template>
   <UCard>
-    <ProductHeader />
-    <div v-if="selectedCount" class="mb-4 flex items-center justify-between">
-      <p class="text-xs text-slate-500">
-        Selected {{ selectedCount }} products
-      </p>
-      <UButton
-        color="error"
-        variant="outline"
-        icon="i-lucide-trash-2"
-        @click="handleBulkDelete"
-      >
-        Delete selected
-      </UButton>
-    </div>
+    <AdminTableSelectionBar
+      v-if="selectedCount"
+      :count="selectedCount"
+      item-label="products"
+      @action="handleBulkDelete"
+    />
 
     <UTable
+      v-if="props.isLoading || hasRows"
       ref="table"
       v-model:pagination="pagination"
       :data="filteredProducts"
@@ -226,6 +235,7 @@ const productInitials = (name?: string) => {
       :pagination-options="{
         getPaginationRowModel: getPaginationRowModel(),
       }"
+      :loading="props.isLoading"
     >
       <template #select-header>
         <div class="flex items-center justify-center">
@@ -275,25 +285,6 @@ const productInitials = (name?: string) => {
           </span>
         </div>
       </template>
-      <template #guide-cell="{ row }">
-        <div class="max-w-sm">
-          <p class="line-clamp-2 text-slate-700">
-            {{
-              row.original.handbook?.summary ??
-              row.original.description ??
-              "No guide content"
-            }}
-          </p>
-          <div class="mt-2 flex flex-wrap gap-2">
-            <UBadge color="info" variant="subtle">
-              {{ row.original.handbook?.specifications?.length ?? 0 }} specs
-            </UBadge>
-            <UBadge color="neutral" variant="subtle">
-              {{ row.original.handbook?.applications?.length ?? 0 }} uses
-            </UBadge>
-          </div>
-        </div>
-      </template>
       <template #category-cell="{ row }">
         <div class="flex flex-col">
           <span class="text-slate-700">
@@ -315,7 +306,7 @@ const productInitials = (name?: string) => {
       </template>
       <template #price-cell="{ row }">
         <span class="font-medium">
-          {{ formatCurrency(row.original.price) }}
+          {{ formatCurrency(row.original.price ?? 0) }}
         </span>
       </template>
       <template #stock-cell="{ row }">
@@ -346,18 +337,24 @@ const productInitials = (name?: string) => {
       </template>
       <template #updated-cell="{ row }">
         <span class="text-slate-600">
-          {{
-            row.original.updated_at
-              ? formatShortDate(row.original.updated_at)
-              : "_"
-          }}
+          {{ formatShortDateOrFallback(row.original.updated_at, "_") }}
         </span>
       </template>
       <template #actions-cell="{ row }">
         <ProductRowActions :product="row.original" />
       </template>
     </UTable>
-    <div class="flex justify-end border-t border-default pt-4 px-4">
+
+    <AdminTableEmptyState
+      v-else
+      title="No products match the current filters"
+      description="Adjust the search or filters, or add a new product to expand the catalog."
+    />
+
+    <div
+      v-if="hasRows"
+      class="flex justify-end border-t border-default pt-4 px-4"
+    >
       <UPagination
         :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
         :items-per-page="table?.tableApi?.getState().pagination.pageSize"

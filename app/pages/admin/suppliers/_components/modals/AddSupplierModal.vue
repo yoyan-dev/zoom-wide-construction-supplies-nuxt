@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast";
+import SupplierForm from "../SupplierForm.vue";
 
 defineProps<{ payload?: unknown }>();
 const emit = defineEmits<{ close: [boolean] }>();
@@ -8,13 +9,13 @@ const supplierStore = useSupplierStore();
 const { notifyResponse } = useAdminResponseToast();
 const isSaving = ref(false);
 
-const form = reactive({
-  name: "",
-  contact_name: "",
-  phone: "",
-  email: "",
-  address: "",
-});
+type SupplierPayload = {
+  name: string;
+  contact_name?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+};
 
 const appendIfPresent = (formData: FormData, key: string, value: string) => {
   const trimmed = value.trim();
@@ -24,26 +25,34 @@ const appendIfPresent = (formData: FormData, key: string, value: string) => {
   }
 };
 
-const handleSave = async () => {
-  const name = form.name.trim();
-
-  if (!name) return;
-
+const handleSave = async (payload: SupplierPayload) => {
   const formData = new FormData();
-  formData.append("name", name);
-  appendIfPresent(formData, "contact_name", form.contact_name);
-  appendIfPresent(formData, "phone", form.phone);
-  appendIfPresent(formData, "email", form.email);
-  appendIfPresent(formData, "address", form.address);
+  formData.append("name", payload.name);
+
+  if (payload.contact_name) {
+    appendIfPresent(formData, "contact_name", payload.contact_name);
+  }
+
+  if (payload.phone) {
+    appendIfPresent(formData, "phone", payload.phone);
+  }
+
+  if (payload.email) {
+    appendIfPresent(formData, "email", payload.email);
+  }
+
+  if (payload.address) {
+    appendIfPresent(formData, "address", payload.address);
+  }
 
   isSaving.value = true;
-  const response = await supplierStore.createSupplier(formData);
+  const response = await supplierStore.addSupplier(formData);
   isSaving.value = false;
 
   if (
     !notifyResponse(response, {
       successTitle: "Supplier created",
-      successDescription: `Added ${name}.`,
+      successDescription: `Added ${payload.name}.`,
       errorTitle: "Supplier not created",
     })
   ) {
@@ -66,67 +75,13 @@ const handleSave = async () => {
     </template>
 
     <template #body>
-      <div class="space-y-4">
-        <UFormField label="Supplier name">
-          <UInput
-            v-model="form.name"
-            name="name"
-            class="w-full"
-            placeholder="Atlas Aggregates"
-          />
-        </UFormField>
-        <UFormField label="Contact name">
-          <UInput
-            v-model="form.contact_name"
-            name="contact_name"
-            class="w-full"
-            placeholder="Kim Warren"
-          />
-        </UFormField>
-        <div class="grid gap-4 md:grid-cols-2">
-          <UFormField label="Phone">
-            <UInput
-              v-model="form.phone"
-              name="phone"
-              class="w-full"
-              placeholder="+1-555-555-5555"
-            />
-          </UFormField>
-          <UFormField label="Email">
-            <UInput
-              v-model="form.email"
-              name="email"
-              class="w-full"
-              placeholder="contact@supplier.com"
-            />
-          </UFormField>
-        </div>
-        <UFormField label="Address">
-          <UTextarea
-            v-model="form.address"
-            name="address"
-            class="w-full"
-            placeholder="Street, City, State"
-          />
-        </UFormField>
-        <div class="flex justify-end gap-2 w-full">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            @click="emit('close', false)"
-          >
-            Cancel
-          </UButton>
-          <UButton
-            color="primary"
-            :disabled="!form.name.trim()"
-            :loading="isSaving"
-            @click="handleSave"
-          >
-            Save
-          </UButton>
-        </div>
-      </div>
+      <SupplierForm
+        :supplier="null"
+        submit-label="Save"
+        :is-submitting="isSaving"
+        @submit="handleSave"
+        @cancel="emit('close', false)"
+      />
     </template>
   </UModal>
 </template>

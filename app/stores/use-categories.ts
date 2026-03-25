@@ -156,7 +156,7 @@ export const useCategoryStore = defineStore("categories", () => {
 
   async function updateCategory(
     id: string,
-    payload: Category,
+    payload: Partial<Omit<Category, "id" | "created_at" | "updated_at">>,
   ): Promise<StoreResponse> {
     isLoading.value = true;
 
@@ -175,6 +175,7 @@ export const useCategoryStore = defineStore("categories", () => {
         throw new Error(result.message || "Failed to update category");
       }
 
+      category.value = result.data || category.value;
       await fetchCategories();
 
       return {

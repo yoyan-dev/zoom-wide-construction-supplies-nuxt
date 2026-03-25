@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import ActionConfirmModal from "~/pages/admin/_components/modals/ActionConfirmModal.vue";
+import { useAdminDeleteFeedback } from "~/composables/admin/useAdminDeleteFeedback";
+
 const props = defineProps<{
   payload: { ids: string[]; onDeleted?: () => void } | null;
 }>();
@@ -6,68 +9,30 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [boolean] }>();
 
 const supplierStore = useSupplierStore();
-const { isSuccessResponse, showError, showSuccess } = useAdminResponseToast();
-const isDeleting = ref(false);
+const { getBulkDeleteDescription, handleBulkDelete } = useAdminDeleteFeedback();
 
 const count = computed(() => props.payload?.ids?.length ?? 0);
 
-const handleDelete = async () => {
-  if (!props.payload?.ids?.length) return;
-  isDeleting.value = true;
-  let deleted = 0;
-  for (const id of props.payload.ids) {
-    const response = await supplierStore.deleteSupplier(id);
+const payload = computed(() => ({
+  eyebrow: "Delete Suppliers",
+  title: `Delete ${count.value} selected suppliers?`,
+  description: getBulkDeleteDescription("Suppliers"),
+  confirmLabel: "Delete",
+  confirmColor: "error" as const,
+  onConfirm: async () => {
+    if (!props.payload?.ids?.length) return false;
 
-    if (!isSuccessResponse(response)) {
-      isDeleting.value = false;
-      showError(
-        "Suppliers not deleted",
-        `Deleted ${deleted} of ${count.value} suppliers before the request failed.`,
-      );
-      return;
-    }
-
-    deleted += 1;
-  }
-  isDeleting.value = false;
-  showSuccess(
-    "Suppliers deleted",
-    `Deleted ${deleted} selected ${deleted === 1 ? "supplier" : "suppliers"}.`,
-  );
-  props.payload.onDeleted?.();
-  emit("close", false);
-};
+    return handleBulkDelete({
+      ids: props.payload.ids,
+      deleteItem: supplierStore.deleteSupplier,
+      resourceLabel: "Supplier",
+      resourceLabelPlural: "Suppliers",
+      onDeleted: props.payload.onDeleted,
+    });
+  },
+}));
 </script>
 
 <template>
-  <UModal :close="{ onClick: () => emit('close', false) }">
-    <template #header>
-      <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Delete Suppliers
-        </p>
-        <h3 class="mt-2 text-lg font-semibold">
-          Delete {{ count }} selected suppliers?
-        </h3>
-      </div>
-    </template>
-
-    <template #body>
-      <div class="text-sm text-slate-600">
-        This action cannot be undone. Are you sure you want to delete these
-        suppliers?
-      </div>
-    </template>
-
-    <template #footer>
-      <div class="flex justify-end gap-2 w-full">
-        <UButton color="neutral" variant="ghost" @click="emit('close', false)">
-          Cancel
-        </UButton>
-        <UButton color="error" :loading="isDeleting" @click="handleDelete">
-          Delete
-        </UButton>
-      </div>
-    </template>
-  </UModal>
+  <ActionConfirmModal :payload="payload" @close="emit('close', $event)" />
 </template>

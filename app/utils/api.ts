@@ -2,11 +2,12 @@ import type { H3Response } from "~/types/h3Response";
 
 type ApiQueryValue = string | number | boolean | null | undefined;
 type ApiQuery = Record<string, ApiQueryValue>;
+type ApiBody = BodyInit | Record<string, any> | null;
 
 type ApiRequestOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   query?: ApiQuery;
-  body?: unknown;
+  body?: ApiBody;
 };
 
 export const DEFAULT_API_PAGE_LIMIT = 10;
@@ -23,10 +24,10 @@ export const buildOkResponse = <T>(
   data: T,
   total?: number,
   message?: string,
-  statusCode = 200,
+  statusCode: H3Response<T>["statusCode"] = 200,
   statusMessage: H3Response<T>["statusMessage"] = "ok",
 ): H3Response<T> => ({
-  status: "success",
+  status: "ok",
   statusCode,
   statusMessage,
   message,
@@ -41,7 +42,12 @@ export const buildErrorResponse = <T>(error: unknown): H3Response<T> => {
     status: "error",
     statusCode: 500,
     statusMessage: "internal server error",
+    data: null,
     message: resolvedError.message,
+    error: {
+      code: "internal_error",
+      message: resolvedError.message,
+    },
   };
 };
 
@@ -60,9 +66,7 @@ export const isH3ResponseSuccess = <T>(response?: H3Response<T> | null) =>
   response.status !== "error" &&
   (response.statusCode === undefined || response.statusCode < 400);
 
-export const formatH3StatusMessage = (
-  statusMessage?: H3Response["statusMessage"],
-) =>
+export const formatH3StatusMessage = (statusMessage?: string) =>
   normalizeResponseText(statusMessage?.replace(/_/g, " "))?.replace(
     /\b\w/g,
     (char) => char.toUpperCase(),

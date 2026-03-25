@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import type { Product } from "~/types/product";
-import ProductForm from "../_components/ProductForm.vue";
+import AdminPageHeader from "../../_components/AdminPageHeader.vue";
+import AdminPageStateCard from "../../_components/AdminPageStateCard.vue";
+import ProductForm from "./_components/ProductForm.vue";
+import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
+import type { Warehouse } from "~/types/warehouse";
 import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast";
 
 definePageMeta({
@@ -10,91 +13,94 @@ definePageMeta({
 
 const categoryStore = useCategoryStore();
 const supplierStore = useSupplierStore();
-const warehouseStore = useWarehouseStore();
 const productStore = useProductStore();
-const inventoryStore = useInventoryStore();
-const router = useRouter();
-const { isSuccessResponse, notifyResponse, showError, showSuccess } =
-  useAdminResponseToast();
+const { notifyResponse } = useAdminResponseToast();
+const { getLoadErrorMessage } = useAdminPageLoadState();
+const pageError = ref<string | null>(null);
+const isRetrying = ref(false);
 
-await Promise.all([
-  categoryStore.fetchCategories(),
-  supplierStore.fetchSuppliers(),
-  warehouseStore.fetchWarehouses(),
-]);
+const loadPage = async () => {
+  const [categoriesResponse, suppliersResponse] = await Promise.all([
+    categoryStore.fetchCategories(),
+    supplierStore.fetchSuppliers(),
+  ]);
+
+  pageError.value =
+    categoriesResponse.status === "success" &&
+    suppliersResponse.status === "success"
+      ? null
+      : getLoadErrorMessage(
+          [categoriesResponse, suppliersResponse],
+          "The product form could not be prepared right now.",
+        );
+};
+
+await loadPage();
 
 const { categories } = storeToRefs(categoryStore);
 const { suppliers } = storeToRefs(supplierStore);
-const { warehouses } = storeToRefs(warehouseStore);
+const warehouses = ref<Warehouse[]>([]);
 
-type ProductDraft = Omit<Product, "id" | "created_at" | "updated_at">;
+const handleCancel = async () => {
+  await navigateTo("/admin/products");
+};
 
-const handleSubmit = async (payload: ProductDraft) => {
-  const created = await productStore.createProduct(payload);
+const handleSubmit = async (formData: FormData) => {
+  const response = await productStore.addProduct(formData);
 
-  if (!isSuccessResponse(created)) {
-    notifyResponse(created, {
+  if (
+    !notifyResponse(response, {
       successTitle: "Product created",
+      successDescription: "The new product has been added to the catalog.",
       errorTitle: "Product not created",
-    });
+    })
+  ) {
     return;
   }
 
-  if (created.data?.id && (payload.stock_quantity ?? 0) > 0) {
-    const inventoryResponse = await inventoryStore.createInventoryLog({
-      product_id: created.data.id,
-      movement_type: "in",
-      quantity_change: payload.stock_quantity ?? 0,
-      reference_type: "opening_balance",
-      reference_id: created.data.id,
-      note: "Opening stock created with product setup.",
-      created_by: "admin",
-    });
+  await navigateTo("/admin/products");
+};
 
-    if (!isSuccessResponse(inventoryResponse)) {
-      showError(
-        "Product created, but stock log failed",
-        "The product was saved, but the opening stock movement could not be recorded.",
-      );
-      return;
-    }
-  }
-
-  showSuccess("Product created", `Added ${payload.name ?? "the product"}.`);
-  router.push("/admin/products");
+const handleRetry = async () => {
+  isRetrying.value = true;
+  await loadPage();
+  isRetrying.value = false;
 };
 </script>
 
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <section class="bg-white dark:bg-gray-800 p-2">
-        <div
-          class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
-        >
-          <div>
-            <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-              Catalog Management
-            </p>
-            <h1 class="mt-2 text-2xl font-semibold">Add Product</h1>
-            <p class="mt-2 text-sm text-slate-600">
-              Create a new SKU with pricing, stock, and supplier details.
-            </p>
-          </div>
-          <UButton color="neutral" variant="outline" to="/admin/products">
-            Back to Products
-          </UButton>
-        </div>
-      </section>
+      <AdminPageHeader
+        eyebrow="Catalog Management"
+        title="Add Product"
+        description="Create a new SKU with pricing, stock, and supplier details."
+        action-label="Back to Products"
+        action-icon="i-lucide-arrow-left"
+        action-color="neutral"
+        action-to="/admin/products"
+      />
+
+      <AdminPageStateCard
+        v-if="pageError"
+        eyebrow="Product Form"
+        title="Product form unavailable"
+        :description="pageError"
+        tone="error"
+        action-label="Retry"
+        :action-loading="isRetrying"
+        @action="handleRetry"
+      />
 
       <ProductForm
-        :product="null"
+        v-else
         :categories="categories"
         :suppliers="suppliers"
         :warehouses="warehouses"
-        submit-label="Add Product"
-        cancel-to="/admin/products"
+        submit-label="Create Product"
+        :is-submitting="productStore.isLoading"
         @submit="handleSubmit"
+        @cancel="handleCancel"
       />
     </div>
   </div>

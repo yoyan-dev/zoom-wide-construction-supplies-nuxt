@@ -1,40 +1,23 @@
 <script setup lang="ts">
-import { useModal } from "~/composables/admin/useModal";
-import AddSupplierModal from "../modals/AddSupplierModal.vue";
+import AdminPageHeader from "../../../_components/AdminPageHeader.vue";
 
 const props = defineProps<{
   total: number;
 }>();
 
-const { openModal } = useModal();
+const emit = defineEmits<{
+  (e: "create"): void;
+}>();
 </script>
 
 <template>
-  <section class="bg-white dark:bg-gray-800 p-2">
-    <div
-      class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
-    >
-      <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Product Suppliers
-        </p>
-        <h1 class="mt-2 text-2xl font-semibold">Supplier Management</h1>
-        <p class="mt-2 text-sm text-slate-600">
-          Organize catalog structure and keep product taxonomy consistent.
-        </p>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-3">
-        <UBadge color="primary" variant="subtle">
-          {{ props.total }} suppliers
-        </UBadge>
-        <UButton
-          color="primary"
-          icon="i-lucide-plus"
-          @click="openModal(AddSupplierModal)"
-          label="New Supplier"
-        />
-      </div>
-    </div>
-  </section>
+  <AdminPageHeader
+    eyebrow="Product Suppliers"
+    title="Supplier Management"
+    description="Manage supplier records and keep purchasing contacts easy to maintain."
+    :total="props.total"
+    total-label="suppliers"
+    action-label="New Supplier"
+    @action="emit('create')"
+  />
 </template>
