@@ -175,10 +175,7 @@ const handleSubmit = () => {
       </div>
     </div>
 
-    <div
-      v-if="props.showActions !== false"
-      class="mt-6 flex items-center justify-end gap-2"
-    >
+    <div class="mt-6 flex items-center justify-end gap-2">
       <UButton
         color="neutral"
         variant="ghost"

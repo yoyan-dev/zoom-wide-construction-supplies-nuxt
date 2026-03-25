@@ -53,6 +53,12 @@ const links = [
       to: "/admin/orders",
       onSelect: () => (open.value = false),
     },
+    {
+      label: "Customers",
+      icon: "i-lucide-users",
+      to: "/admin/customers",
+      onSelect: () => (open.value = false),
+    },
 
     {
       label: "Deliveries",
