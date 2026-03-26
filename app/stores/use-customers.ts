@@ -1,11 +1,9 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import type { Customer, FetchCustomerParams } from "~/types/customer";
-import type { H3Response } from "~/types/h3Response";
 import type { PaginationMeta } from "~/types/pagination";
 import type { StoreResponse } from "~/types/store-response";
-
-const BASE_URL = import.meta.env.VITE_API_URL;
+import { apiRequest, apiRequestRaw } from "~/utils/api";
 
 export const useCustomerStore = defineStore("customers", () => {
   const customers = ref<Customer[]>([]);
@@ -25,20 +23,6 @@ export const useCustomerStore = defineStore("customers", () => {
     totalPages: 0,
   });
 
-  function buildQueryString(params?: FetchCustomerParams) {
-    const searchParams = new URLSearchParams();
-
-    if (!params) return searchParams.toString();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        searchParams.append(key, String(value));
-      }
-    });
-
-    return searchParams.toString();
-  }
-
   async function fetchCustomers(params?: FetchCustomerParams) {
     isLoading.value = true;
 
@@ -50,13 +34,9 @@ export const useCustomerStore = defineStore("customers", () => {
         };
       }
 
-      const queryString = buildQueryString(query.value);
-      const response = await fetch(`${BASE_URL}/customers?${queryString}`);
-      const result: H3Response<Customer[]> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to fetch customers");
-      }
+      const result = await apiRequest<Customer[]>("/customers", {
+        query: query.value,
+      });
 
       customers.value = result.data || [];
       totalCustomers.value = result.total || result.meta?.total || 0;
@@ -90,12 +70,7 @@ export const useCustomerStore = defineStore("customers", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/customers/${id}`);
-      const result: H3Response<Customer> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to fetch customer");
-      }
+      const result = await apiRequest<Customer>(`/customers/${id}`);
 
       customer.value = result.data;
 
@@ -125,19 +100,10 @@ export const useCustomerStore = defineStore("customers", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/customers`, {
+      const result = await apiRequest<Customer>("/customers", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        body: payload,
       });
-
-      const result: H3Response<Customer> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to add customer");
-      }
 
       await fetchCustomers();
 
@@ -166,19 +132,10 @@ export const useCustomerStore = defineStore("customers", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/customers/${id}`, {
+      const result = await apiRequest<Customer>(`/customers/${id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        body: payload,
       });
-
-      const result: H3Response<Customer> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to update customer");
-      }
 
       customer.value = result.data || customer.value;
       await fetchCustomers();
@@ -205,17 +162,11 @@ export const useCustomerStore = defineStore("customers", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/customers/${id}`, {
+      const { data: result, ok } = await apiRequestRaw<null>(`/customers/${id}`, {
         method: "DELETE",
       });
 
-      let result: H3Response<null> | null = null;
-
-      if (response.status !== 204) {
-        result = await response.json();
-      }
-
-      if (!response.ok || (result && result.status === "error")) {
+      if (!ok || (result && result.status === "error")) {
         throw new Error(result?.message || "Failed to delete customer");
       }
 

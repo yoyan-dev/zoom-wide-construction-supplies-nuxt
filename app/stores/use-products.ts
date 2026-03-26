@@ -1,11 +1,9 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-import type { H3Response } from "~/types/h3Response";
 import type { PaginationMeta } from "~/types/pagination";
 import type { StoreResponse } from "~/types/store-response";
 import type { FetchProductParams, Product } from "~/types/product";
-
-const BASE_URL = import.meta.env.VITE_API_URL;
+import { apiRequest, apiRequestRaw } from "~/utils/api";
 
 export const useProductStore = defineStore("products", () => {
   const products = ref<Product[]>([]);
@@ -25,20 +23,6 @@ export const useProductStore = defineStore("products", () => {
     totalPages: 0,
   });
 
-  function buildQueryString(params?: FetchProductParams) {
-    const searchParams = new URLSearchParams();
-
-    if (!params) return searchParams.toString();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        searchParams.append(key, String(value));
-      }
-    });
-
-    return searchParams.toString();
-  }
-
   async function fetchProducts(params?: FetchProductParams) {
     isLoading.value = true;
 
@@ -50,13 +34,9 @@ export const useProductStore = defineStore("products", () => {
         };
       }
 
-      const queryString = buildQueryString(query.value);
-      const response = await fetch(`${BASE_URL}/products?${queryString}`);
-      const result: H3Response<Product[]> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to fetch products");
-      }
+      const result = await apiRequest<Product[]>("/products", {
+        query: query.value,
+      });
 
       products.value = result.data || [];
       totalProducts.value = result.total || result.meta?.total || 0;
@@ -90,12 +70,7 @@ export const useProductStore = defineStore("products", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/products/${id}`);
-      const result: H3Response<Product> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to fetch product");
-      }
+      const result = await apiRequest<Product>(`/products/${id}`);
 
       product.value = result.data;
 
@@ -125,16 +100,10 @@ export const useProductStore = defineStore("products", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/products`, {
+      const result = await apiRequest<Product>("/products", {
         method: "POST",
         body: payload,
       });
-
-      const result: H3Response<Product> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to add product");
-      }
 
       await fetchProducts();
       console.log("Product created successfully");
@@ -165,16 +134,10 @@ export const useProductStore = defineStore("products", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/products/${id}`, {
+      const result = await apiRequest<Product>(`/products/${id}`, {
         method: "PATCH",
         body: payload,
       });
-
-      const result: H3Response<Product> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to update product");
-      }
 
       product.value = result.data || null;
       await fetchProducts();
@@ -203,17 +166,11 @@ export const useProductStore = defineStore("products", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/products/${id}`, {
+      const { data: result, ok } = await apiRequestRaw<null>(`/products/${id}`, {
         method: "DELETE",
       });
 
-      let result: H3Response<null> | null = null;
-
-      if (response.status !== 204) {
-        result = await response.json();
-      }
-
-      if (!response.ok || (result && result.status === "error")) {
+      if (!ok || (result && result.status === "error")) {
         throw new Error(result?.message || "Failed to delete product");
       }
 

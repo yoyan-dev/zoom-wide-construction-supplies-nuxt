@@ -1,11 +1,9 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import type { FetchCategoryParams, Category } from "~/types/category";
-import type { H3Response } from "~/types/h3Response";
 import type { PaginationMeta } from "~/types/pagination";
 import type { StoreResponse } from "~/types/store-response";
-
-const BASE_URL = import.meta.env.VITE_API_URL;
+import { apiRequest, apiRequestRaw } from "~/utils/api";
 
 export const useCategoryStore = defineStore("categories", () => {
   const categories = ref<Category[]>([]);
@@ -25,20 +23,6 @@ export const useCategoryStore = defineStore("categories", () => {
     totalPages: 0,
   });
 
-  function buildQueryString(params?: FetchCategoryParams) {
-    const searchParams = new URLSearchParams();
-
-    if (!params) return searchParams.toString();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        searchParams.append(key, String(value));
-      }
-    });
-
-    return searchParams.toString();
-  }
-
   async function fetchCategories(params?: FetchCategoryParams) {
     isLoading.value = true;
 
@@ -50,13 +34,9 @@ export const useCategoryStore = defineStore("categories", () => {
         };
       }
 
-      const queryString = buildQueryString(query.value);
-      const response = await fetch(`${BASE_URL}/categories?${queryString}`);
-      const result: H3Response<Category[]> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to fetch categories");
-      }
+      const result = await apiRequest<Category[]>("/categories", {
+        query: query.value,
+      });
 
       categories.value = result.data || [];
       totalCategories.value = result.total || result.meta?.total || 0;
@@ -90,12 +70,7 @@ export const useCategoryStore = defineStore("categories", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/categories/${id}`);
-      const result: H3Response<Category> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to fetch category");
-      }
+      const result = await apiRequest<Category>(`/categories/${id}`);
 
       category.value = result.data;
 
@@ -123,16 +98,10 @@ export const useCategoryStore = defineStore("categories", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/categories`, {
+      const result = await apiRequest<Category>("/categories", {
         method: "POST",
         body: payload,
       });
-
-      const result: H3Response<Category> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to add category");
-      }
 
       await fetchCategories();
 
@@ -161,19 +130,10 @@ export const useCategoryStore = defineStore("categories", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/categories/${id}`, {
+      const result = await apiRequest<Category>(`/categories/${id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        body: payload,
       });
-
-      const result: H3Response<Category> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to update category");
-      }
 
       category.value = result.data || category.value;
       await fetchCategories();
@@ -200,17 +160,14 @@ export const useCategoryStore = defineStore("categories", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/categories/${id}`, {
-        method: "DELETE",
-      });
+      const { data: result, ok } = await apiRequestRaw<null>(
+        `/categories/${id}`,
+        {
+          method: "DELETE",
+        },
+      );
 
-      let result: H3Response<null> | null = null;
-
-      if (response.status !== 204) {
-        result = await response.json();
-      }
-
-      if (!response.ok || (result && result.status === "error")) {
+      if (!ok || (result && result.status === "error")) {
         throw new Error(result?.message || "Failed to delete category");
       }
 

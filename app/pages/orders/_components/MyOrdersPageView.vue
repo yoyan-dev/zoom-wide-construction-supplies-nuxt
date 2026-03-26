@@ -8,11 +8,16 @@ import MyOrdersStateCard from "./MyOrdersStateCard.vue";
 
 const route = useRoute();
 const orderStore = useOrderStore();
+const authStore = useAuthStore();
 const pageError = ref<string | null>(null);
 const isRetrying = ref(false);
+const { customer } = storeToRefs(authStore);
 
 const customerId = computed(() =>
-  typeof route.query.customer_id === "string" ? route.query.customer_id : undefined,
+  customer.value?.id ??
+  (typeof route.query.customer_id === "string"
+    ? route.query.customer_id
+    : undefined),
 );
 
 const requestParams = computed<FetchOrderParams>(() => ({
@@ -23,6 +28,12 @@ const requestParams = computed<FetchOrderParams>(() => ({
 }));
 
 const loadPage = async () => {
+  if (!customerId.value) {
+    pageError.value =
+      "Your account does not have a linked customer record yet, so orders cannot be loaded.";
+    return;
+  }
+
   const ordersResponse = await orderStore.fetchOrders(requestParams.value);
 
   pageError.value =

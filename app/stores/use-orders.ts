@@ -1,6 +1,5 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-import type { H3Response } from "~/types/h3Response";
 import type { PaginationMeta } from "~/types/pagination";
 import type {
   CreateOrderPayload,
@@ -9,8 +8,7 @@ import type {
   OrderItem,
 } from "~/types/order";
 import type { StoreResponse } from "~/types/store-response";
-
-const BASE_URL = import.meta.env.VITE_API_URL;
+import { apiRequest, apiRequestRaw } from "~/utils/api";
 type OrderWithItems = Order & { items?: OrderItem[] };
 
 const extractOrderItems = (value: unknown): OrderItem[] => {
@@ -47,20 +45,6 @@ export const useOrderStore = defineStore("orders", () => {
     totalPages: 0,
   });
 
-  function buildQueryString(params?: FetchOrderParams) {
-    const searchParams = new URLSearchParams();
-
-    if (!params) return searchParams.toString();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        searchParams.append(key, String(value));
-      }
-    });
-
-    return searchParams.toString();
-  }
-
   async function fetchOrders(params?: FetchOrderParams) {
     isLoading.value = true;
 
@@ -72,13 +56,9 @@ export const useOrderStore = defineStore("orders", () => {
         };
       }
 
-      const queryString = buildQueryString(query.value);
-      const response = await fetch(`${BASE_URL}/orders?${queryString}`);
-      const result: H3Response<Order[]> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to fetch orders");
-      }
+      const result = await apiRequest<Order[]>("/orders", {
+        query: query.value,
+      });
 
       orders.value = result.data || [];
       const embeddedOrderItems = extractOrderItems(result.data);
@@ -117,12 +97,7 @@ export const useOrderStore = defineStore("orders", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/orders/${id}`);
-      const result: H3Response<Order> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to fetch order");
-      }
+      const result = await apiRequest<Order>(`/orders/${id}`);
 
       order.value = result.data;
       const embeddedOrderItems = extractOrderItems(
@@ -161,19 +136,10 @@ export const useOrderStore = defineStore("orders", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/orders`, {
+      const result = await apiRequest<Order>("/orders", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        body: payload,
       });
-
-      const result: H3Response<Order> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to create order");
-      }
 
       order.value = result.data || null;
 
@@ -212,6 +178,38 @@ export const useOrderStore = defineStore("orders", () => {
     }
   }
 
+  async function deleteOrder(id: string): Promise<StoreResponse> {
+    isLoading.value = true;
+
+    try {
+      const { data: result, ok } = await apiRequestRaw<null>(`/orders/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!ok || (result && result.status === "error")) {
+        throw new Error(result?.message || "Failed to delete order");
+      }
+
+      orders.value = orders.value.filter((entry) => entry.id !== id);
+      totalOrders.value = Math.max(0, totalOrders.value - 1);
+
+      return {
+        status: "success",
+        message: result?.message || "Order deleted successfully",
+        statusMessage: result?.statusMessage || "no content",
+      };
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      return {
+        status: "error",
+        message: error instanceof Error ? error.message : "Failed to delete order",
+        statusMessage: "internal server error",
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   return {
     orders,
     order,
@@ -223,5 +221,6 @@ export const useOrderStore = defineStore("orders", () => {
     fetchOrders,
     fetchOrderById,
     createOrder,
+    deleteOrder,
   };
 });

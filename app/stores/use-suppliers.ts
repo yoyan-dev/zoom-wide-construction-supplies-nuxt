@@ -1,11 +1,9 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-import type { H3Response } from "~/types/h3Response";
 import type { PaginationMeta } from "~/types/pagination";
 import type { StoreResponse } from "~/types/store-response";
 import type { FetchSupplierParams, Supplier } from "~/types/supplier";
-
-const BASE_URL = import.meta.env.VITE_API_URL;
+import { apiRequest, apiRequestRaw } from "~/utils/api";
 
 export const useSupplierStore = defineStore("suppliers", () => {
   const suppliers = ref<Supplier[]>([]);
@@ -25,20 +23,6 @@ export const useSupplierStore = defineStore("suppliers", () => {
     totalPages: 0,
   });
 
-  function buildQueryString(params?: FetchSupplierParams) {
-    const searchParams = new URLSearchParams();
-
-    if (!params) return searchParams.toString();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        searchParams.append(key, String(value));
-      }
-    });
-
-    return searchParams.toString();
-  }
-
   async function fetchSuppliers(params?: FetchSupplierParams) {
     isLoading.value = true;
 
@@ -50,13 +34,9 @@ export const useSupplierStore = defineStore("suppliers", () => {
         };
       }
 
-      const queryString = buildQueryString(query.value);
-      const response = await fetch(`${BASE_URL}/suppliers?${queryString}`);
-      const result: H3Response<Supplier[]> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to fetch suppliers");
-      }
+      const result = await apiRequest<Supplier[]>("/suppliers", {
+        query: query.value,
+      });
 
       suppliers.value = result.data || [];
       totalSuppliers.value = result.total || result.meta?.total || 0;
@@ -90,12 +70,7 @@ export const useSupplierStore = defineStore("suppliers", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/suppliers/${id}`);
-      const result: H3Response<Supplier> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to fetch supplier");
-      }
+      const result = await apiRequest<Supplier>(`/suppliers/${id}`);
 
       supplier.value = result.data;
 
@@ -123,16 +98,10 @@ export const useSupplierStore = defineStore("suppliers", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/suppliers`, {
+      const result = await apiRequest<Supplier>("/suppliers", {
         method: "POST",
         body: payload,
       });
-
-      const result: H3Response<Supplier> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to add supplier");
-      }
 
       await fetchSuppliers();
 
@@ -161,19 +130,10 @@ export const useSupplierStore = defineStore("suppliers", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/suppliers/${id}`, {
+      const result = await apiRequest<Supplier>(`/suppliers/${id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        body: payload,
       });
-
-      const result: H3Response<Supplier> = await response.json();
-
-      if (!response.ok || result.status === "error") {
-        throw new Error(result.message || "Failed to update supplier");
-      }
 
       supplier.value = result.data || supplier.value;
       await fetchSuppliers();
@@ -200,17 +160,11 @@ export const useSupplierStore = defineStore("suppliers", () => {
     isLoading.value = true;
 
     try {
-      const response = await fetch(`${BASE_URL}/suppliers/${id}`, {
+      const { data: result, ok } = await apiRequestRaw<null>(`/suppliers/${id}`, {
         method: "DELETE",
       });
 
-      let result: H3Response<null> | null = null;
-
-      if (response.status !== 204) {
-        result = await response.json();
-      }
-
-      if (!response.ok || (result && result.status === "error")) {
+      if (!ok || (result && result.status === "error")) {
         throw new Error(result?.message || "Failed to delete supplier");
       }
 

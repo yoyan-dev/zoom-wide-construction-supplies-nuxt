@@ -8,9 +8,11 @@ type ApiRequestOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   query?: ApiQuery;
   body?: ApiBody;
+  headers?: HeadersInit;
 };
 
 export const DEFAULT_API_PAGE_LIMIT = 10;
+export const AUTH_SESSION_COOKIE_KEY = "zoom_auth_session";
 
 const API_BASE_URL = (
   (
@@ -126,27 +128,67 @@ export const cleanQuery = (query?: ApiQuery) =>
     }),
   );
 
+const buildApiUrl = (path: string) =>
+  `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+
+const resolveRequestHeaders = (headers?: HeadersInit) => {
+  const resolvedHeaders = new Headers(headers ?? {});
+  const authSession = useCookie<{
+    session: {
+      access_token?: string | null;
+    };
+  } | null>(AUTH_SESSION_COOKIE_KEY);
+  const token = authSession.value?.session.access_token;
+
+  if (token && !resolvedHeaders.has("Authorization")) {
+    resolvedHeaders.set("Authorization", `Bearer ${token}`);
+  }
+
+  return resolvedHeaders;
+};
+
+export async function apiRequestRaw<T>(
+  path: string,
+  options: ApiRequestOptions = {},
+) {
+  const response = await $fetch.raw<H3Response<T>>(buildApiUrl(path), {
+    method: options.method,
+    query: cleanQuery(options.query),
+    body: options.body,
+    headers: resolveRequestHeaders(options.headers),
+    ignoreResponseError: true,
+  });
+
+  return {
+    ok: response.status >= 200 && response.status < 300,
+    status: response.status,
+    data:
+      response.status === 204
+        ? null
+        : ((response._data ?? null) as H3Response<T> | null),
+  };
+}
+
 export async function apiRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<H3Response<T>> {
-  const response = await $fetch<H3Response<T>>(
-    `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`,
-    {
-      method: options.method,
-      query: cleanQuery(options.query),
-      body: options.body,
-    },
-  );
+  const response = await apiRequestRaw<T>(path, options);
+  const responsePayload = response.data;
 
   if (
-    response.status === "error" ||
-    (typeof response.statusCode === "number" && response.statusCode >= 400)
+    !response.ok ||
+    !responsePayload ||
+    responsePayload.status === "error" ||
+    (typeof responsePayload.statusCode === "number" &&
+      responsePayload.statusCode >= 400)
   ) {
     throw new Error(
-      response.message || response.statusMessage || "Request failed",
+      responsePayload?.message ||
+        responsePayload?.statusMessage ||
+        "Request failed",
     );
   }
 
-  return response;
+  return responsePayload;
 }

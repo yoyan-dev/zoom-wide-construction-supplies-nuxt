@@ -19,10 +19,12 @@ type CheckoutDraft = {
 
 const cartStore = useCartStore();
 const orderStore = useOrderStore();
+const authStore = useAuthStore();
 const toast = useToast();
 const { items, hasItems, distinctItemCount, itemCount, subtotal } =
   storeToRefs(cartStore);
 const { isLoading: isSubmitting } = storeToRefs(orderStore);
+const { customer, user } = storeToRefs(authStore);
 
 const draft = reactive<CheckoutDraft>({
   companyName: "",
@@ -34,9 +36,11 @@ const draft = reactive<CheckoutDraft>({
 });
 
 const submittedOrder = ref<Order | null>(null);
+const customerId = computed(() => customer.value?.id ?? null);
 
 const canReviewOrder = computed(
   () =>
+    !!customerId.value &&
     !!draft.companyName.trim() &&
     !!draft.contactName.trim() &&
     !!draft.email.trim() &&
@@ -67,6 +71,7 @@ const reviewMessage = computed(() =>
 );
 
 const buildOrderPayload = (): CreateOrderPayload => ({
+  customer_id: customerId.value ?? undefined,
   status: "pending",
   total_amount: subtotal.value,
   notes: normalizedNotes.value,
@@ -77,6 +82,20 @@ const buildOrderPayload = (): CreateOrderPayload => ({
     line_total: item.price * item.quantity,
   })),
 });
+
+watch(
+  [customer, user],
+  () => {
+    draft.companyName ||= customer.value?.company_name ?? "";
+    draft.contactName ||=
+      customer.value?.contact_name ?? user.value?.full_name ?? "";
+    draft.email ||= customer.value?.email ?? user.value?.email ?? "";
+    draft.phone ||= customer.value?.phone ?? user.value?.phone ?? "";
+    draft.deliveryAddress ||=
+      customer.value?.shipping_address ?? customer.value?.billing_address ?? "";
+  },
+  { immediate: true },
+);
 
 const handleSubmitOrder = async () => {
   if (!canReviewOrder.value || isSubmitting.value) {

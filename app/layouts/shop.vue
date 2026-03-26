@@ -5,7 +5,9 @@ import { formatCurrency } from "~/utils/format";
 const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
+const authStore = useAuthStore();
 const { items, itemCount, subtotal } = storeToRefs(cartStore);
+const { customer, isAuthenticated, user } = storeToRefs(authStore);
 
 const search = ref(typeof route.query.q === "string" ? route.query.q : "");
 
@@ -24,6 +26,20 @@ const submitSearch = async () => {
     query: query ? { q: query } : {},
   });
 };
+
+const accountLabel = computed(() =>
+  authStore.role === "customer" ? "My Orders" : "Dashboard",
+);
+
+const accountTarget = computed(() => authStore.getRoleLandingPath());
+
+const accountName = computed(
+  () =>
+    customer.value?.contact_name ??
+    user.value?.full_name ??
+    user.value?.email ??
+    "Signed in",
+);
 </script>
 
 <template>
@@ -63,6 +79,29 @@ const submitSearch = async () => {
           <UButton color="neutral" variant="ghost" to="/shop/categories">
             Categories
           </UButton>
+
+          <template v-if="isAuthenticated">
+            <div class="hidden text-right lg:block">
+              <p class="text-sm font-medium text-slate-900">
+                {{ accountName }}
+              </p>
+              <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+                {{ user?.role ?? "account" }}
+              </p>
+            </div>
+
+            <UButton color="warning" variant="soft" :to="accountTarget">
+              {{ accountLabel }}
+            </UButton>
+          </template>
+          <template v-else>
+            <UButton color="neutral" variant="ghost" to="/auth/login">
+              Sign in
+            </UButton>
+            <UButton color="warning" variant="soft" to="/auth/register">
+              Create account
+            </UButton>
+          </template>
 
           <UPopover :ui="{ content: 'w-[320px] p-4' }">
             <UButton color="neutral" variant="outline" icon="i-lucide-shopping-cart">
