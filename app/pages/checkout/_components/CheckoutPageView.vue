@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import type { CreateOrderPayload, Order } from "~/types/order";
 import CheckoutContactFormCard from "./CheckoutContactFormCard.vue";
 import CheckoutEmptyState from "./CheckoutEmptyState.vue";
 import CheckoutHeader from "./CheckoutHeader.vue";
 import CheckoutOrderSummaryCard from "./CheckoutOrderSummaryCard.vue";
 import CheckoutPaymentPlaceholderCard from "./CheckoutPaymentPlaceholderCard.vue";
+import CheckoutSuccessState from "./CheckoutSuccessState.vue";
 
 type CheckoutDraft = {
   companyName: string;
@@ -16,8 +18,11 @@ type CheckoutDraft = {
 };
 
 const cartStore = useCartStore();
+const orderStore = useOrderStore();
+const toast = useToast();
 const { items, hasItems, distinctItemCount, itemCount, subtotal } =
   storeToRefs(cartStore);
+const { isLoading: isSubmitting } = storeToRefs(orderStore);
 
 const draft = reactive<CheckoutDraft>({
   companyName: "",
@@ -27,6 +32,8 @@ const draft = reactive<CheckoutDraft>({
   deliveryAddress: "",
   deliveryNotes: "",
 });
+
+const submittedOrder = ref<Order | null>(null);
 
 const canReviewOrder = computed(
   () =>
@@ -38,38 +45,102 @@ const canReviewOrder = computed(
     hasItems.value,
 );
 
+const normalizedNotes = computed(() =>
+  [
+    `Company: ${draft.companyName.trim()}`,
+    `Contact: ${draft.contactName.trim()}`,
+    `Email: ${draft.email.trim()}`,
+    `Phone: ${draft.phone.trim()}`,
+    `Delivery Address: ${draft.deliveryAddress.trim()}`,
+    draft.deliveryNotes.trim()
+      ? `Delivery Notes: ${draft.deliveryNotes.trim()}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n"),
+);
+
 const reviewMessage = computed(() =>
   canReviewOrder.value
     ? "Your checkout details are ready for the order-submission phase."
     : "Complete the delivery and contact details to prepare this cart for the next order step.",
 );
+
+const buildOrderPayload = (): CreateOrderPayload => ({
+  status: "pending",
+  total_amount: subtotal.value,
+  notes: normalizedNotes.value,
+  items: items.value.map((item) => ({
+    product_id: item.product_id,
+    quantity: item.quantity,
+    unit_price: item.price,
+    line_total: item.price * item.quantity,
+  })),
+});
+
+const handleSubmitOrder = async () => {
+  if (!canReviewOrder.value || isSubmitting.value) {
+    return;
+  }
+
+  const response = await orderStore.createOrder(buildOrderPayload());
+
+  if (response.status === "error" || !response.data) {
+    toast.add({
+      title: "Order request failed",
+      description: response.message || "Please try again.",
+      color: "error",
+      icon: "i-lucide-circle-alert",
+    });
+    return;
+  }
+
+  submittedOrder.value = response.data;
+  cartStore.clearCart();
+
+  toast.add({
+    title: "Order request created",
+    description:
+      response.message || "Your order request was submitted successfully.",
+    color: "success",
+    icon: "i-lucide-circle-check",
+  });
+};
 </script>
 
 <template>
   <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-    <CheckoutHeader
-      :distinct-item-count="distinctItemCount"
-      :item-count="itemCount"
+    <CheckoutSuccessState
+      v-if="submittedOrder"
+      :order="submittedOrder"
     />
-
-    <CheckoutEmptyState v-if="!hasItems" />
-
-    <div
-      v-else
-      class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] xl:items-start"
-    >
-      <div class="space-y-6">
-        <CheckoutContactFormCard v-model="draft" />
-        <CheckoutPaymentPlaceholderCard :review-message="reviewMessage" />
-      </div>
-
-      <CheckoutOrderSummaryCard
-        :items="items"
+    <template v-else>
+      <CheckoutHeader
         :distinct-item-count="distinctItemCount"
         :item-count="itemCount"
-        :subtotal="subtotal"
-        :can-review-order="canReviewOrder"
       />
-    </div>
+
+      <CheckoutEmptyState v-if="!hasItems" />
+
+      <div
+        v-else
+        class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] xl:items-start"
+      >
+        <div class="space-y-6">
+          <CheckoutContactFormCard v-model="draft" />
+          <CheckoutPaymentPlaceholderCard :review-message="reviewMessage" />
+        </div>
+
+        <CheckoutOrderSummaryCard
+          :items="items"
+          :distinct-item-count="distinctItemCount"
+          :item-count="itemCount"
+          :subtotal="subtotal"
+          :can-review-order="canReviewOrder"
+          :is-submitting="isSubmitting"
+          @submit="handleSubmitOrder"
+        />
+      </div>
+    </template>
   </div>
 </template>

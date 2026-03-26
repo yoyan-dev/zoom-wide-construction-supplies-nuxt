@@ -8,6 +8,11 @@ defineProps<{
   itemCount: number;
   subtotal: number;
   canReviewOrder: boolean;
+  isSubmitting?: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: "submit"): void;
 }>();
 </script>
 
@@ -84,9 +89,11 @@ defineProps<{
           <UButton
             color="primary"
             class="w-full justify-center"
-            :disabled="true"
+            :disabled="!canReviewOrder"
+            :loading="isSubmitting"
+            @click="emit('submit')"
           >
-            Order Submission Next Phase
+            Submit Order Request
           </UButton>
           <UButton
             color="neutral"

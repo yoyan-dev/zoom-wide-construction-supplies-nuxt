@@ -28,6 +28,21 @@ export interface OrderItem {
   updated_at: string;
 }
 
+export interface CreateOrderItemPayload {
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+}
+
+export interface CreateOrderPayload {
+  customer_id?: string;
+  status?: OrderStatus;
+  total_amount: number;
+  notes?: string | null;
+  items: CreateOrderItemPayload[];
+}
+
 export interface FetchOrderParams {
   q?: string;
   status?: OrderStatus | "";
