@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import type { Delivery } from "~/types/delivery";
+import OrderDeliveryVisibilityCard from "./OrderDeliveryVisibilityCard.vue";
 import OrderStatusTimeline from "./shared/OrderStatusTimeline.vue";
 import MyOrdersStateCard from "./MyOrdersStateCard.vue";
 import { formatCurrency, formatLongDate } from "~/utils/format";
@@ -17,9 +19,13 @@ const route = useRoute();
 const router = useRouter();
 const orderId = computed(() => String(route.params.id));
 const orderStore = useOrderStore();
+const deliveryStore = useDeliveryStore();
 const pageError = ref<string | null>(null);
+const deliveryError = ref<string | null>(null);
 const isRetrying = ref(false);
 const isMissingOrder = ref(false);
+const isLoadingDelivery = ref(false);
+const resolvedDelivery = ref<Delivery | null>(null);
 
 const statusBadge = (status: string): { color: BadgeColor; label: string } => {
   switch (status) {
@@ -49,6 +55,37 @@ const loadPage = async () => {
     orderResponse.status === "error" && !isMissingOrder.value
       ? orderResponse.message || "Your order could not be loaded right now."
       : null;
+
+  resolvedDelivery.value = null;
+  deliveryError.value = null;
+  isLoadingDelivery.value = false;
+
+  if (orderResponse.status === "success" && orderStore.order?.id) {
+    isLoadingDelivery.value = true;
+
+    const deliveryResponse = await deliveryStore.fetchDeliveries({
+      q: "",
+      status: "",
+      order_id: orderStore.order.id,
+      page: 1,
+    });
+
+    if (deliveryResponse.status === "error") {
+      deliveryError.value =
+        deliveryResponse.message || "Delivery updates are unavailable right now.";
+    } else {
+      resolvedDelivery.value =
+        [...deliveryStore.deliveries]
+          .filter((entry) => entry.order_id === orderStore.order?.id)
+          .sort(
+            (left, right) =>
+              new Date(right.updated_at).getTime() -
+              new Date(left.updated_at).getTime(),
+          )[0] ?? null;
+    }
+
+    isLoadingDelivery.value = false;
+  }
 };
 
 await loadPage();
@@ -247,6 +284,12 @@ const retryLoad = async () => {
             </p>
           </div>
         </UCard>
+
+        <OrderDeliveryVisibilityCard
+          :delivery="resolvedDelivery"
+          :is-loading="isLoadingDelivery"
+          :load-error="deliveryError"
+        />
       </div>
 
       <UCard>

@@ -25,6 +25,14 @@ export interface FetchDeliveryParams {
   page?: number;
 }
 
+export interface UpdateDeliveryPayload {
+  driver_id?: string | null;
+  vehicle_number?: string | null;
+  status?: DeliveryStatus;
+  scheduled_at?: string | null;
+  delivered_at?: string | null;
+}
+
 export interface DeliveryPagination {
   page?: number;
   limit?: number;
