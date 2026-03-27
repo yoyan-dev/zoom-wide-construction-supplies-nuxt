@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import type { Delivery } from "~/types/delivery";
+import type { Payment } from "~/types/payment";
 import OrderDeliveryVisibilityCard from "./OrderDeliveryVisibilityCard.vue";
+import OrderPaymentVisibilityCard from "./OrderPaymentVisibilityCard.vue";
 import OrderStatusTimeline from "./shared/OrderStatusTimeline.vue";
 import MyOrdersStateCard from "./MyOrdersStateCard.vue";
 import { formatCurrency, formatLongDate } from "~/utils/format";
@@ -20,12 +22,16 @@ const router = useRouter();
 const orderId = computed(() => String(route.params.id));
 const orderStore = useOrderStore();
 const deliveryStore = useDeliveryStore();
+const paymentStore = usePaymentStore();
 const pageError = ref<string | null>(null);
 const deliveryError = ref<string | null>(null);
+const paymentError = ref<string | null>(null);
 const isRetrying = ref(false);
 const isMissingOrder = ref(false);
 const isLoadingDelivery = ref(false);
+const isLoadingPayment = ref(false);
 const resolvedDelivery = ref<Delivery | null>(null);
+const resolvedPayment = ref<Payment | null>(null);
 
 const statusBadge = (status: string): { color: BadgeColor; label: string } => {
   switch (status) {
@@ -59,16 +65,29 @@ const loadPage = async () => {
   resolvedDelivery.value = null;
   deliveryError.value = null;
   isLoadingDelivery.value = false;
+  resolvedPayment.value = null;
+  paymentError.value = null;
+  isLoadingPayment.value = false;
 
   if (orderResponse.status === "success" && orderStore.order?.id) {
     isLoadingDelivery.value = true;
+    isLoadingPayment.value = true;
 
-    const deliveryResponse = await deliveryStore.fetchDeliveries({
-      q: "",
-      status: "",
-      order_id: orderStore.order.id,
-      page: 1,
-    });
+    const [deliveryResponse, paymentResponse] = await Promise.all([
+      deliveryStore.fetchDeliveries({
+        q: "",
+        status: "",
+        order_id: orderStore.order.id,
+        page: 1,
+      }),
+      paymentStore.fetchPayments({
+        q: "",
+        status: "",
+        method: "",
+        order_id: orderStore.order.id,
+        page: 1,
+      }),
+    ]);
 
     if (deliveryResponse.status === "error") {
       deliveryError.value =
@@ -84,7 +103,22 @@ const loadPage = async () => {
           )[0] ?? null;
     }
 
+    if (paymentResponse.status === "error") {
+      paymentError.value =
+        paymentResponse.message || "Payment updates are unavailable right now.";
+    } else {
+      resolvedPayment.value =
+        [...paymentStore.payments]
+          .filter((entry) => entry.order_id === orderStore.order?.id)
+          .sort(
+            (left, right) =>
+              new Date(right.updated_at).getTime() -
+              new Date(left.updated_at).getTime(),
+          )[0] ?? null;
+    }
+
     isLoadingDelivery.value = false;
+    isLoadingPayment.value = false;
   }
 };
 
@@ -289,6 +323,12 @@ const retryLoad = async () => {
           :delivery="resolvedDelivery"
           :is-loading="isLoadingDelivery"
           :load-error="deliveryError"
+        />
+
+        <OrderPaymentVisibilityCard
+          :payment="resolvedPayment"
+          :is-loading="isLoadingPayment"
+          :load-error="paymentError"
         />
       </div>
 

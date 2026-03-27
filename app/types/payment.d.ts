@@ -20,10 +20,3 @@ export interface FetchPaymentParams {
   order_id?: string;
   page?: number;
 }
-
-export interface PaymentPagination {
-  page?: number;
-  limit?: number;
-  total?: number;
-  total_pages?: number;
-}
