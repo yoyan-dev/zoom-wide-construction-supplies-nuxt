@@ -112,60 +112,10 @@ const loginLink = computed(() =>
 </script>
 
 <template>
-  <div
-    class="min-h-screen bg-[linear-gradient(145deg,#ecfccb_0%,#f8fafc_42%,#fff7ed_100%)] px-4 py-10 text-slate-900 sm:px-6 lg:px-8"
-  >
+  <div class="min-h-screen px-4 py-10 text-slate-900 sm:px-6 lg:px-8">
     <div
-      class="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(460px,1fr)] lg:items-start"
+      class="mx-auto flex justify-center items-center w-full max-w-6xl gap-8"
     >
-      <!-- <section class="rounded-[32px] border border-lime-200/70 bg-lime-950 px-6 py-8 text-white shadow-xl sm:px-8 sm:py-10">
-        <div class="space-y-6">
-          <div>
-            <p class="text-xs uppercase tracking-[0.28em] text-lime-300">
-              Customer Signup
-            </p>
-            <h1 class="mt-4 max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">
-              Create a buyer account for your company and continue straight into the storefront flow.
-            </h1>
-          </div>
-
-          <div class="grid gap-4 sm:grid-cols-2">
-            <div class="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <p class="text-xs uppercase tracking-[0.18em] text-lime-300">
-                Register
-              </p>
-              <p class="mt-2 text-sm leading-6 text-slate-200">
-                This page sends the customer-only signup payload your API expects.
-              </p>
-            </div>
-            <div class="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <p class="text-xs uppercase tracking-[0.18em] text-lime-300">
-                Auto login
-              </p>
-              <p class="mt-2 text-sm leading-6 text-slate-200">
-                After a successful register call, the page immediately signs the user in.
-              </p>
-            </div>
-            <div class="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <p class="text-xs uppercase tracking-[0.18em] text-lime-300">
-                Customer ID
-              </p>
-              <p class="mt-2 text-sm leading-6 text-slate-200">
-                The linked customer record is stored for customer-owned flows like orders and checkout.
-              </p>
-            </div>
-            <div class="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <p class="text-xs uppercase tracking-[0.18em] text-lime-300">
-                Addresses
-              </p>
-              <p class="mt-2 text-sm leading-6 text-slate-200">
-                Billing and shipping details are optional but ready for downstream order handling.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section> -->
-
       <section
         class="rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-lg shadow-slate-200/70 sm:p-8"
       >

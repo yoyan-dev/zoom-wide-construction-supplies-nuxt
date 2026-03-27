@@ -20,11 +20,8 @@ const redirectTarget = computed(() =>
   typeof route.query.redirect === "string" ? route.query.redirect : null,
 );
 
-const canSubmit = computed(
-  () => !!form.email.trim() && !!form.password.trim() && !isLoading.value,
-);
-
-const handleSubmit = async () => {
+const handleSubmit = async (e: Event) => {
+  e.preventDefault();
   formError.value = null;
 
   if (!form.email.trim() || !form.password.trim()) {
@@ -66,55 +63,8 @@ const registerLink = computed(() =>
 </script>
 
 <template>
-  <div
-    class="min-h-screen bg-[radial-gradient(circle_at_top_left,#fef3c7_0%,#fff7ed_28%,#f8fafc_72%)] px-4 py-10 text-slate-900 sm:px-6 lg:px-8"
-  >
-    <div
-      class="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)] lg:items-stretch"
-    >
-      <!-- <section class="rounded-[32px] border border-amber-200/70 bg-slate-900 px-6 py-8 text-white shadow-xl sm:px-8 sm:py-10">
-        <div class="flex h-full flex-col justify-between gap-8">
-          <div>
-            <p class="text-xs uppercase tracking-[0.28em] text-amber-300">
-              Customer Access
-            </p>
-            <h1 class="mt-4 max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">
-              Sign in to track orders, manage delivery details, and keep purchasing moving.
-            </h1>
-            <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-              This login uses your backend auth API and routes you by account role after sign-in.
-            </p>
-          </div>
-
-          <div class="grid gap-4 sm:grid-cols-3">
-            <div class="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <p class="text-xs uppercase tracking-[0.18em] text-slate-400">
-                Orders
-              </p>
-              <p class="mt-2 text-sm leading-6 text-slate-200">
-                Customer accounts land in a dedicated order history flow.
-              </p>
-            </div>
-            <div class="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <p class="text-xs uppercase tracking-[0.18em] text-slate-400">
-                Routing
-              </p>
-              <p class="mt-2 text-sm leading-6 text-slate-200">
-                Admin and staff roles redirect to their existing workspaces.
-              </p>
-            </div>
-            <div class="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <p class="text-xs uppercase tracking-[0.18em] text-slate-400">
-                Checkout
-              </p>
-              <p class="mt-2 text-sm leading-6 text-slate-200">
-                Customer data can prefill checkout and customer-owned order flows.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section> -->
-
+  <div class="min-h-screen px-4 py-10 text-slate-900 sm:px-6 lg:px-8">
+    <div class="mx-auto w-full flex justify-center items-center max-w-6xl">
       <section
         class="rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-lg shadow-slate-200/70 sm:p-8"
       >
@@ -164,11 +114,10 @@ const registerLink = computed(() =>
 
             <UButton
               type="submit"
-              color="warning"
+              color="primary"
               size="xl"
               block
               :loading="isLoading"
-              :disabled="!canSubmit"
             >
               Sign in
             </UButton>
