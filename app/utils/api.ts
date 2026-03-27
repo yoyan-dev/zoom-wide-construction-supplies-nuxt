@@ -1,4 +1,5 @@
 import type { H3Response } from "~/types/h3Response";
+import type { AuthSession } from "~/types/auth";
 
 type ApiQueryValue = string | number | boolean | null | undefined;
 type ApiQuery = Record<string, ApiQueryValue>;
@@ -131,14 +132,52 @@ export const cleanQuery = (query?: ApiQuery) =>
 const buildApiUrl = (path: string) =>
   `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
-const resolveRequestHeaders = (headers?: HeadersInit) => {
+const resolveAccessToken = (payload?: AuthSession | null) =>
+  normalizeResponseText(payload?.session?.access_token);
+null;
+
+const readAuthSessionCookie = () =>
+  useCookie<AuthSession | null>(AUTH_SESSION_COOKIE_KEY, {
+    default: () => null,
+    sameSite: "lax",
+    watch: true,
+  });
+
+const mergeAuthSession = (
+  currentSession: AuthSession,
+  nextValue?: Partial<AuthSession> | null,
+): AuthSession => {
+  const candidate = nextValue && typeof nextValue === "object" ? nextValue : {};
+  const nextAccessToken =
+    normalizeResponseText(candidate.access_token) ??
+    normalizeResponseText(candidate.token) ??
+    resolveAccessToken(currentSession);
+  const nextRefreshToken =
+    normalizeResponseText(candidate.refresh_token) ??
+    normalizeResponseText(currentSession.refresh_token) ??
+    null;
+
+  return {
+    ...currentSession,
+    ...candidate,
+    user: candidate.user ?? currentSession.user,
+    customer:
+      candidate.customer === undefined
+        ? currentSession.customer
+        : candidate.customer,
+    token: nextAccessToken,
+    access_token: nextAccessToken,
+    refresh_token: nextRefreshToken,
+  };
+};
+
+const resolveRequestHeaders = (
+  headers?: HeadersInit,
+  accessToken?: string | null,
+) => {
   const resolvedHeaders = new Headers(headers ?? {});
-  const authSession = useCookie<{
-    session: {
-      access_token?: string | null;
-    };
-  } | null>(AUTH_SESSION_COOKIE_KEY);
-  const token = authSession.value?.session.access_token;
+  const authSession = readAuthSessionCookie();
+  const token = accessToken ?? resolveAccessToken(authSession.value);
 
   if (token && !resolvedHeaders.has("Authorization")) {
     resolvedHeaders.set("Authorization", `Bearer ${token}`);
@@ -146,6 +185,42 @@ const resolveRequestHeaders = (headers?: HeadersInit) => {
 
   return resolvedHeaders;
 };
+
+export async function refreshAuthSession() {
+  const sessionCookie = readAuthSessionCookie();
+  const currentSession = sessionCookie.value;
+  const refreshToken = normalizeResponseText(
+    currentSession?.session?.refresh_token,
+  );
+
+  if (!currentSession || !refreshToken) {
+    return null;
+  }
+
+  try {
+    const response = await $fetch.raw<H3Response<Partial<AuthSession>>>(
+      buildApiUrl("/auth/refresh"),
+      {
+        method: "POST",
+        body: { refresh_token: refreshToken },
+      },
+    );
+
+    console.log(response);
+    const payload = response._data;
+    const nextSession = mergeAuthSession(currentSession, payload?.data ?? null);
+    console.log(payload);
+    if (!resolveAccessToken(nextSession)) {
+      sessionCookie.value = null;
+      return null;
+    }
+
+    sessionCookie.value = nextSession;
+    return nextSession;
+  } catch {
+    return null;
+  }
+}
 
 export async function apiRequestRaw<T>(
   path: string,
@@ -158,6 +233,38 @@ export async function apiRequestRaw<T>(
     headers: resolveRequestHeaders(options.headers),
     ignoreResponseError: true,
   });
+
+  const canAttemptRefresh =
+    response.status === 401 &&
+    !path.startsWith("/auth") &&
+    !new Headers(options.headers ?? {}).has("Authorization");
+
+  if (canAttemptRefresh) {
+    const refreshedSession = await refreshAuthSession();
+    const refreshedToken = resolveAccessToken(refreshedSession);
+
+    if (refreshedToken) {
+      const retriedResponse = await $fetch.raw<H3Response<T>>(
+        buildApiUrl(path),
+        {
+          method: options.method,
+          query: cleanQuery(options.query),
+          body: options.body,
+          headers: resolveRequestHeaders(options.headers, refreshedToken),
+          ignoreResponseError: true,
+        },
+      );
+
+      return {
+        ok: retriedResponse.status >= 200 && retriedResponse.status < 300,
+        status: retriedResponse.status,
+        data:
+          retriedResponse.status === 204
+            ? null
+            : ((retriedResponse._data ?? null) as H3Response<T> | null),
+      };
+    }
+  }
 
   return {
     ok: response.status >= 200 && response.status < 300,

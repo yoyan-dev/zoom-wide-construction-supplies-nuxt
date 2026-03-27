@@ -12,6 +12,7 @@ import type { UserRole } from "~/types/user";
 import {
   apiRequest,
   AUTH_SESSION_COOKIE_KEY,
+  refreshAuthSession,
   toErrorMessage,
 } from "~/utils/api";
 
@@ -239,6 +240,45 @@ export const useAuthStore = defineStore("auth", () => {
     clearSession();
   };
 
+  const refreshSession = async (): Promise<StoreResponse<AuthSession>> => {
+    isLoading.value = true;
+
+    try {
+      const nextSession = await refreshAuthSession();
+
+      if (!nextSession) {
+        clearSession();
+
+        return {
+          status: "error",
+          message: "Your session could not be refreshed.",
+          statusMessage: "unauthorized",
+          data: null,
+        };
+      }
+
+      setSession(nextSession);
+
+      return {
+        status: "success",
+        message: "Session refreshed successfully.",
+        statusMessage: "ok",
+        data: nextSession,
+      };
+    } catch (error) {
+      clearSession();
+
+      return {
+        status: "error",
+        message: toErrorMessage(error) || "Your session could not be refreshed.",
+        statusMessage: "unauthorized",
+        data: null,
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   return {
     isLoading,
     session,
@@ -252,6 +292,7 @@ export const useAuthStore = defineStore("auth", () => {
     clearSession,
     login,
     register,
+    refreshSession,
     logout,
     hasAnyRole,
     getRoleLandingPath: () => getRoleLandingPath(role.value),

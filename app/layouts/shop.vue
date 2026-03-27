@@ -40,6 +40,11 @@ const accountName = computed(
     user.value?.email ??
     "Signed in",
 );
+
+const handleLogout = async () => {
+  authStore.logout();
+  await router.push("/auth/login");
+};
 </script>
 
 <template>
@@ -92,6 +97,9 @@ const accountName = computed(
 
             <UButton color="warning" variant="soft" :to="accountTarget">
               {{ accountLabel }}
+            </UButton>
+            <UButton color="neutral" variant="ghost" @click="handleLogout">
+              Logout
             </UButton>
           </template>
           <template v-else>

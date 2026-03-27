@@ -20,6 +20,14 @@ export interface AuthSession {
   token?: string | null;
   access_token?: string | null;
   refresh_token?: string | null;
+  session?: {
+    access_token?: string | null;
+    refresh_token?: string | null;
+    expires_in?: number | null;
+    token_type?: string | null;
+    scope?: string | null;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 
