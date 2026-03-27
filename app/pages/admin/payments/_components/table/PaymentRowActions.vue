@@ -1,36 +1,48 @@
 <script setup lang="ts">
+import type { Payment } from "~/types/payment";
+import { useModal } from "~/composables/admin/useModal";
 import AdminActionMenu from "../../../_components/AdminActionMenu.vue";
 import type {
   AdminActionItem,
   AdminActionSection,
 } from "../../../_components/admin-table";
+import PaymentEditModal from "../modals/PaymentEditModal.vue";
 
 const props = defineProps<{
-  paymentId: string;
+  payment: Payment;
   detailBasePath: string;
-  orderId?: string;
   orderBasePath?: string;
 }>();
 
+const { openModal } = useModal();
 const viewActions = computed<AdminActionItem[]>(() => [
   {
     label: "View Payment Details",
     icon: "i-lucide-eye",
-    to: `${props.detailBasePath}/${props.paymentId}`,
+    to: `${props.detailBasePath}/${props.payment.id}`,
   },
-  ...(props.orderBasePath && props.orderId
+  ...(props.orderBasePath && props.payment.order_id
     ? [
         {
           label: "View Related Order",
           icon: "i-lucide-package-search",
-          to: `${props.orderBasePath}/${props.orderId}`,
+          to: `${props.orderBasePath}/${props.payment.order_id}`,
         } satisfies AdminActionItem,
       ]
     : []),
 ]);
 
+const editActions = computed<AdminActionItem[]>(() => [
+  {
+    label: "Update Payment",
+    icon: "i-lucide-pencil",
+    onClick: () => openModal(PaymentEditModal, props.payment),
+  },
+]);
+
 const sections = computed<AdminActionSection[]>(() => [
   { label: "View / Info", actions: viewActions.value },
+  { label: "Edit / Update", actions: editActions.value },
 ]);
 </script>
 

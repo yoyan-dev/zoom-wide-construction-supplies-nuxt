@@ -43,6 +43,14 @@ export interface CreateOrderPayload {
   items: CreateOrderItemPayload[];
 }
 
+export interface ApproveOrderPayload {
+  approved_by?: string | null;
+}
+
+export interface RejectOrderPayload {
+  rejection_reason: string;
+}
+
 export interface FetchOrderParams {
   q?: string;
   status?: OrderStatus | "";

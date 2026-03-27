@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import AdminPageStateCard from "../../../_components/AdminPageStateCard.vue";
+import CustomerDeleteModal from "../modals/CustomerDeleteModal.vue";
+import CustomerEditModal from "../modals/CustomerEditModal.vue";
 import CustomerAccountCard from "./CustomerAccountCard.vue";
 import CustomerAddressCard from "./CustomerAddressCard.vue";
 import CustomerOrderSummaryCard from "./CustomerOrderSummaryCard.vue";
 import CustomerOverviewCard from "./CustomerOverviewCard.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
+import { useModal } from "~/composables/admin/useModal";
 
 const props = defineProps<{
   customerId: string;
@@ -14,6 +17,7 @@ const props = defineProps<{
 const customerStore = useCustomerStore();
 const { getLoadErrorMessage, isMissingResourceResponse } =
   useAdminPageLoadState();
+const { openModal } = useModal();
 const router = useRouter();
 const pageError = ref<string | null>(null);
 const isMissingCustomer = ref(false);
@@ -38,6 +42,16 @@ const { customer } = storeToRefs(customerStore);
 
 const goBack = () => {
   void router.push("/admin/customers");
+};
+
+const editCustomer = () => {
+  if (!customer.value) return;
+  void openModal(CustomerEditModal, customer.value);
+};
+
+const deleteCustomer = () => {
+  if (!customer.value) return;
+  void openModal(CustomerDeleteModal, customer.value);
 };
 
 const retryLoad = async () => {
@@ -69,6 +83,17 @@ const retryLoad = async () => {
           <div class="flex flex-wrap items-center gap-2">
             <UButton color="neutral" variant="outline" @click="goBack">
               Back to Customers
+            </UButton>
+            <UButton v-if="customer?.id" color="primary" @click="editCustomer">
+              Edit Customer
+            </UButton>
+            <UButton
+              v-if="customer?.id"
+              color="error"
+              variant="soft"
+              @click="deleteCustomer"
+            >
+              Delete Customer
             </UButton>
           </div>
         </div>

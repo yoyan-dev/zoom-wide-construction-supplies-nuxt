@@ -19,6 +19,8 @@ export interface CartItem {
 }
 
 export interface CartLineItem {
+  id?: string | null;
+  cart_id?: string | null;
   product_id: string;
   sku?: string | null;
   category_id?: string | null;

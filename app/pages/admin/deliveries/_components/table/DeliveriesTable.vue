@@ -3,6 +3,7 @@ import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
 import type { Customer } from "~/types/customer";
 import type { Delivery } from "~/types/delivery";
+import type { Driver } from "~/types/driver";
 import type { Order } from "~/types/order";
 import { formatCurrency, formatShortDateOrFallback } from "~/utils/format";
 import { getDeliveryStatusBadge } from "~/pages/orders/_components/shared/delivery-status-badge";
@@ -15,6 +16,7 @@ const props = defineProps<{
   deliveries: Delivery[];
   orders: Order[];
   customers: Customer[];
+  drivers: Driver[];
   search: string;
   status: string;
   isLoading: boolean;
@@ -187,6 +189,7 @@ const pagination = ref({
         <div class="flex justify-end">
           <DeliveryRowActions
             :delivery="row.original"
+            :drivers="props.drivers"
             :detail-base-path="props.detailBasePath"
           />
         </div>

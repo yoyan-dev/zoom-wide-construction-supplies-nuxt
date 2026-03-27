@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import type { CreateOrderPayload, Order } from "~/types/order";
+import type { Order } from "~/types/order";
 import CheckoutContactFormCard from "./CheckoutContactFormCard.vue";
 import CheckoutEmptyState from "./CheckoutEmptyState.vue";
 import CheckoutHeader from "./CheckoutHeader.vue";
@@ -18,12 +18,11 @@ type CheckoutDraft = {
 };
 
 const cartStore = useCartStore();
-const orderStore = useOrderStore();
 const authStore = useAuthStore();
 const toast = useToast();
 const { items, hasItems, distinctItemCount, itemCount, subtotal } =
   storeToRefs(cartStore);
-const { isLoading: isSubmitting } = storeToRefs(orderStore);
+const { isCheckingOut: isSubmitting } = storeToRefs(cartStore);
 const { customer, user } = storeToRefs(authStore);
 
 const draft = reactive<CheckoutDraft>({
@@ -70,19 +69,6 @@ const reviewMessage = computed(() =>
     : "Complete the delivery and contact details to prepare this cart for the next order step.",
 );
 
-const buildOrderPayload = (): CreateOrderPayload => ({
-  customer_id: customerId.value ?? undefined,
-  status: "pending",
-  total_amount: subtotal.value,
-  notes: normalizedNotes.value,
-  items: items.value.map((item) => ({
-    product_id: item.product_id,
-    quantity: item.quantity,
-    unit_price: item.price,
-    line_total: item.price * item.quantity,
-  })),
-});
-
 watch(
   [customer, user],
   () => {
@@ -102,7 +88,7 @@ const handleSubmitOrder = async () => {
     return;
   }
 
-  const response = await orderStore.createOrder(buildOrderPayload());
+  const response = await cartStore.checkoutCart(normalizedNotes.value);
 
   if (response.status === "error" || !response.data) {
     toast.add({
@@ -115,7 +101,6 @@ const handleSubmitOrder = async () => {
   }
 
   submittedOrder.value = response.data;
-  cartStore.clearCart();
 
   toast.add({
     title: "Order request created",

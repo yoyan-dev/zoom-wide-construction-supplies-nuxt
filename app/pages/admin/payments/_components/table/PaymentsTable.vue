@@ -172,9 +172,8 @@ const paymentMethodLabel = (method: PaymentMethod) => {
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
           <PaymentRowActions
-            :payment-id="row.original.id"
+            :payment="row.original"
             :detail-base-path="props.detailBasePath"
-            :order-id="row.original.order_id"
             :order-base-path="props.orderBasePath"
           />
         </div>

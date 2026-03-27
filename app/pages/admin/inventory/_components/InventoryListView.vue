@@ -2,7 +2,9 @@
 import { storeToRefs } from "pinia";
 import type { Product } from "~/types/product";
 import AdminPageStateCard from "../../_components/AdminPageStateCard.vue";
+import InventoryMovementModal from "./modals/InventoryMovementModal.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
+import { useModal } from "~/composables/admin/useModal";
 import { buildInventoryBalanceMap } from "~/utils/inventory-balance";
 import InventoryFilters from "./InventoryFilters.vue";
 import InventoryStats from "./InventoryStats.vue";
@@ -17,6 +19,7 @@ const props = defineProps<{
 const productStore = useProductStore();
 const inventoryStore = useInventoryStore();
 const warehouseStore = useWarehouseStore();
+const { openModal } = useModal();
 const { getLoadErrorMessage } = useAdminPageLoadState();
 const pageError = ref<string | null>(null);
 const isRetrying = ref(false);
@@ -115,6 +118,12 @@ const handleStockStatus = (value: string) => {
   stockStatus.value = value;
 };
 
+const handleCreate = () => {
+  void openModal(InventoryMovementModal, {
+    products: products.value,
+  });
+};
+
 const handleRetry = async () => {
   isRetrying.value = true;
   await loadPage();
@@ -125,7 +134,7 @@ const handleRetry = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <InventoryHeader :total="filteredProducts.length" />
+      <InventoryHeader :total="filteredProducts.length" @create="handleCreate" />
 
       <template v-if="pageError">
         <AdminPageStateCard

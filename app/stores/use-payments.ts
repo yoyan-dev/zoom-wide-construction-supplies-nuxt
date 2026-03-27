@@ -2,7 +2,12 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import type { PaginationMeta } from "~/types/pagination";
 import type { StoreResponse } from "~/types/store-response";
-import type { FetchPaymentParams, Payment } from "~/types/payment";
+import type {
+  CreatePaymentPayload,
+  FetchPaymentParams,
+  Payment,
+  UpdatePaymentPayload,
+} from "~/types/payment";
 import { apiRequest } from "~/utils/api";
 
 export const usePaymentStore = defineStore("payments", () => {
@@ -22,6 +27,23 @@ export const usePaymentStore = defineStore("payments", () => {
     total: 0,
     totalPages: 0,
   });
+
+  const syncPaymentRecord = (nextPayment: Payment) => {
+    payment.value = nextPayment;
+    const existingIndex = payments.value.findIndex(
+      (entry) => entry.id === nextPayment.id,
+    );
+
+    if (existingIndex === -1) {
+      payments.value = [nextPayment, ...payments.value];
+      totalPayments.value += 1;
+      return;
+    }
+
+    payments.value = payments.value.map((entry) =>
+      entry.id === nextPayment.id ? nextPayment : entry,
+    );
+  };
 
   async function fetchPayments(params?: FetchPaymentParams) {
     isLoading.value = true;
@@ -96,6 +118,75 @@ export const usePaymentStore = defineStore("payments", () => {
     }
   }
 
+  async function createPayment(
+    payload: CreatePaymentPayload,
+  ): Promise<StoreResponse<Payment>> {
+    isLoading.value = true;
+
+    try {
+      const result = await apiRequest<Payment>("/payments", {
+        method: "POST",
+        body: payload,
+      });
+
+      if (result.data) {
+        syncPaymentRecord(result.data);
+      }
+
+      return {
+        status: "success",
+        message: result.message || "Payment created successfully",
+        statusMessage: result.statusMessage || "created",
+        data: result.data || null,
+      };
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      return {
+        status: "error",
+        message: error instanceof Error ? error.message : "Failed to create payment",
+        statusMessage: "internal server error",
+        data: null,
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function updatePayment(
+    id: string,
+    payload: UpdatePaymentPayload,
+  ): Promise<StoreResponse<Payment>> {
+    isLoading.value = true;
+
+    try {
+      const result = await apiRequest<Payment>(`/payments/${id}`, {
+        method: "PATCH",
+        body: payload,
+      });
+
+      if (result.data) {
+        syncPaymentRecord(result.data);
+      }
+
+      return {
+        status: "success",
+        message: result.message || "Payment updated successfully",
+        statusMessage: result.statusMessage || "accepted",
+        data: result.data || null,
+      };
+    } catch (error) {
+      console.error("Error updating payment:", error);
+      return {
+        status: "error",
+        message: error instanceof Error ? error.message : "Failed to update payment",
+        statusMessage: "internal server error",
+        data: null,
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   return {
     payments,
     payment,
@@ -105,5 +196,7 @@ export const usePaymentStore = defineStore("payments", () => {
     pagination,
     fetchPayments,
     fetchPaymentById,
+    createPayment,
+    updatePayment,
   };
 });

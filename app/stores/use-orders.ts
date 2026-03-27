@@ -2,10 +2,12 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import type { PaginationMeta } from "~/types/pagination";
 import type {
+  ApproveOrderPayload,
   CreateOrderPayload,
   FetchOrderParams,
   Order,
   OrderItem,
+  RejectOrderPayload,
 } from "~/types/order";
 import type { StoreResponse } from "~/types/store-response";
 import { apiRequest, apiRequestRaw } from "~/utils/api";
@@ -44,6 +46,13 @@ export const useOrderStore = defineStore("orders", () => {
     total: 0,
     totalPages: 0,
   });
+
+  const syncOrderRecord = (nextOrder: Order) => {
+    order.value = nextOrder;
+    orders.value = orders.value.map((entry) =>
+      entry.id === nextOrder.id ? nextOrder : entry,
+    );
+  };
 
   async function fetchOrders(params?: FetchOrderParams) {
     isLoading.value = true;
@@ -210,6 +219,76 @@ export const useOrderStore = defineStore("orders", () => {
     }
   }
 
+  async function approveOrder(
+    id: string,
+    payload: ApproveOrderPayload = {},
+  ): Promise<StoreResponse<Order>> {
+    isLoading.value = true;
+
+    try {
+      const result = await apiRequest<Order>(`/orders/${id}/approve`, {
+        method: "POST",
+        body: payload,
+      });
+
+      if (result.data) {
+        syncOrderRecord(result.data);
+      }
+
+      return {
+        status: "success",
+        message: result.message || "Order approved successfully",
+        statusMessage: result.statusMessage || "accepted",
+        data: result.data || null,
+      };
+    } catch (error) {
+      console.error("Error approving order:", error);
+      return {
+        status: "error",
+        message: error instanceof Error ? error.message : "Failed to approve order",
+        statusMessage: "internal server error",
+        data: null,
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function rejectOrder(
+    id: string,
+    payload: RejectOrderPayload,
+  ): Promise<StoreResponse<Order>> {
+    isLoading.value = true;
+
+    try {
+      const result = await apiRequest<Order>(`/orders/${id}/reject`, {
+        method: "POST",
+        body: payload,
+      });
+
+      if (result.data) {
+        syncOrderRecord(result.data);
+      }
+
+      return {
+        status: "success",
+        message: result.message || "Order rejected successfully",
+        statusMessage: result.statusMessage || "accepted",
+        data: result.data || null,
+      };
+    } catch (error) {
+      console.error("Error rejecting order:", error);
+      return {
+        status: "error",
+        message: error instanceof Error ? error.message : "Failed to reject order",
+        statusMessage: "internal server error",
+        data: null,
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   return {
     orders,
     order,
@@ -222,5 +301,7 @@ export const useOrderStore = defineStore("orders", () => {
     fetchOrderById,
     createOrder,
     deleteOrder,
+    approveOrder,
+    rejectOrder,
   };
 });

@@ -3,7 +3,9 @@ import { storeToRefs } from "pinia";
 import type { Customer } from "~/types/customer";
 import type { Order } from "~/types/order";
 import AdminPageStateCard from "../../../_components/AdminPageStateCard.vue";
+import PaymentEditModal from "../modals/PaymentEditModal.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
+import { useModal } from "~/composables/admin/useModal";
 import PaymentFinanceCard from "./PaymentFinanceCard.vue";
 import PaymentOrderSummaryCard from "./PaymentOrderSummaryCard.vue";
 import PaymentOverviewCard from "./PaymentOverviewCard.vue";
@@ -23,6 +25,7 @@ const orderStore = useOrderStore();
 const customerStore = useCustomerStore();
 const { getLoadErrorMessage, isMissingResourceResponse } =
   useAdminPageLoadState();
+const { openModal } = useModal();
 const pageError = ref<string | null>(null);
 const isMissingPayment = ref(false);
 const isRetrying = ref(false);
@@ -92,6 +95,11 @@ const goBack = () => {
   void router.push(props.backTo);
 };
 
+const editPayment = () => {
+  if (!payment.value) return;
+  void openModal(PaymentEditModal, payment.value);
+};
+
 const retryLoad = async () => {
   isRetrying.value = true;
   await loadPage();
@@ -120,6 +128,9 @@ const retryLoad = async () => {
 
           <UButton color="neutral" variant="outline" @click="goBack">
             Back to Payments
+          </UButton>
+          <UButton v-if="payment?.id" color="primary" @click="editPayment">
+            Update Payment
           </UButton>
         </div>
       </section>

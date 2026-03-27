@@ -1,6 +1,7 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import type {
+  CreateDeliveryPayload,
   Delivery,
   FetchDeliveryParams,
   UpdateDeliveryPayload,
@@ -26,6 +27,23 @@ export const useDeliveryStore = defineStore("deliveries", () => {
     total: 0,
     totalPages: 0,
   });
+
+  const syncDeliveryRecord = (nextDelivery: Delivery) => {
+    delivery.value = nextDelivery;
+    const existingIndex = deliveries.value.findIndex(
+      (entry) => entry.id === nextDelivery.id,
+    );
+
+    if (existingIndex === -1) {
+      deliveries.value = [nextDelivery, ...deliveries.value];
+      totalDeliveries.value += 1;
+      return;
+    }
+
+    deliveries.value = deliveries.value.map((entry) =>
+      entry.id === nextDelivery.id ? nextDelivery : entry,
+    );
+  };
 
   async function fetchDeliveries(params?: FetchDeliveryParams) {
     isLoading.value = true;
@@ -139,6 +157,40 @@ export const useDeliveryStore = defineStore("deliveries", () => {
     }
   }
 
+  async function createDelivery(
+    payload: CreateDeliveryPayload,
+  ): Promise<StoreResponse<Delivery>> {
+    isLoading.value = true;
+
+    try {
+      const result = await apiRequest<Delivery>("/deliveries", {
+        method: "POST",
+        body: payload,
+      });
+
+      if (result.data) {
+        syncDeliveryRecord(result.data);
+      }
+
+      return {
+        status: "success",
+        message: result.message || "Delivery created successfully",
+        statusMessage: result.statusMessage || "created",
+        data: result.data || null,
+      };
+    } catch (error) {
+      console.error("Error creating delivery:", error);
+      return {
+        status: "error",
+        message: error instanceof Error ? error.message : "Failed to create delivery",
+        statusMessage: "internal server error",
+        data: null,
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   return {
     deliveries,
     delivery,
@@ -148,6 +200,7 @@ export const useDeliveryStore = defineStore("deliveries", () => {
     pagination,
     fetchDeliveries,
     fetchDeliveryById,
+    createDelivery,
     updateDelivery,
   };
 });

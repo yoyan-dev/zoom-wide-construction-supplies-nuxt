@@ -2,11 +2,14 @@
 import { storeToRefs } from "pinia";
 import type { Customer } from "~/types/customer";
 import AdminPageStateCard from "../../../_components/AdminPageStateCard.vue";
+import OrderApproveModal from "../modals/OrderApproveModal.vue";
+import OrderRejectModal from "../modals/OrderRejectModal.vue";
 import OrderCustomerCard from "./OrderCustomerCard.vue";
 import OrderItemsCard from "./OrderItemsCard.vue";
 import OrderOverviewCard from "./OrderOverviewCard.vue";
 import OrderTimelineCard from "./OrderTimelineCard.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
+import { useModal } from "~/composables/admin/useModal";
 
 const props = defineProps<{
   backTo: string;
@@ -20,6 +23,7 @@ const orderStore = useOrderStore();
 const customerStore = useCustomerStore();
 const { getLoadErrorMessage, isMissingResourceResponse } =
   useAdminPageLoadState();
+const { openModal } = useModal();
 const pageError = ref<string | null>(null);
 const isMissingOrder = ref(false);
 const isRetrying = ref(false);
@@ -79,6 +83,16 @@ const goBack = () => {
   void router.push(props.backTo);
 };
 
+const approveOrder = () => {
+  if (!order.value) return;
+  void openModal(OrderApproveModal, order.value);
+};
+
+const rejectOrder = () => {
+  if (!order.value) return;
+  void openModal(OrderRejectModal, order.value);
+};
+
 const retryLoad = async () => {
   isRetrying.value = true;
   await loadPage();
@@ -107,6 +121,21 @@ const retryLoad = async () => {
           <div class="flex flex-wrap items-center gap-2">
             <UButton color="neutral" variant="outline" @click="goBack">
               Back to Orders
+            </UButton>
+            <UButton
+              v-if="order?.status === 'pending'"
+              color="success"
+              @click="approveOrder"
+            >
+              Approve Order
+            </UButton>
+            <UButton
+              v-if="order?.status === 'pending'"
+              color="error"
+              variant="soft"
+              @click="rejectOrder"
+            >
+              Reject Order
             </UButton>
           </div>
         </div>

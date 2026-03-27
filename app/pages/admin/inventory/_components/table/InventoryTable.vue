@@ -188,9 +188,8 @@ const stockBadge = (product: Product) =>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
           <InventoryRowActions
-            :inventory-id="row.original.id ?? ''"
+            :product="row.original"
             :detail-base-path="props.detailBasePath"
-            :product-id="row.original.id ?? ''"
             :product-base-path="props.productBasePath"
           />
         </div>

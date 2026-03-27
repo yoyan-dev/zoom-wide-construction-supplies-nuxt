@@ -2,7 +2,9 @@
 import { storeToRefs } from "pinia";
 import type { PaymentMethod, PaymentStatus } from "~/types/payment";
 import AdminPageStateCard from "../../_components/AdminPageStateCard.vue";
+import AddPaymentModal from "./modals/AddPaymentModal.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
+import { useModal } from "~/composables/admin/useModal";
 import PaymentsFilters from "./PaymentsFilters.vue";
 import PaymentSummaryCards from "./PaymentSummaryCards.vue";
 import PaymentHeader from "./table/PaymentHeader.vue";
@@ -16,6 +18,7 @@ const props = defineProps<{
 const paymentStore = usePaymentStore();
 const orderStore = useOrderStore();
 const customerStore = useCustomerStore();
+const { openModal } = useModal();
 const { getLoadErrorMessage } = useAdminPageLoadState();
 const pageError = ref<string | null>(null);
 const isRetrying = ref(false);
@@ -112,6 +115,12 @@ const handleMethod = async (value: string) => {
   await fetchWithFilters();
 };
 
+const handleCreate = () => {
+  void openModal(AddPaymentModal, {
+    orders: orders.value,
+  });
+};
+
 const handleRetry = async () => {
   isRetrying.value = true;
   await loadPage();
@@ -122,7 +131,7 @@ const handleRetry = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <PaymentHeader :total="payments.length" />
+      <PaymentHeader :total="payments.length" @create="handleCreate" />
 
       <template v-if="pageError">
         <AdminPageStateCard

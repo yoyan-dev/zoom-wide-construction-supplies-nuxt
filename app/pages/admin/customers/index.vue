@@ -4,13 +4,16 @@ import AdminPageStateCard from "../_components/AdminPageStateCard.vue";
 import CustomersFilters from "./_components/CustomersFilters.vue";
 import CustomerHeader from "./_components/table/CustomerHeader.vue";
 import CustomersTable from "./_components/table/CustomersTable.vue";
+import AddCustomerModal from "./_components/modals/AddCustomerModal.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
+import { useModal } from "~/composables/admin/useModal";
 
 definePageMeta({
   layout: "admin",
 });
 
 const customerStore = useCustomerStore();
+const { openModal } = useModal();
 const { getLoadErrorMessage } = useAdminPageLoadState();
 const pageError = ref<string | null>(null);
 const isRetrying = ref(false);
@@ -49,6 +52,10 @@ const handleAccountStatus = (value: string) => {
   accountStatus.value = value;
 };
 
+const handleCreate = () => {
+  void openModal(AddCustomerModal);
+};
+
 const handleRetry = async () => {
   isRetrying.value = true;
   await loadPage();
@@ -59,7 +66,7 @@ const handleRetry = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <CustomerHeader :total="customers.length" />
+      <CustomerHeader :total="customers.length" @create="handleCreate" />
       <template v-if="pageError">
         <AdminPageStateCard
           eyebrow="Customers"
