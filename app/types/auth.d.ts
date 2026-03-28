@@ -8,6 +8,7 @@ export interface AuthenticatedUser {
   full_name?: string | null;
   contact_name?: string | null;
   phone?: string | null;
+  image_url?: string | null;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;

@@ -49,6 +49,7 @@ const normalizeUser = (value: unknown): AuthenticatedUser | null => {
     full_name: normalizeText(candidate.full_name),
     contact_name: normalizeText(candidate.contact_name),
     phone: normalizeText(candidate.phone),
+    image_url: normalizeText(candidate.image_url),
   };
 };
 

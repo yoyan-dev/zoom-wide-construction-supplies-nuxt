@@ -15,7 +15,6 @@ const props = defineProps<{
   customer: Customer | null;
   submitLabel: string;
   cancelLabel?: string;
-  showActions?: boolean;
   isSubmitting?: boolean;
 }>();
 
@@ -80,17 +79,6 @@ const handleSubmit = () => {
 <template>
   <UForm @submit.prevent="handleSubmit">
     <div class="space-y-4">
-      <UFormField
-        label="Linked account ID"
-        description="Optional user account ID tied to this customer record."
-      >
-        <UInput
-          v-model="draft.user_id"
-          class="w-full"
-          placeholder="user_123"
-        />
-      </UFormField>
-
       <div class="grid gap-4 md:grid-cols-2">
         <UFormField label="Company name">
           <UInput
@@ -147,10 +135,7 @@ const handleSubmit = () => {
       </div>
     </div>
 
-    <div
-      v-if="props.showActions !== false"
-      class="mt-6 flex items-center justify-end gap-2"
-    >
+    <div class="mt-6 flex items-center justify-end gap-2">
       <UButton
         color="neutral"
         variant="ghost"

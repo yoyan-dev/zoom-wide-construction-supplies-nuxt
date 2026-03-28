@@ -5,6 +5,8 @@ Protected routes use: Authorization: Bearer <access_token>
 
 After login, use data.user.role for frontend routing. For customer-owned routes, use data.customer.id.
 
+Use POST /api/auth/refresh to rotate sessions and POST /api/auth/logout to revoke them.
+
 Examples
 POST /api/auth/register
 Content-Type: application/json
@@ -24,6 +26,12 @@ Content-Type: application/json
 {
 "email": "user@example.com",
 "password": "your-password"
+}
+POST /api/auth/refresh
+Content-Type: application/json
+
+{
+"refresh_token": "<refresh_token>"
 }
 {
 "status": "ok",
@@ -49,7 +57,6 @@ Content-Type: application/json
 "message": "Invalid email or password"
 }
 }
-
 System
 GET /api
 access: public
@@ -57,17 +64,70 @@ note: This guide.
 GET /api/health
 access: public
 note: Health check.
-
 Auth
 POST /api/auth/register
 access: public
-input: json: email, password, company_name, contact_name, phone?, billing_address?, shipping_address?
+input: json or multipart/form-data: email, password, company_name, contact_name, phone?, image_url? or profile image file, billing_address?, shipping_address?
 note: Customer-only signup. Call login after register.
 POST /api/auth/login
 access: public
 input: json: email, password
 note: Use data.user.role for frontend routing. Use data.customer.id for customer-owned flows.
-
+POST /api/auth/refresh
+access: public
+input: json: refresh_token
+note: Returns a fresh session and refreshed user payload.
+POST /api/auth/logout
+access: bearer access token + json refresh_token
+input: json: refresh_token, scope?
+note: Revokes the current session by default. Use scope=global to revoke all sessions.
+POST /api/auth/forgot-password
+access: public
+input: json: email, redirect_to?
+note: Sends a password reset email through Supabase.
+Account
+GET /api/account
+access: bearer: any authenticated active user
+note: Returns the logged-in user's account plus related customer or driver profile when available.
+PATCH /api/account
+access: bearer: any authenticated active user
+input: json or multipart/form-data: email?, phone?, image_url? or profile image file, full_name?/name?/contact_name?, company_name?, billing_address?, shipping_address?, license_number?, vehicle_number?
+note: Updates the logged-in user's own account. Allowed fields depend on the user's role.
+POST /api/account/change-password
+access: bearer: any authenticated active user
+input: json: current_password, new_password
+note: Changes the logged-in user's password after verifying the current password.
+Users
+GET /api/users
+access: bearer: admin
+input: query: q?, page?, limit?
+note: Lists internal accounts only. Customers and drivers are excluded.
+POST /api/users
+access: bearer: admin
+input: json or multipart/form-data: email, password, full_name, phone?, image_url? or profile image file, role
+note: Creates internal accounts for roles: admin, manager, staff, warehouse_manager, finance, supplier, auditor. Use /api/drivers for driver accounts and /api/auth/register for customers.
+GET /api/users/:id
+access: bearer: admin
+PATCH /api/users/:id
+access: bearer: admin
+input: json or multipart/form-data: email?, password?, full_name?, phone?, image_url? or profile image file, role?, is_active?
+DELETE /api/users/:id
+access: bearer: admin
+Drivers
+GET /api/drivers
+access: bearer: admin, staff
+input: query: q?, page?, limit?
+POST /api/drivers
+access: bearer: admin, staff
+input: json or multipart/form-data: email, password, name, phone?, image_url? or profile image file, license_number?, vehicle_number?
+note: Creates a driver profile plus a linked auth/user account with the driver role.
+GET /api/drivers/:id
+access: bearer: admin, staff
+PATCH /api/drivers/:id
+access: bearer: admin, staff
+input: json or multipart/form-data: email?, password?, name?, phone?, image_url? or profile image file, license_number?, vehicle_number?, is_active?
+DELETE /api/drivers/:id
+access: bearer: admin, staff
 Categories
 GET /api/categories
 access: public
@@ -82,7 +142,6 @@ access: bearer: admin, manager
 input: json partial category fields
 DELETE /api/categories/:id
 access: bearer: admin, manager
-
 Products
 GET /api/products
 access: public
@@ -100,7 +159,6 @@ access: bearer: admin, manager, warehouse_manager
 GET /api/products/insights
 access: bearer: admin, manager, warehouse_manager
 input: query: limit?
-
 Suppliers
 GET /api/suppliers
 access: public
@@ -115,7 +173,6 @@ access: bearer: admin, manager
 input: json partial supplier fields
 DELETE /api/suppliers/:id
 access: bearer: admin, manager
-
 Warehouses
 GET /api/warehouses
 access: public
@@ -130,23 +187,21 @@ access: no explicit route auth check
 input: json partial warehouse fields
 DELETE /api/warehouses/:id
 access: no explicit route auth check
-
 Customers
 GET /api/customers
 access: bearer: admin, manager, staff, finance, auditor
 input: query: q?, page?, limit?
 POST /api/customers
 access: bearer: admin, manager, staff
-input: json: user_id?, company_name, contact_name, phone?, email, billing_address?, shipping_address?
+input: json or multipart/form-data: user_id?, company_name, contact_name, phone?, email, image_url? or profile image file, billing_address?, shipping_address?
 note: For public signup, use POST /api/auth/register.
 GET /api/customers/:id
 access: bearer: owner or customers:read
 PATCH /api/customers/:id
 access: bearer: owner or customers:write
-input: json partial customer fields
+input: json or multipart/form-data partial customer fields, optional profile image file
 DELETE /api/customers/:id
 access: bearer: admin, manager, staff
-
 Cart
 GET /api/cart
 access: bearer: owner or cart:read
@@ -163,7 +218,6 @@ input: query: customer_id
 POST /api/cart/checkout
 access: bearer: owner or cart:write
 input: json: customer_id, notes?
-
 Orders
 GET /api/orders
 access: bearer: report roles, or owner when filtering by customer_id
@@ -182,7 +236,6 @@ input: json: approved_by?
 POST /api/orders/:id/reject
 access: bearer: admin, manager
 input: json: rejection_reason
-
 Deliveries
 GET /api/deliveries
 access: bearer: report roles, order owner by order_id, or driver owner by driver_id
@@ -193,11 +246,11 @@ input: query: q?, order_id?, driver_id?, status?, from?, to?
 POST /api/deliveries
 access: bearer: admin, manager
 input: json: order_id, driver_id?, vehicle_number?, status?, scheduled_at?, delivered_at?
+note: driver_id must be a driver record id from /api/drivers.
 PATCH /api/deliveries/:id
 access: bearer: admin, manager, driver
 input: json: status, delivered_at?
 note: Drivers can only update deliveries assigned to them.
-
 Inventory
 GET /api/inventory
 access: bearer: admin, manager, warehouse_manager, auditor
@@ -215,7 +268,6 @@ POST /api/inventory
 access: bearer: admin, manager, warehouse_manager
 input: json: product_id, movement_type, quantity_change, reference_type?, reference_id?, note?, created_by?
 note: reference_type and reference_id must be paired.
-
 Payments
 GET /api/payments
 access: bearer: admin, finance, auditor, or order owner by order_id

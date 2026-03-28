@@ -137,6 +137,8 @@ const groups = computed(() => [
   },
 ]);
 
+const avatarSrc = computed(() => authStore.user?.image_url || undefined);
+
 const handleLogout = async () => {
   authStore.logout();
   await router.push("/auth/login");
@@ -203,7 +205,7 @@ const handleLogout = async () => {
               <UButton color="neutral" variant="ghost" @click="handleLogout">
                 Logout
               </UButton>
-              <UAvatar src="https://github.com/benjamincanac.png" />
+              <UAvatar :src="avatarSrc" :alt="authStore.displayName" />
             </div>
           </template>
         </UDashboardNavbar>

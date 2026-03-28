@@ -16,7 +16,6 @@ const props = defineProps<{
   category: Category | null;
   submitLabel: string;
   cancelLabel?: string;
-  showActions?: boolean;
   isSubmitting?: boolean;
 }>();
 
