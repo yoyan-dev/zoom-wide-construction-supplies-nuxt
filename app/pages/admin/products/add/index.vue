@@ -12,7 +12,6 @@ definePageMeta({
 });
 
 const categoryStore = useCategoryStore();
-const supplierStore = useSupplierStore();
 const productStore = useProductStore();
 const { notifyResponse } = useAdminResponseToast();
 const { getLoadErrorMessage } = useAdminPageLoadState();
@@ -20,17 +19,15 @@ const pageError = ref<string | null>(null);
 const isRetrying = ref(false);
 
 const loadPage = async () => {
-  const [categoriesResponse, suppliersResponse] = await Promise.all([
+  const [categoriesResponse] = await Promise.all([
     categoryStore.fetchCategories(),
-    supplierStore.fetchSuppliers(),
   ]);
 
   pageError.value =
-    categoriesResponse.status === "success" &&
-    suppliersResponse.status === "success"
+    categoriesResponse.status === "success"
       ? null
       : getLoadErrorMessage(
-          [categoriesResponse, suppliersResponse],
+          [categoriesResponse],
           "The product form could not be prepared right now.",
         );
 };
@@ -38,7 +35,6 @@ const loadPage = async () => {
 await loadPage();
 
 const { categories } = storeToRefs(categoryStore);
-const { suppliers } = storeToRefs(supplierStore);
 const warehouses = ref<Warehouse[]>([]);
 
 const handleCancel = async () => {
@@ -95,7 +91,6 @@ const handleRetry = async () => {
       <ProductForm
         v-else
         :categories="categories"
-        :suppliers="suppliers"
         :warehouses="warehouses"
         submit-label="Create Product"
         :is-submitting="productStore.isLoading"

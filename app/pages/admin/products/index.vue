@@ -15,26 +15,22 @@ definePageMeta({
 
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
-const supplierStore = useSupplierStore();
 const { getLoadErrorMessage } = useAdminPageLoadState();
 const pageError = ref<string | null>(null);
 const isRetrying = ref(false);
 
 const loadPage = async () => {
-  const [productsResponse, categoriesResponse, suppliersResponse] =
-    await Promise.all([
-      productStore.fetchProducts(),
-      categoryStore.fetchCategories(),
-      supplierStore.fetchSuppliers(),
-    ]);
+  const [productsResponse, categoriesResponse] = await Promise.all([
+    productStore.fetchProducts(),
+    categoryStore.fetchCategories(),
+  ]);
 
   pageError.value =
     productsResponse.status === "success" &&
-    categoriesResponse.status === "success" &&
-    suppliersResponse.status === "success"
+    categoriesResponse.status === "success"
       ? null
       : getLoadErrorMessage(
-          [productsResponse, categoriesResponse, suppliersResponse],
+          [productsResponse, categoriesResponse],
           "The products list could not be loaded right now.",
         );
 };
@@ -43,7 +39,6 @@ await loadPage();
 
 const { products, isLoading } = storeToRefs(productStore);
 const { categories } = storeToRefs(categoryStore);
-const { suppliers } = storeToRefs(supplierStore);
 const logs = ref<InventoryLog[]>([]);
 const warehouses = ref<Warehouse[]>([]);
 
@@ -106,7 +101,6 @@ const handleRetry = async () => {
         <ProductsTable
           :products="products"
           :categories="categories"
-          :suppliers="suppliers"
           :warehouses="warehouses"
           :inventory-logs="logs"
           :search="search"

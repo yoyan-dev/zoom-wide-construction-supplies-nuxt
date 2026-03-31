@@ -11,7 +11,6 @@ import ImageInput from "../../_components/ImageInput.vue";
 
 type ProductDraft = {
   category_id: string;
-  supplier_id: string;
   warehouse_id: string;
   sku: string;
   name: string;
@@ -30,7 +29,6 @@ type ProductDraft = {
 const props = defineProps<{
   product?: Product | null;
   categories: Category[];
-  suppliers: Supplier[];
   warehouses: Warehouse[];
   submitLabel: string;
   cancelLabel?: string;
@@ -44,7 +42,6 @@ const emit = defineEmits<{
 
 const draft = reactive<ProductDraft>({
   category_id: "",
-  supplier_id: "",
   warehouse_id: "",
   sku: "",
   name: "",
@@ -96,7 +93,6 @@ const syncDraft = (product?: Product | null) => {
   const handbook = product?.handbook;
 
   draft.category_id = product?.category_id ?? "";
-  draft.supplier_id = product?.supplier_id ?? "";
   draft.warehouse_id = product?.warehouse_id ?? "";
   draft.sku = product?.sku ?? "";
   draft.name = product?.name ?? "";
@@ -141,7 +137,12 @@ const buildHandbookPayload = (): ProductHandbookDetails | undefined => {
   const applications = parseLines(draft.handbook_applications);
   const specifications = parseSpecs(draft.handbook_specifications);
 
-  if (!summary && !features.length && !applications.length && !specifications.length) {
+  if (
+    !summary &&
+    !features.length &&
+    !applications.length &&
+    !specifications.length
+  ) {
     return undefined;
   }
 
@@ -175,7 +176,6 @@ const handleSubmit = async () => {
   const handbook = buildHandbookPayload();
 
   appendIfPresent(formData, "category_id", draft.category_id);
-  appendIfPresent(formData, "supplier_id", draft.supplier_id);
   appendIfPresent(formData, "warehouse_id", draft.warehouse_id);
   appendIfPresent(formData, "sku", draft.sku);
   appendIfPresent(formData, "name", draft.name);
@@ -249,17 +249,6 @@ watch(
               name="category_id"
               :items="props.categories"
               placeholder="Select category"
-            />
-          </UFormField>
-          <UFormField class="w-full" label="Supplier">
-            <USelect
-              v-model="draft.supplier_id"
-              class="w-full"
-              valueKey="id"
-              labelKey="name"
-              name="supplier_id"
-              :items="props.suppliers"
-              placeholder="Select supplier"
             />
           </UFormField>
           <UFormField class="w-full" label="Stock warehouse">

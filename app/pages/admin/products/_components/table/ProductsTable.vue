@@ -30,7 +30,6 @@ type BadgeColor =
 const props = defineProps<{
   products: Product[];
   categories: Category[];
-  suppliers: Supplier[];
   warehouses: Warehouse[];
   inventoryLogs: InventoryLog[];
   search: string;
@@ -48,15 +47,6 @@ const categoryMap = computed(() => {
   const map: Record<string, string> = {};
   for (const category of props.categories) {
     map[category.id] = category.name;
-  }
-  return map;
-});
-
-const supplierMap = computed(() => {
-  const map: Record<string, string> = {};
-  for (const supplier of props.suppliers) {
-    if (!supplier.id) continue;
-    map[supplier.id] = supplier.name ?? "Unknown supplier";
   }
   return map;
 });
@@ -93,16 +83,10 @@ const filteredProducts = computed(() => {
       (props.stockStatus === "healthy" &&
         currentStock > (product.minimum_stock_quantity ?? 0));
 
-    const supplierName = product.supplier_id
-      ? (supplierMap.value[product.supplier_id] ?? "")
-      : "";
     const productName = product.name?.toLowerCase() ?? "";
     const productSku = product.sku?.toLowerCase() ?? "";
     const searchMatch =
-      !query ||
-      productName.includes(query) ||
-      productSku.includes(query) ||
-      supplierName.toLowerCase().includes(query);
+      !query || productName.includes(query) || productSku.includes(query);
 
     return categoryMatch && statusMatch && stockMatch && searchMatch;
   });
@@ -174,7 +158,11 @@ const columns: TableColumn<Product>[] = [
   { id: "name", header: "Product", accessorFn: (row) => row.name },
 
   { id: "category", header: "Category", accessorFn: (row) => row.category_id },
-  { id: "warehouse", header: "Warehouse", accessorFn: (row) => row.warehouse_id ?? "" },
+  {
+    id: "warehouse",
+    header: "Warehouse",
+    accessorFn: (row) => row.warehouse_id ?? "",
+  },
   { id: "price", header: "Price", accessorFn: (row) => row.price },
   {
     id: "stock",
@@ -276,14 +264,6 @@ const productInitials = (name?: string) => {
       </template>
       <template #sku-cell="{ row }">
         <span class="font-medium">{{ row.original.sku }}</span>
-      </template>
-      <template #name-cell="{ row }">
-        <div class="flex flex-col">
-          <span class="font-medium">{{ row.original.name }}</span>
-          <span class="text-xs text-slate-500">
-            {{ supplierMap[row.original.supplier_id ?? ""] ?? "No supplier" }}
-          </span>
-        </div>
       </template>
       <template #category-cell="{ row }">
         <div class="flex flex-col">

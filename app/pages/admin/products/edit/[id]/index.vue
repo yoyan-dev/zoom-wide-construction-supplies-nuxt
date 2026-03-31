@@ -16,7 +16,6 @@ const productId = computed(() => String(route.params.id));
 
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
-const supplierStore = useSupplierStore();
 const { notifyResponse } = useAdminResponseToast();
 const { getLoadErrorMessage, isMissingResourceResponse } =
   useAdminPageLoadState();
@@ -25,20 +24,17 @@ const isMissingProduct = ref(false);
 const isRetrying = ref(false);
 
 const loadPage = async () => {
-  const [productResponse, categoriesResponse, suppliersResponse] =
-    await Promise.all([
-      productStore.fetchProductById(productId.value),
-      categoryStore.fetchCategories(),
-      supplierStore.fetchSuppliers(),
-    ]);
+  const [productResponse, categoriesResponse] = await Promise.all([
+    productStore.fetchProductById(productId.value),
+    categoryStore.fetchCategories(),
+  ]);
 
   isMissingProduct.value = isMissingResourceResponse(productResponse);
   pageError.value =
     (productResponse.status === "error" && !isMissingProduct.value) ||
-    categoriesResponse.status === "error" ||
-    suppliersResponse.status === "error"
+    categoriesResponse.status === "error"
       ? getLoadErrorMessage(
-          [productResponse, categoriesResponse, suppliersResponse],
+          [productResponse, categoriesResponse],
           "The product could not be loaded for editing right now.",
         )
       : null;
@@ -48,7 +44,6 @@ await loadPage();
 
 const { product } = storeToRefs(productStore);
 const { categories } = storeToRefs(categoryStore);
-const { suppliers } = storeToRefs(supplierStore);
 const warehouses = ref<Warehouse[]>([]);
 
 const handleCancel = async () => {
@@ -119,7 +114,6 @@ const handleRetry = async () => {
         v-else
         :product="product"
         :categories="categories"
-        :suppliers="suppliers"
         :warehouses="warehouses"
         submit-label="Update Product"
         :is-submitting="productStore.isLoading"

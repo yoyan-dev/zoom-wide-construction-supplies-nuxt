@@ -37,7 +37,9 @@ await loadPage();
 const { product } = storeToRefs(productStore);
 
 const featureList = computed(() => product.value?.handbook?.features ?? []);
-const applicationList = computed(() => product.value?.handbook?.applications ?? []);
+const applicationList = computed(
+  () => product.value?.handbook?.applications ?? [],
+);
 const specificationList = computed(
   () => product.value?.handbook?.specifications ?? [],
 );
@@ -75,7 +77,8 @@ const retryLoad = async () => {
               {{ product?.name ?? "Product not found" }}
             </h1>
             <p class="mt-2 text-sm text-slate-600">
-              Review pricing, stock readiness, supplier context, and handbook notes.
+              Review pricing, stock readiness, supplier context, and handbook
+              notes.
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -112,7 +115,9 @@ const retryLoad = async () => {
       />
 
       <div v-else class="space-y-6">
-        <div class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.9fr)]">
+        <div
+          class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.9fr)]"
+        >
           <UCard>
             <div
               class="flex h-72 items-center justify-center overflow-hidden rounded-[28px] border border-slate-200/70 bg-gradient-to-br from-slate-100 via-white to-amber-50"
@@ -187,12 +192,6 @@ const retryLoad = async () => {
                 </span>
               </div>
               <div class="flex items-start justify-between gap-4">
-                <span class="text-sm text-slate-500">Supplier</span>
-                <span class="text-right font-medium text-slate-800">
-                  {{ product.supplier?.name ?? "Unassigned" }}
-                </span>
-              </div>
-              <div class="flex items-start justify-between gap-4">
                 <span class="text-sm text-slate-500">Warehouse</span>
                 <span class="text-right font-medium text-slate-800">
                   {{ product.warehouse?.name ?? "Unassigned" }}
@@ -228,7 +227,9 @@ const retryLoad = async () => {
           </UCard>
         </div>
 
-        <div class="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+        <div
+          class="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]"
+        >
           <UCard>
             <div class="space-y-4">
               <div>
@@ -263,7 +264,10 @@ const retryLoad = async () => {
                 <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                   Key Features
                 </p>
-                <div v-if="featureList.length" class="mt-3 flex flex-wrap gap-2">
+                <div
+                  v-if="featureList.length"
+                  class="mt-3 flex flex-wrap gap-2"
+                >
                   <UBadge
                     v-for="feature in featureList"
                     :key="feature"
@@ -330,7 +334,6 @@ const retryLoad = async () => {
           </div>
         </UCard>
       </div>
-
     </div>
   </div>
 </template>
