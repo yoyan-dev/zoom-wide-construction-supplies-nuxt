@@ -14,19 +14,30 @@ const draft = defineModel<CheckoutDraftModel>({
 </script>
 
 <template>
-  <UCard>
+  <UCard class="rounded-xl bg-white/95 shadow-sm">
     <div class="space-y-6">
       <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+        <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
           Delivery Information
         </p>
-        <h2 class="mt-2 text-xl font-semibold text-slate-900">
+        <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
           Customer and Delivery Details
         </h2>
         <p class="mt-2 text-sm leading-6 text-slate-600">
           This foundation form collects the information needed for the next
           order phase without submitting an order yet.
         </p>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+          <UIcon name="i-lucide-shield-check" class="text-emerald-600" />
+          Secure details
+        </span>
+        <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+          <UIcon name="i-lucide-truck" class="text-amber-600" />
+          Delivery ready
+        </span>
       </div>
 
       <UForm @submit.prevent>

@@ -28,7 +28,7 @@ const removeItem = () => {
 </script>
 
 <template>
-  <UCard>
+  <UCard class="rounded-xl bg-white/95 shadow-sm">
     <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
       <div class="flex gap-4">
         <NuxtLink
@@ -65,7 +65,7 @@ const removeItem = () => {
 
           <div class="mt-4 flex flex-wrap items-center gap-3">
             <div
-              class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 p-1"
+              class="inline-flex items-center rounded-full bg-slate-100 p-1"
             >
               <UButton
                 color="neutral"
@@ -96,7 +96,7 @@ const removeItem = () => {
       </div>
 
       <div class="flex shrink-0 flex-col items-start gap-2 lg:items-end">
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+        <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
           Line Subtotal
         </p>
         <p class="text-xl font-semibold text-slate-900">

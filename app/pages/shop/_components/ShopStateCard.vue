@@ -23,19 +23,23 @@ const emit = defineEmits<{
 
 const toneClasses = computed(() =>
   props.tone === "error"
-    ? "border-rose-200/70 bg-rose-50/60"
-    : "border-slate-200/70 bg-white",
+    ? "border border-rose-200/70 bg-rose-50/70"
+    : "bg-white/95",
 );
+
+const actionColor = computed(() => (props.tone === "error" ? "error" : "neutral"));
 </script>
 
 <template>
-  <section :class="`rounded-[28px] border p-6 shadow-sm ${toneClasses}`">
-    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+  <section :class="`rounded-xl p-5 shadow-sm md:p-6 ${toneClasses}`">
+    <div
+      class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+    >
+      <div class="max-w-2xl">
+        <p class="text-xs uppercase tracking-[0.18em] text-slate-500/90">
           {{ props.eyebrow }}
         </p>
-        <h2 class="mt-2 text-2xl font-semibold text-slate-900">
+        <h2 class="mt-2 text-xl font-semibold tracking-tight text-slate-900 md:text-2xl">
           {{ props.title }}
         </h2>
         <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
@@ -45,7 +49,7 @@ const toneClasses = computed(() =>
 
       <UButton
         v-if="props.actionLabel"
-        color="neutral"
+        :color="actionColor"
         variant="outline"
         :loading="props.actionLoading"
         @click="emit('action')"

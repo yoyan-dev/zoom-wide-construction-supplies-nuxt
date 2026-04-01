@@ -106,7 +106,7 @@ const resolveCustomer = (customerId: string) =>
 </script>
 
 <template>
-  <UCard>
+  <UCard class="rounded-[24px] border border-slate-200/70 bg-white/95 shadow-sm">
     <UTable
       v-if="props.isLoading || hasRows"
       ref="table"
@@ -151,7 +151,7 @@ const resolveCustomer = (customerId: string) =>
       </template>
 
       <template #status-cell="{ row }">
-        <UBadge :color="statusBadge(row.original).color" variant="subtle">
+        <UBadge :color="statusBadge(row.original).color" variant="soft">
           {{ statusBadge(row.original).label }}
         </UBadge>
       </template>

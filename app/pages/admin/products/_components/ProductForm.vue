@@ -5,9 +5,8 @@ import type {
   ProductSpecification,
 } from "~/types/product";
 import type { Category } from "~/types/category";
-import type { Supplier } from "~/types/supplier";
 import type { Warehouse } from "~/types/warehouse";
-import ImageInput from "../../_components/ImageInput.vue";
+import ImageInput from "./ImageInput.vue";
 
 type ProductDraft = {
   category_id: string;

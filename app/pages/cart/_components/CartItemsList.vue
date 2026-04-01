@@ -11,10 +11,10 @@ defineProps<{
   <section class="space-y-4">
     <div class="flex items-center justify-between gap-4">
       <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+        <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
           Cart Items
         </p>
-        <h2 class="mt-2 text-xl font-semibold text-slate-900">
+        <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
           Product Summary
         </h2>
       </div>

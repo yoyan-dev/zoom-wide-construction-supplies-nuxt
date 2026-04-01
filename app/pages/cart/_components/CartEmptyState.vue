@@ -1,6 +1,6 @@
 <template>
-  <section class="rounded-[28px] border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
-    <p class="text-xs uppercase tracking-[0.22em] text-slate-500">
+  <section class="rounded-xl bg-white/95 shadow-sm p-8 text-center">
+    <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
       Cart Status
     </p>
     <h2 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">
@@ -12,7 +12,7 @@
     </p>
 
     <div class="mt-6 flex flex-wrap justify-center gap-3">
-      <UButton color="primary" to="/shop">
+      <UButton color="warning" class="rounded-lg font-semibold shadow-sm" to="/shop">
         Browse Products
       </UButton>
     </div>

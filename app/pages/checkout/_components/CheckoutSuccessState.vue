@@ -8,7 +8,7 @@ defineProps<{
 </script>
 
 <template>
-  <section class="rounded-[32px] border border-emerald-200/70 bg-white p-6 shadow-sm md:p-8">
+  <section class="rounded-xl bg-white/95 p-6 shadow-sm md:p-8">
     <div class="mx-auto max-w-3xl text-center">
       <div
         class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"
@@ -27,9 +27,9 @@ defineProps<{
         and tracking views can now build on this flow in the next Phase 4 steps.
       </p>
 
-      <div class="mt-8 grid gap-4 rounded-[28px] border border-slate-200/70 bg-slate-50/60 p-5 md:grid-cols-3">
+      <div class="mt-8 grid gap-4 rounded-lg bg-slate-50/70 p-5 md:grid-cols-3">
         <div>
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
             Order ID
           </p>
           <p class="mt-2 font-semibold text-slate-900">
@@ -37,7 +37,7 @@ defineProps<{
           </p>
         </div>
         <div>
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
             Status
           </p>
           <p class="mt-2 font-semibold capitalize text-slate-900">
@@ -45,7 +45,7 @@ defineProps<{
           </p>
         </div>
         <div>
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
             Total
           </p>
           <p class="mt-2 font-semibold text-slate-900">
@@ -59,10 +59,10 @@ defineProps<{
       </p>
 
       <div class="mt-6 flex flex-wrap justify-center gap-3">
-        <UButton color="primary" to="/shop">
+        <UButton color="warning" class="rounded-lg font-semibold shadow-sm" to="/shop">
           Continue Shopping
         </UButton>
-        <UButton color="neutral" variant="outline" to="/orders">
+        <UButton color="neutral" variant="outline" class="rounded-lg font-semibold" to="/orders">
           View My Orders
         </UButton>
       </div>

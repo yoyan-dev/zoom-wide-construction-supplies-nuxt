@@ -5,10 +5,10 @@ defineProps<{
 </script>
 
 <template>
-  <UCard>
+  <UCard class="rounded-xl bg-white/95 shadow-sm">
     <div class="space-y-4">
       <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+        <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
           Payment and Submission
         </p>
         <h2 class="mt-2 text-xl font-semibold text-slate-900">
@@ -22,7 +22,7 @@ defineProps<{
         details and keeps the cart summary visible.
       </p>
 
-      <div class="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+      <div class="rounded-lg bg-slate-50/80 p-4 text-sm leading-6 text-slate-600">
         {{ reviewMessage }}
       </div>
     </div>

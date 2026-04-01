@@ -18,10 +18,10 @@ const emit = defineEmits<{
 
 <template>
   <section class="xl:sticky xl:top-24">
-    <UCard>
+    <UCard class="rounded-xl bg-white/95 shadow-sm">
       <div class="space-y-6">
         <div>
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
             Order Summary
           </p>
           <h2 class="mt-2 text-xl font-semibold text-slate-900">
@@ -68,8 +68,19 @@ const emit = defineEmits<{
           </div>
         </div>
 
+        <div class="grid gap-2">
+          <div class="flex items-center gap-2 rounded-lg bg-slate-50/80 px-3 py-2 text-sm text-slate-700">
+            <UIcon name="i-lucide-shield-check" class="text-emerald-600" />
+            Secure order submission workflow
+          </div>
+          <div class="flex items-center gap-2 rounded-lg bg-slate-50/80 px-3 py-2 text-sm text-slate-700">
+            <UIcon name="i-lucide-lock" class="text-sky-600" />
+            Buyer and delivery details are protected
+          </div>
+        </div>
+
         <div
-          class="rounded-2xl p-4 text-sm leading-6"
+          class="rounded-lg p-4 text-sm leading-6"
           :class="
             canReviewOrder
               ? 'bg-emerald-50 text-emerald-700'
@@ -87,8 +98,8 @@ const emit = defineEmits<{
 
         <div class="flex flex-col gap-3">
           <UButton
-            color="primary"
-            class="w-full justify-center"
+            color="warning"
+            class="rounded-lg font-semibold shadow-sm w-full justify-center"
             :disabled="!canReviewOrder"
             :loading="isSubmitting"
             @click="emit('submit')"
@@ -98,7 +109,7 @@ const emit = defineEmits<{
           <UButton
             color="neutral"
             variant="outline"
-            class="w-full justify-center"
+            class="rounded-lg font-semibold w-full justify-center"
             to="/cart"
           >
             Edit Cart

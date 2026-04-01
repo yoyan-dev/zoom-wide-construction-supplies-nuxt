@@ -1,23 +1,62 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import type { Product } from "~/types/product";
 import ShopStateCard from "../../_components/ShopStateCard.vue";
 import ShopProductDescriptionCard from "./ShopProductDescriptionCard.vue";
 import ShopProductHeroCard from "./ShopProductHeroCard.vue";
 import ShopProductLoadingState from "./ShopProductLoadingState.vue";
 import ShopProductPurchaseCard from "./ShopProductPurchaseCard.vue";
+import ShopRelatedProductsSection from "./ShopRelatedProductsSection.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
+import { apiRequest } from "~/utils/api";
 
 const props = defineProps<{
   productId: string;
 }>();
 
 const productStore = useProductStore();
+const { product, isLoading } = storeToRefs(productStore);
 const { getLoadErrorMessage, isMissingResourceResponse } =
   useAdminPageLoadState();
 const router = useRouter();
 const pageError = ref<string | null>(null);
 const isMissingProduct = ref(false);
 const isRetrying = ref(false);
+const relatedProducts = ref<Product[]>([]);
+const isRelatedLoading = ref(false);
+
+const loadRelatedProducts = async () => {
+  if (!product.value?.category_id || !product.value.id) {
+    relatedProducts.value = [];
+    return;
+  }
+
+  isRelatedLoading.value = true;
+
+  try {
+    const response = await apiRequest<Product[]>("/products", {
+      query: {
+        category_id: product.value.category_id,
+        page: 1,
+      },
+    });
+
+    const candidates = response.data ?? [];
+
+    relatedProducts.value = candidates
+      .filter(
+        (candidate) =>
+          candidate.id &&
+          candidate.id !== product.value?.id &&
+          candidate.is_active !== false,
+      )
+      .slice(0, 3);
+  } catch {
+    relatedProducts.value = [];
+  } finally {
+    isRelatedLoading.value = false;
+  }
+};
 
 const loadPage = async () => {
   const productResponse = await productStore.fetchProductById(props.productId);
@@ -30,6 +69,12 @@ const loadPage = async () => {
           "The product record could not be loaded right now.",
         )
       : null;
+
+  if (productResponse.status === "success" && product.value) {
+    await loadRelatedProducts();
+  } else {
+    relatedProducts.value = [];
+  }
 };
 
 await loadPage();
@@ -45,8 +90,6 @@ watch(
   },
 );
 
-const { product, isLoading } = storeToRefs(productStore);
-
 const goBack = () => {
   void router.push("/shop");
 };
@@ -59,14 +102,14 @@ const retryLoad = async () => {
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-    <section class="rounded-[32px] border border-slate-200/70 bg-white p-6 shadow-sm md:p-8">
+  <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+    <section class="rounded-xl bg-white/95 shadow-sm p-6 md:p-8">
       <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <p class="text-xs uppercase tracking-[0.22em] text-amber-600">
+          <p class="text-xs font-medium uppercase tracking-[0.2em] text-amber-700">
             Product Details
           </p>
-          <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+          <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
             {{ product?.name ?? "Product not found" }}
           </h1>
           <p class="mt-3 text-sm leading-7 text-slate-600">
@@ -112,6 +155,10 @@ const retryLoad = async () => {
       </div>
 
       <ShopProductDescriptionCard :product="product" />
+      <ShopRelatedProductsSection
+        :products="relatedProducts"
+        :is-loading="isRelatedLoading"
+      />
     </div>
   </div>
 </template>
