@@ -6,19 +6,13 @@ import MyOrdersHeader from "./MyOrdersHeader.vue";
 import MyOrdersList from "./MyOrdersList.vue";
 import MyOrdersStateCard from "./MyOrdersStateCard.vue";
 
-const route = useRoute();
 const orderStore = useOrderStore();
 const authStore = useAuthStore();
 const pageError = ref<string | null>(null);
 const isRetrying = ref(false);
 const { customer } = storeToRefs(authStore);
 
-const customerId = computed(() =>
-  customer.value?.id ??
-  (typeof route.query.customer_id === "string"
-    ? route.query.customer_id
-    : undefined),
-);
+const customerId = computed(() => customer.value?.id);
 
 const requestParams = computed<FetchOrderParams>(() => ({
   q: "",

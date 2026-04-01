@@ -4,7 +4,7 @@ import type { CartLineItem } from "~/types/cart";
 import type { Order } from "~/types/order";
 import type { Product } from "~/types/product";
 import type { StoreResponse } from "~/types/store-response";
-import { apiRequest, apiRequestRaw } from "~/utils/api";
+import { apiRequest, apiRequestRaw, toErrorMessage } from "~/utils/api";
 
 const STORAGE_KEY = "zoom-shop-cart";
 
@@ -313,10 +313,9 @@ export const useCartStore = defineStore("cart", () => {
         data: nextItems,
       };
     } catch (error) {
-      console.error("Error fetching cart:", error);
       return {
         status: "error",
-        message: error instanceof Error ? error.message : "Failed to fetch cart",
+        message: toErrorMessage(error) || "Failed to fetch cart",
         statusMessage: "internal server error",
         data: null,
       };
@@ -549,11 +548,10 @@ export const useCartStore = defineStore("cart", () => {
         statusMessage: data?.statusMessage || "no content",
       };
     } catch (error) {
-      console.error("Error clearing cart:", error);
       await fetchCart(customerId.value);
       return {
         status: "error",
-        message: error instanceof Error ? error.message : "Failed to clear cart",
+        message: toErrorMessage(error) || "Failed to clear cart",
         statusMessage: "internal server error",
       };
     } finally {
@@ -593,11 +591,9 @@ export const useCartStore = defineStore("cart", () => {
         data: result.data || null,
       };
     } catch (error) {
-      console.error("Error checking out cart:", error);
       return {
         status: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to checkout cart",
+        message: toErrorMessage(error) || "Failed to checkout cart",
         statusMessage: "internal server error",
         data: null,
       };

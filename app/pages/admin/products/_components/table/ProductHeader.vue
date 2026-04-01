@@ -10,7 +10,7 @@ const props = defineProps<{
   <AdminPageHeader
     eyebrow="Catalog Inventory"
     title="Product Management"
-    description="Manage catalog items, pricing, supplier context, and stock visibility."
+    description="Manage catalog items, pricing, and stock visibility."
     :total="props.total"
     total-label="products"
     action-label="Add Product"

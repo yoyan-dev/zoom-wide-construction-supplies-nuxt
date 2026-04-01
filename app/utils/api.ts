@@ -12,6 +12,30 @@ type ApiRequestOptions = {
   headers?: HeadersInit;
 };
 
+type NormalizedApiError = {
+  message: string;
+  status: number | null;
+  statusMessage: string | null;
+  code: string | null;
+  details?: unknown;
+};
+
+export class ApiRequestError extends Error {
+  readonly status: number | null;
+  readonly statusMessage: string | null;
+  readonly code: string | null;
+  readonly details?: unknown;
+
+  constructor(payload: NormalizedApiError) {
+    super(payload.message);
+    this.name = "ApiRequestError";
+    this.status = payload.status;
+    this.statusMessage = payload.statusMessage;
+    this.code = payload.code;
+    this.details = payload.details;
+  }
+}
+
 export const DEFAULT_API_PAGE_LIMIT = 10;
 export const AUTH_SESSION_COOKIE_KEY = "zoom_auth_session";
 
@@ -133,8 +157,33 @@ const buildApiUrl = (path: string) =>
   `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
 const resolveAccessToken = (payload?: AuthSession | null) =>
-  normalizeResponseText(payload?.session?.access_token);
-null;
+  normalizeResponseText(payload?.access_token) ??
+  normalizeResponseText(payload?.token) ??
+  normalizeResponseText(payload?.session?.access_token) ??
+  null;
+
+const resolveRefreshToken = (payload?: AuthSession | null) =>
+  normalizeResponseText(payload?.refresh_token) ??
+  normalizeResponseText(payload?.session?.refresh_token) ??
+  null;
+
+const resolveSessionPayload = (value?: AuthSession["session"] | null) =>
+  value && typeof value === "object" ? value : {};
+
+const normalizeApiError = <T>(
+  response?: H3Response<T> | null,
+  fallbackMessage = "Request failed",
+): NormalizedApiError => ({
+  message:
+    normalizeResponseText(response?.message) ??
+    normalizeResponseText(response?.error?.message) ??
+    formatH3StatusMessage(response?.statusMessage) ??
+    fallbackMessage,
+  status: typeof response?.statusCode === "number" ? response.statusCode : null,
+  statusMessage: normalizeResponseText(response?.statusMessage) ?? null,
+  code: normalizeResponseText(response?.error?.code) ?? null,
+  details: response?.error?.details,
+});
 
 const readAuthSessionCookie = () =>
   useCookie<AuthSession | null>(AUTH_SESSION_COOKIE_KEY, {
@@ -148,13 +197,17 @@ const mergeAuthSession = (
   nextValue?: Partial<AuthSession> | null,
 ): AuthSession => {
   const candidate = nextValue && typeof nextValue === "object" ? nextValue : {};
+  const currentSessionPayload = resolveSessionPayload(currentSession.session);
+  const nextSessionPayload = resolveSessionPayload(candidate.session);
   const nextAccessToken =
     normalizeResponseText(candidate.access_token) ??
     normalizeResponseText(candidate.token) ??
+    normalizeResponseText(nextSessionPayload.access_token) ??
     resolveAccessToken(currentSession);
   const nextRefreshToken =
     normalizeResponseText(candidate.refresh_token) ??
-    normalizeResponseText(currentSession.refresh_token) ??
+    normalizeResponseText(nextSessionPayload.refresh_token) ??
+    resolveRefreshToken(currentSession) ??
     null;
 
   return {
@@ -165,6 +218,12 @@ const mergeAuthSession = (
       candidate.customer === undefined
         ? currentSession.customer
         : candidate.customer,
+    session: {
+      ...currentSessionPayload,
+      ...nextSessionPayload,
+      access_token: nextAccessToken,
+      refresh_token: nextRefreshToken,
+    },
     token: nextAccessToken,
     access_token: nextAccessToken,
     refresh_token: nextRefreshToken,
@@ -186,14 +245,29 @@ const resolveRequestHeaders = (
   return resolvedHeaders;
 };
 
+const executeRawRequest = <T>(
+  path: string,
+  options: ApiRequestOptions = {},
+  accessToken?: string | null,
+) =>
+  $fetch.raw<H3Response<T>>(buildApiUrl(path), {
+    method: options.method,
+    query: cleanQuery(options.query),
+    body: options.body,
+    headers: resolveRequestHeaders(options.headers, accessToken),
+    ignoreResponseError: true,
+  });
+
 export async function refreshAuthSession() {
   const sessionCookie = readAuthSessionCookie();
   const currentSession = sessionCookie.value;
-  const refreshToken = normalizeResponseText(
-    currentSession?.session?.refresh_token,
-  );
+  const refreshToken = resolveRefreshToken(currentSession);
 
-  if (!currentSession || !refreshToken) {
+  if (!currentSession) {
+    return null;
+  }
+
+  if (!refreshToken) {
     return null;
   }
 
@@ -203,13 +277,23 @@ export async function refreshAuthSession() {
       {
         method: "POST",
         body: { refresh_token: refreshToken },
+        ignoreResponseError: true,
       },
     );
 
-    console.log(response);
     const payload = response._data;
+    if (
+      response.status >= 400 ||
+      !payload ||
+      payload.status === "error" ||
+      !payload.data
+    ) {
+      sessionCookie.value = null;
+      return null;
+    }
+
     const nextSession = mergeAuthSession(currentSession, payload?.data ?? null);
-    console.log(payload);
+
     if (!resolveAccessToken(nextSession)) {
       sessionCookie.value = null;
       return null;
@@ -218,6 +302,7 @@ export async function refreshAuthSession() {
     sessionCookie.value = nextSession;
     return nextSession;
   } catch {
+    sessionCookie.value = null;
     return null;
   }
 }
@@ -226,34 +311,48 @@ export async function apiRequestRaw<T>(
   path: string,
   options: ApiRequestOptions = {},
 ) {
-  const response = await $fetch.raw<H3Response<T>>(buildApiUrl(path), {
-    method: options.method,
-    query: cleanQuery(options.query),
-    body: options.body,
-    headers: resolveRequestHeaders(options.headers),
-    ignoreResponseError: true,
-  });
+  let response;
+
+  try {
+    response = await executeRawRequest<T>(path, options);
+  } catch (error) {
+    throw new ApiRequestError({
+      message: toErrorMessage(error) || "Network request failed.",
+      status: null,
+      statusMessage: null,
+      code: "network_error",
+    });
+  }
+
+  const hasRefreshToken = Boolean(resolveRefreshToken(readAuthSessionCookie().value));
 
   const canAttemptRefresh =
     response.status === 401 &&
     !path.startsWith("/auth") &&
-    !new Headers(options.headers ?? {}).has("Authorization");
+    !new Headers(options.headers ?? {}).has("Authorization") &&
+    hasRefreshToken;
 
   if (canAttemptRefresh) {
     const refreshedSession = await refreshAuthSession();
     const refreshedToken = resolveAccessToken(refreshedSession);
 
     if (refreshedToken) {
-      const retriedResponse = await $fetch.raw<H3Response<T>>(
-        buildApiUrl(path),
-        {
-          method: options.method,
-          query: cleanQuery(options.query),
-          body: options.body,
-          headers: resolveRequestHeaders(options.headers, refreshedToken),
-          ignoreResponseError: true,
-        },
-      );
+      let retriedResponse;
+
+      try {
+        retriedResponse = await executeRawRequest<T>(
+          path,
+          options,
+          refreshedToken,
+        );
+      } catch (error) {
+        throw new ApiRequestError({
+          message: toErrorMessage(error) || "Network request failed.",
+          status: null,
+          statusMessage: null,
+          code: "network_error",
+        });
+      }
 
       return {
         ok: retriedResponse.status >= 200 && retriedResponse.status < 300,
@@ -290,11 +389,12 @@ export async function apiRequest<T>(
     (typeof responsePayload.statusCode === "number" &&
       responsePayload.statusCode >= 400)
   ) {
-    throw new Error(
-      responsePayload?.message ||
-        responsePayload?.statusMessage ||
-        "Request failed",
-    );
+    const normalized = normalizeApiError(responsePayload, "Request failed");
+
+    throw new ApiRequestError({
+      ...normalized,
+      status: normalized.status ?? response.status,
+    });
   }
 
   return responsePayload;

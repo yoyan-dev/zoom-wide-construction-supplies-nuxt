@@ -31,11 +31,6 @@ const links = [
           onSelect: () => (open.value = false),
         },
         {
-          label: "Suppliers",
-          to: "/admin/suppliers",
-          onSelect: () => (open.value = false),
-        },
-        {
           label: "Inventory",
           to: "/admin/inventory",
           onSelect: () => (open.value = false),
@@ -140,7 +135,7 @@ const groups = computed(() => [
 const avatarSrc = computed(() => authStore.user?.image_url || undefined);
 
 const handleLogout = async () => {
-  authStore.logout();
+  await authStore.logout();
   await router.push("/auth/login");
 };
 </script>

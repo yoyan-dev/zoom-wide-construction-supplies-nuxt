@@ -2,9 +2,8 @@
 import { storeToRefs } from "pinia";
 import AdminPageHeader from "../../../_components/AdminPageHeader.vue";
 import AdminPageStateCard from "../../../_components/AdminPageStateCard.vue";
-import ProductForm from "../../add/_components/ProductForm.vue";
+import ProductForm from "../../_components/ProductForm.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
-import type { Warehouse } from "~/types/warehouse";
 import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast";
 
 definePageMeta({
@@ -16,6 +15,7 @@ const productId = computed(() => String(route.params.id));
 
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
+const warehouseStore = useWarehouseStore();
 const { notifyResponse } = useAdminResponseToast();
 const { getLoadErrorMessage, isMissingResourceResponse } =
   useAdminPageLoadState();
@@ -24,17 +24,24 @@ const isMissingProduct = ref(false);
 const isRetrying = ref(false);
 
 const loadPage = async () => {
-  const [productResponse, categoriesResponse] = await Promise.all([
+  const [productResponse, categoriesResponse, warehousesResponse] =
+    await Promise.all([
     productStore.fetchProductById(productId.value),
     categoryStore.fetchCategories(),
+    warehouseStore.fetchWarehouses(),
   ]);
 
   isMissingProduct.value = isMissingResourceResponse(productResponse);
   pageError.value =
     (productResponse.status === "error" && !isMissingProduct.value) ||
-    categoriesResponse.status === "error"
+    categoriesResponse.status === "error" ||
+    warehousesResponse.status === "error"
       ? getLoadErrorMessage(
-          [productResponse, categoriesResponse],
+          [
+            productResponse,
+            categoriesResponse,
+            warehousesResponse,
+          ],
           "The product could not be loaded for editing right now.",
         )
       : null;
@@ -44,7 +51,7 @@ await loadPage();
 
 const { product } = storeToRefs(productStore);
 const { categories } = storeToRefs(categoryStore);
-const warehouses = ref<Warehouse[]>([]);
+const { warehouses } = storeToRefs(warehouseStore);
 
 const handleCancel = async () => {
   await navigateTo("/admin/products");

@@ -77,8 +77,7 @@ const retryLoad = async () => {
               {{ product?.name ?? "Product not found" }}
             </h1>
             <p class="mt-2 text-sm text-slate-600">
-              Review pricing, stock readiness, supplier context, and handbook
-              notes.
+              Review pricing, stock readiness, and handbook notes.
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">

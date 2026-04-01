@@ -1,5 +1,4 @@
 import type { Category } from "./category";
-import type { Supplier } from "./supplier";
 import type { Warehouse } from "./warehouse";
 
 export interface ProductSpecification {
@@ -42,7 +41,6 @@ export interface ProductFormSubmitValue {
 export interface FetchProductParams {
   q?: string;
   category_id?: string;
-  supplier_id?: string;
   page?: number;
 }
 

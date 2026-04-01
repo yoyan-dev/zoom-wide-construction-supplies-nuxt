@@ -1,23 +1,62 @@
+import type { AuthSession } from "~/types/auth";
+import { AUTH_SESSION_COOKIE_KEY } from "~/utils/api";
+
 const isSectionPath = (path: string, prefix: string) =>
   path === prefix || path.startsWith(`${prefix}/`);
 
-export default defineNuxtRouteMiddleware((to) => {
-  const authStore = useAuthStore();
+const resolveRedirectQuery = (value: unknown) =>
+  typeof value === "string" ? value : null;
 
-  if (isSectionPath(to.path, "/auth")) {
+export default defineNuxtRouteMiddleware(async (to) => {
+  const authStore = useAuthStore();
+  const sessionCookie = useCookie<AuthSession | null>(AUTH_SESSION_COOKIE_KEY, {
+    default: () => null,
+    sameSite: "lax",
+    watch: true,
+  });
+  const redirectToRoleHome = () =>
+    navigateTo(authStore.getRoleLandingPath(), { replace: true });
+
+  if (sessionCookie.value && !authStore.session) {
+    authStore.clearSession();
+  }
+
+  const isAuthPath = isSectionPath(to.path, "/auth");
+  const isCustomerPath =
+    isSectionPath(to.path, "/orders") || isSectionPath(to.path, "/checkout");
+  const isStaffPath = isSectionPath(to.path, "/staff");
+  const isAdminPath = isSectionPath(to.path, "/admin");
+  const isWarehousePath = isSectionPath(to.path, "/warehouse");
+  const isFinancePath = isSectionPath(to.path, "/finance");
+
+  const needsAuthResolution =
+    isAuthPath ||
+    isCustomerPath ||
+    isStaffPath ||
+    isAdminPath ||
+    isWarehousePath ||
+    isFinancePath;
+
+  if (needsAuthResolution && authStore.session && !authStore.token) {
+    if (authStore.refreshToken) {
+      await authStore.refreshSession();
+    } else {
+      authStore.clearSession();
+    }
+  }
+
+  if (isAuthPath) {
     if (authStore.isAuthenticated) {
-      return navigateTo(authStore.getRoleLandingPath());
+      return navigateTo(
+        authStore.resolveRedirectPath(resolveRedirectQuery(to.query.redirect)),
+        { replace: true },
+      );
     }
 
     return;
   }
 
-  const isCustomerPath =
-    isSectionPath(to.path, "/orders") || isSectionPath(to.path, "/checkout");
-  const isStaffPath = isSectionPath(to.path, "/staff");
-  const isAdminPath = isSectionPath(to.path, "/admin");
-
-  if (!isCustomerPath && !isStaffPath && !isAdminPath) {
+  if (!needsAuthResolution) {
     return;
   }
 
@@ -27,18 +66,36 @@ export default defineNuxtRouteMiddleware((to) => {
       query: {
         redirect: to.fullPath,
       },
+      replace: true,
     });
   }
 
   if (isCustomerPath && !authStore.hasAnyRole(["customer"])) {
-    return navigateTo(authStore.getRoleLandingPath());
+    return redirectToRoleHome();
   }
 
-  if (isStaffPath && !authStore.hasAnyRole(["staff", "admin", "manager"])) {
-    return navigateTo(authStore.getRoleLandingPath());
+  if (
+    isStaffPath &&
+    !authStore.hasAnyRole(["staff", "driver", "admin", "manager"])
+  ) {
+    return redirectToRoleHome();
   }
 
   if (isAdminPath && !authStore.hasAnyRole(["admin", "manager"])) {
-    return navigateTo(authStore.getRoleLandingPath());
+    return redirectToRoleHome();
+  }
+
+  if (
+    isWarehousePath &&
+    !authStore.hasAnyRole(["warehouse_manager", "admin", "manager"])
+  ) {
+    return redirectToRoleHome();
+  }
+
+  if (
+    isFinancePath &&
+    !authStore.hasAnyRole(["finance", "auditor", "admin", "manager"])
+  ) {
+    return redirectToRoleHome();
   }
 });

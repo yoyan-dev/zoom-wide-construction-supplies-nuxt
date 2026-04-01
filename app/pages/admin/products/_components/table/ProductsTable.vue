@@ -4,7 +4,6 @@ import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { Category } from "~/types/category";
 import type { InventoryLog } from "~/types/inventory";
 import type { Product } from "~/types/product";
-import type { Supplier } from "~/types/supplier";
 import type { Warehouse } from "~/types/warehouse";
 import {
   formatCurrency,
@@ -348,7 +347,6 @@ const productInitials = (name?: string) => {
     :open="editOpen"
     :product="selectedProduct"
     :categories="props.categories"
-    :suppliers="props.suppliers"
     @update:open="editOpen = $event"
   /> -->
 </template>

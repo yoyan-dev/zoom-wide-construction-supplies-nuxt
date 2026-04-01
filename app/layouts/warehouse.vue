@@ -64,7 +64,7 @@ const groups = computed(() => [
 ]);
 
 const handleLogout = async () => {
-  authStore.logout();
+  await authStore.logout();
   await router.push("/auth/login");
 };
 </script>

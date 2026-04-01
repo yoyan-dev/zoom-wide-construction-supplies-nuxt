@@ -10,7 +10,7 @@ import type {
   RejectOrderPayload,
 } from "~/types/order";
 import type { StoreResponse } from "~/types/store-response";
-import { apiRequest, apiRequestRaw } from "~/utils/api";
+import { apiRequest, apiRequestRaw, toErrorMessage } from "~/utils/api";
 type OrderWithItems = Order & { items?: OrderItem[] };
 
 const extractOrderItems = (value: unknown): OrderItem[] => {
@@ -91,10 +91,9 @@ export const useOrderStore = defineStore("orders", () => {
         statusMessage: result.statusMessage,
       } as StoreResponse;
     } catch (error) {
-      console.error("Error fetching orders:", error);
       return {
         status: "error",
-        message: error instanceof Error ? error.message : "Failed to fetch orders",
+        message: toErrorMessage(error) || "Failed to fetch orders",
         statusMessage: "internal server error",
       } as StoreResponse;
     } finally {
@@ -126,12 +125,11 @@ export const useOrderStore = defineStore("orders", () => {
         statusMessage: result.statusMessage,
       } as StoreResponse;
     } catch (error) {
-      console.error("Error fetching order:", error);
       order.value = null;
 
       return {
         status: "error",
-        message: error instanceof Error ? error.message : "Failed to fetch order",
+        message: toErrorMessage(error) || "Failed to fetch order",
         statusMessage: "internal server error",
       } as StoreResponse;
     } finally {
@@ -175,10 +173,9 @@ export const useOrderStore = defineStore("orders", () => {
         data: result.data || null,
       };
     } catch (error) {
-      console.error("Error creating order:", error);
       return {
         status: "error",
-        message: error instanceof Error ? error.message : "Failed to create order",
+        message: toErrorMessage(error) || "Failed to create order",
         statusMessage: "internal server error",
         data: null,
       };
@@ -208,10 +205,9 @@ export const useOrderStore = defineStore("orders", () => {
         statusMessage: result?.statusMessage || "no content",
       };
     } catch (error) {
-      console.error("Error deleting order:", error);
       return {
         status: "error",
-        message: error instanceof Error ? error.message : "Failed to delete order",
+        message: toErrorMessage(error) || "Failed to delete order",
         statusMessage: "internal server error",
       };
     } finally {
@@ -242,10 +238,9 @@ export const useOrderStore = defineStore("orders", () => {
         data: result.data || null,
       };
     } catch (error) {
-      console.error("Error approving order:", error);
       return {
         status: "error",
-        message: error instanceof Error ? error.message : "Failed to approve order",
+        message: toErrorMessage(error) || "Failed to approve order",
         statusMessage: "internal server error",
         data: null,
       };
@@ -277,10 +272,9 @@ export const useOrderStore = defineStore("orders", () => {
         data: result.data || null,
       };
     } catch (error) {
-      console.error("Error rejecting order:", error);
       return {
         status: "error",
-        message: error instanceof Error ? error.message : "Failed to reject order",
+        message: toErrorMessage(error) || "Failed to reject order",
         statusMessage: "internal server error",
         data: null,
       };

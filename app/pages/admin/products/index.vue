@@ -6,8 +6,6 @@ import ProductsStats from "./_components/ProductsStats.vue";
 import ProductHeader from "./_components/table/ProductHeader.vue";
 import ProductsTable from "./_components/table/ProductsTable.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
-import type { InventoryLog } from "~/types/inventory";
-import type { Warehouse } from "~/types/warehouse";
 
 definePageMeta({
   layout: "admin",
@@ -15,22 +13,38 @@ definePageMeta({
 
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
+const warehouseStore = useWarehouseStore();
+const inventoryStore = useInventoryStore();
 const { getLoadErrorMessage } = useAdminPageLoadState();
 const pageError = ref<string | null>(null);
 const isRetrying = ref(false);
 
 const loadPage = async () => {
-  const [productsResponse, categoriesResponse] = await Promise.all([
+  const [
+    productsResponse,
+    categoriesResponse,
+    warehousesResponse,
+    inventoryResponse,
+  ] = await Promise.all([
     productStore.fetchProducts(),
     categoryStore.fetchCategories(),
+    warehouseStore.fetchWarehouses(),
+    inventoryStore.fetchInventoryLogs(),
   ]);
 
   pageError.value =
     productsResponse.status === "success" &&
-    categoriesResponse.status === "success"
+    categoriesResponse.status === "success" &&
+    warehousesResponse.status === "success" &&
+    inventoryResponse.status === "success"
       ? null
       : getLoadErrorMessage(
-          [productsResponse, categoriesResponse],
+          [
+            productsResponse,
+            categoriesResponse,
+            warehousesResponse,
+            inventoryResponse,
+          ],
           "The products list could not be loaded right now.",
         );
 };
@@ -39,8 +53,8 @@ await loadPage();
 
 const { products, isLoading } = storeToRefs(productStore);
 const { categories } = storeToRefs(categoryStore);
-const logs = ref<InventoryLog[]>([]);
-const warehouses = ref<Warehouse[]>([]);
+const { warehouses } = storeToRefs(warehouseStore);
+const { logs } = storeToRefs(inventoryStore);
 
 const search = ref("");
 const categoryId = ref("all");

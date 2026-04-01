@@ -3,7 +3,7 @@ import { defineStore } from "pinia";
 import type { FetchCategoryParams, Category } from "~/types/category";
 import type { PaginationMeta } from "~/types/pagination";
 import type { StoreResponse } from "~/types/store-response";
-import { apiRequest, apiRequestRaw } from "~/utils/api";
+import { apiRequest, apiRequestRaw, toErrorMessage } from "~/utils/api";
 
 export const useCategoryStore = defineStore("categories", () => {
   const categories = ref<Category[]>([]);
@@ -54,11 +54,9 @@ export const useCategoryStore = defineStore("categories", () => {
         statusMessage: result.statusMessage,
       } as StoreResponse;
     } catch (error) {
-      console.error("Error fetching categories:", error);
       return {
         status: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to fetch categories",
+        message: toErrorMessage(error) || "Failed to fetch categories",
         statusMessage: "internal server error",
       } as StoreResponse;
     } finally {
@@ -80,13 +78,11 @@ export const useCategoryStore = defineStore("categories", () => {
         statusMessage: result.statusMessage,
       } as StoreResponse;
     } catch (error) {
-      console.error("Error fetching category:", error);
       category.value = null;
 
       return {
         status: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to fetch category",
+        message: toErrorMessage(error) || "Failed to fetch category",
         statusMessage: "internal server error",
       } as StoreResponse;
     } finally {
@@ -111,11 +107,9 @@ export const useCategoryStore = defineStore("categories", () => {
         statusMessage: result.statusMessage || "created",
       };
     } catch (error) {
-      console.error("Error adding category:", error);
       return {
         status: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to add category",
+        message: toErrorMessage(error) || "Failed to add category",
         statusMessage: "internal server error",
       };
     } finally {
@@ -144,11 +138,9 @@ export const useCategoryStore = defineStore("categories", () => {
         statusMessage: result.statusMessage || "accepted",
       };
     } catch (error) {
-      console.error("Error updating category:", error);
       return {
         status: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to update category",
+        message: toErrorMessage(error) || "Failed to update category",
         statusMessage: "internal server error",
       };
     } finally {
@@ -180,11 +172,9 @@ export const useCategoryStore = defineStore("categories", () => {
         statusMessage: result?.statusMessage || "no content",
       };
     } catch (error) {
-      console.error("Error deleting category:", error);
       return {
         status: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to delete category",
+        message: toErrorMessage(error) || "Failed to delete category",
         statusMessage: "internal server error",
       };
     } finally {

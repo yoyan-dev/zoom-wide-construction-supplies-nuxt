@@ -3,7 +3,7 @@ import { defineStore } from "pinia";
 import type { PaginationMeta } from "~/types/pagination";
 import type { StoreResponse } from "~/types/store-response";
 import type { FetchProductParams, Product } from "~/types/product";
-import { apiRequest, apiRequestRaw } from "~/utils/api";
+import { apiRequest, apiRequestRaw, toErrorMessage } from "~/utils/api";
 
 export const useProductStore = defineStore("products", () => {
   const products = ref<Product[]>([]);
@@ -54,11 +54,9 @@ export const useProductStore = defineStore("products", () => {
         statusMessage: result.statusMessage,
       } as StoreResponse;
     } catch (error) {
-      console.error("Error fetching products:", error);
       return {
         status: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to fetch products",
+        message: toErrorMessage(error) || "Failed to fetch products",
         statusMessage: "internal server error",
       } as StoreResponse;
     } finally {
@@ -80,13 +78,11 @@ export const useProductStore = defineStore("products", () => {
         statusMessage: result.statusMessage,
       } as StoreResponse;
     } catch (error) {
-      console.error("Error fetching product:", error);
       product.value = null;
 
       return {
         status: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to fetch product",
+        message: toErrorMessage(error) || "Failed to fetch product",
         statusMessage: "internal server error",
       } as StoreResponse;
     } finally {
@@ -106,7 +102,6 @@ export const useProductStore = defineStore("products", () => {
       });
 
       await fetchProducts();
-      console.log("Product created successfully");
       return {
         status: "success",
         message: result.message || "Product created successfully",
@@ -114,11 +109,9 @@ export const useProductStore = defineStore("products", () => {
         data: result.data || null,
       };
     } catch (error) {
-      console.error("Error adding product:", error);
       return {
         status: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to add product",
+        message: toErrorMessage(error) || "Failed to add product",
         statusMessage: "internal server error",
         data: null,
       };
@@ -149,11 +142,9 @@ export const useProductStore = defineStore("products", () => {
         data: result.data || null,
       };
     } catch (error) {
-      console.error("Error updating product:", error);
       return {
         status: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to update product",
+        message: toErrorMessage(error) || "Failed to update product",
         statusMessage: "internal server error",
         data: null,
       };
@@ -183,11 +174,9 @@ export const useProductStore = defineStore("products", () => {
         statusMessage: result?.statusMessage || "no content",
       };
     } catch (error) {
-      console.error("Error deleting product:", error);
       return {
         status: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to delete product",
+        message: toErrorMessage(error) || "Failed to delete product",
         statusMessage: "internal server error",
       };
     } finally {

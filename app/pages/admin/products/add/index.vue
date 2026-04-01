@@ -2,9 +2,8 @@
 import { storeToRefs } from "pinia";
 import AdminPageHeader from "../../_components/AdminPageHeader.vue";
 import AdminPageStateCard from "../../_components/AdminPageStateCard.vue";
-import ProductForm from "./_components/ProductForm.vue";
+import ProductForm from "../_components/ProductForm.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
-import type { Warehouse } from "~/types/warehouse";
 import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast";
 
 definePageMeta({
@@ -12,6 +11,7 @@ definePageMeta({
 });
 
 const categoryStore = useCategoryStore();
+const warehouseStore = useWarehouseStore();
 const productStore = useProductStore();
 const { notifyResponse } = useAdminResponseToast();
 const { getLoadErrorMessage } = useAdminPageLoadState();
@@ -19,15 +19,17 @@ const pageError = ref<string | null>(null);
 const isRetrying = ref(false);
 
 const loadPage = async () => {
-  const [categoriesResponse] = await Promise.all([
+  const [categoriesResponse, warehousesResponse] = await Promise.all([
     categoryStore.fetchCategories(),
+    warehouseStore.fetchWarehouses(),
   ]);
 
   pageError.value =
-    categoriesResponse.status === "success"
+    categoriesResponse.status === "success" &&
+    warehousesResponse.status === "success"
       ? null
       : getLoadErrorMessage(
-          [categoriesResponse],
+          [categoriesResponse, warehousesResponse],
           "The product form could not be prepared right now.",
         );
 };
@@ -35,7 +37,7 @@ const loadPage = async () => {
 await loadPage();
 
 const { categories } = storeToRefs(categoryStore);
-const warehouses = ref<Warehouse[]>([]);
+const { warehouses } = storeToRefs(warehouseStore);
 
 const handleCancel = async () => {
   await navigateTo("/admin/products");
@@ -70,7 +72,7 @@ const handleRetry = async () => {
       <AdminPageHeader
         eyebrow="Catalog Management"
         title="Add Product"
-        description="Create a new SKU with pricing, stock, and supplier details."
+        description="Create a new SKU with pricing and stock details."
         action-label="Back to Products"
         action-icon="i-lucide-arrow-left"
         action-color="neutral"
