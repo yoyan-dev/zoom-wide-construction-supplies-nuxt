@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import PsgcAddressFields from "~/components/address/PsgcAddressFields.vue";
+import {
+  createEmptyAddressDraft,
+  formatAddress,
+  isAddressDraftComplete,
+  toAddressPayload,
+} from "~/utils/address";
 
 definePageMeta({
   layout: "auth",
@@ -7,6 +14,7 @@ definePageMeta({
 
 const route = useRoute();
 const authStore = useAuthStore();
+const customerAddressesStore = useCustomerAddressesStore();
 const toast = useToast();
 const { isLoading } = storeToRefs(authStore);
 
@@ -15,8 +23,7 @@ const form = reactive({
   contactName: "",
   email: "",
   phone: "",
-  billingAddress: "",
-  shippingAddress: "",
+  address: createEmptyAddressDraft(),
   password: "",
   confirmPassword: "",
 });
@@ -31,6 +38,7 @@ const canSubmit = computed(
     !!form.companyName.trim() &&
     !!form.contactName.trim() &&
     !!form.email.trim() &&
+    isAddressDraftComplete(form.address) &&
     !!form.password.trim() &&
     form.password === form.confirmPassword &&
     !isLoading.value,
@@ -49,10 +57,19 @@ const handleSubmit = async () => {
     return;
   }
 
+  if (!isAddressDraftComplete(form.address)) {
+    formError.value =
+      "Complete the PSGC delivery address fields before creating the account.";
+    return;
+  }
+
   if (form.password !== form.confirmPassword) {
     formError.value = "Password confirmation does not match.";
     return;
   }
+
+  const deliveryAddressPayload = toAddressPayload(form.address);
+  const formattedDeliveryAddress = formatAddress(deliveryAddressPayload);
 
   const registerResponse = await authStore.register({
     email: form.email.trim(),
@@ -60,8 +77,8 @@ const handleSubmit = async () => {
     company_name: form.companyName.trim(),
     contact_name: form.contactName.trim(),
     phone: form.phone.trim() || null,
-    billing_address: form.billingAddress.trim() || null,
-    shipping_address: form.shippingAddress.trim() || null,
+    billing_address: formattedDeliveryAddress || null,
+    shipping_address: formattedDeliveryAddress || null,
   });
 
   if (registerResponse.status === "error") {
@@ -100,6 +117,26 @@ const handleSubmit = async () => {
     color: "success",
     icon: "i-lucide-circle-check",
   });
+
+  const customerId = loginResponse.data?.customer?.id ?? authStore.customer?.id ?? null;
+
+  if (customerId) {
+    const addressResponse = await customerAddressesStore.addAddress(
+      customerId,
+      deliveryAddressPayload,
+    );
+
+    if (addressResponse.status === "error") {
+      toast.add({
+        title: "Address needs attention",
+        description:
+          addressResponse.message ||
+          "Your account was created, but the delivery address could not be saved.",
+        color: "warning",
+        icon: "i-lucide-circle-alert",
+      });
+    }
+  }
 
   await navigateTo(authStore.resolveRedirectPath(redirectTarget.value));
 };
@@ -183,21 +220,13 @@ const loginLink = computed(() =>
               </UFormField>
             </div>
 
-            <UFormField label="Billing address">
-              <UTextarea
-                v-model="form.billingAddress"
-                class="w-full"
-                placeholder="Street, city, province, postal code"
+            <div class="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5">
+              <PsgcAddressFields
+                v-model="form.address"
+                title="Delivery Address"
+                description="This will be saved as your first delivery address for checkout."
               />
-            </UFormField>
-
-            <UFormField label="Shipping address">
-              <UTextarea
-                v-model="form.shippingAddress"
-                class="w-full"
-                placeholder="Leave blank if it matches the billing address"
-              />
-            </UFormField>
+            </div>
 
             <div class="grid gap-5 md:grid-cols-2">
               <UFormField label="Password" required>
