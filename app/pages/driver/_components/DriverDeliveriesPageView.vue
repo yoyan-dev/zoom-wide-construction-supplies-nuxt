@@ -70,7 +70,7 @@ const pageTitle = computed(() =>
 const pageDescription = computed(() =>
   props.scope === "assigned"
     ? "Review your assigned delivery jobs and mark them as delivered when the drop-off is complete."
-    : "Keep track of the orders you have already completed."
+    : "Keep track of the orders you have already completed.",
 );
 
 const sectionEyebrow = computed(() =>
@@ -85,7 +85,8 @@ const loadDriverContext = async () => {
   const response = await accountStore.fetchAccount();
 
   if (response.status === "error") {
-    pageError.value = response.message || "Your driver profile could not be loaded.";
+    pageError.value =
+      response.message || "Your driver profile could not be loaded.";
     return false;
   }
 
@@ -136,8 +137,10 @@ const handleRetry = async () => {
 
 <template>
   <div class="space-y-6">
-    <UCard class="rounded-[28px] border border-slate-200/70 bg-white shadow-sm">
-      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <UCard class="rounded-sm border border-slate-200/70 bg-white shadow-sm">
+      <div
+        class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+      >
         <div>
           <p class="text-xs uppercase tracking-[0.22em] text-amber-600">
             {{ sectionEyebrow }}
