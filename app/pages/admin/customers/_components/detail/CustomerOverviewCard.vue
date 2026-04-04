@@ -28,7 +28,7 @@ const summaryItems = computed(() => [
 <template>
   <UCard>
     <div
-      class="flex h-64 items-center justify-center rounded-[28px] border border-slate-200/70 bg-gradient-to-br from-slate-100 via-white to-amber-50"
+      class="flex h-64 items-center justify-center rounded-sm border border-slate-200/70 bg-gradient-to-br from-slate-100 via-white to-amber-50"
     >
       <div class="text-center">
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
@@ -40,7 +40,9 @@ const summaryItems = computed(() => [
       </div>
     </div>
 
-    <div class="mt-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div
+      class="mt-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
+    >
       <div>
         <div class="flex flex-wrap items-center gap-3">
           <h2 class="text-xl font-semibold text-slate-900">
@@ -50,7 +52,9 @@ const summaryItems = computed(() => [
             :color="props.customer.user_id ? 'success' : 'neutral'"
             variant="subtle"
           >
-            {{ props.customer.user_id ? "Linked account" : "No linked account" }}
+            {{
+              props.customer.user_id ? "Linked account" : "No linked account"
+            }}
           </UBadge>
         </div>
         <p class="mt-2 text-sm text-slate-600">
@@ -75,17 +79,13 @@ const summaryItems = computed(() => [
 
     <div class="mt-6 grid gap-4 md:grid-cols-2">
       <div class="rounded-2xl border border-slate-200/70 p-4">
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Email
-        </p>
+        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Email</p>
         <p class="mt-2 text-sm font-medium text-slate-800">
           {{ props.customer.email }}
         </p>
       </div>
       <div class="rounded-2xl border border-slate-200/70 p-4">
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Phone
-        </p>
+        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Phone</p>
         <p class="mt-2 text-sm font-medium text-slate-800">
           {{ props.customer.phone || "No phone number on file" }}
         </p>

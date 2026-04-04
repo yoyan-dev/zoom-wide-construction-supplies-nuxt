@@ -119,7 +119,7 @@ const retryLoad = async () => {
         >
           <UCard>
             <div
-              class="flex h-72 items-center justify-center overflow-hidden rounded-[28px] border border-slate-200/70 bg-gradient-to-br from-slate-100 via-white to-amber-50"
+              class="flex h-72 items-center justify-center overflow-hidden rounded-sm border border-slate-200/70 bg-gradient-to-br from-slate-100 via-white to-amber-50"
             >
               <img
                 v-if="product.image_url"

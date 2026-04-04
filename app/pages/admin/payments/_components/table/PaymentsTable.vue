@@ -69,6 +69,25 @@ const resolveCustomer = (payment: Payment) => {
   return order?.customer_id ? (customerById.value.get(order.customer_id) ?? null) : null;
 };
 
+const getCustomerDisplayName = (payment: Payment) => {
+  const customer = resolveCustomer(payment);
+  return (
+    customer?.company_name ??
+    customer?.contact_name ??
+    "Customer payment"
+  );
+};
+
+const getCustomerSupportText = (payment: Payment) => {
+  const customer = resolveCustomer(payment);
+
+  if (customer?.company_name && customer?.contact_name) {
+    return customer.contact_name;
+  }
+
+  return customer?.email ?? customer?.phone ?? "Customer details unavailable";
+};
+
 const paymentMethodLabel = (method: PaymentMethod) => {
   switch (method) {
     case "bank_transfer":
@@ -103,7 +122,7 @@ const paymentMethodLabel = (method: PaymentMethod) => {
             :to="`${props.detailBasePath}/${row.original.id}`"
             class="font-medium text-slate-900 transition hover:text-primary"
           >
-            Payment {{ row.original.id }}
+            Payment from {{ getCustomerDisplayName(row.original) }}
           </NuxtLink>
           <span class="text-xs text-slate-500">
             {{
@@ -122,17 +141,13 @@ const paymentMethodLabel = (method: PaymentMethod) => {
             :to="`${props.orderBasePath}/${row.original.order_id}`"
             class="font-medium text-slate-900 transition hover:text-primary"
           >
-            Order {{ row.original.order_id }}
+            Order for {{ getCustomerDisplayName(row.original) }}
           </NuxtLink>
           <span v-else class="font-medium text-slate-900">
-            Order {{ row.original.order_id }}
+            Order for {{ getCustomerDisplayName(row.original) }}
           </span>
           <span class="text-xs text-slate-500">
-            {{
-              resolveCustomer(row.original)?.company_name ??
-              resolveCustomer(row.original)?.contact_name ??
-              "Customer record unavailable"
-            }}
+            {{ getCustomerSupportText(row.original) }}
           </span>
         </div>
       </template>

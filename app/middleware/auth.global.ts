@@ -25,6 +25,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const isCustomerPath =
     isSectionPath(to.path, "/orders") || isSectionPath(to.path, "/checkout");
   const isStaffPath = isSectionPath(to.path, "/staff");
+  const isDriverPath = isSectionPath(to.path, "/driver");
   const isAdminPath = isSectionPath(to.path, "/admin");
   const isWarehousePath = isSectionPath(to.path, "/warehouse");
   const isFinancePath = isSectionPath(to.path, "/finance");
@@ -33,6 +34,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     isAuthPath ||
     isCustomerPath ||
     isStaffPath ||
+    isDriverPath ||
     isAdminPath ||
     isWarehousePath ||
     isFinancePath;
@@ -74,10 +76,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return redirectToRoleHome();
   }
 
-  if (
-    isStaffPath &&
-    !authStore.hasAnyRole(["staff", "driver", "admin", "manager"])
-  ) {
+  if (isStaffPath && !authStore.hasAnyRole(["staff", "admin", "manager"])) {
+    return redirectToRoleHome();
+  }
+
+  if (isDriverPath && !authStore.hasAnyRole(["driver"])) {
     return redirectToRoleHome();
   }
 

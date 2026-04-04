@@ -126,7 +126,7 @@ const pagination = ref({
             {{ getUserStatusLabel(row.original.is_active) }}
           </UBadge>
           <span class="text-xs text-slate-500">
-            {{ row.original.id }}
+            Internal account
           </span>
         </div>
       </template>

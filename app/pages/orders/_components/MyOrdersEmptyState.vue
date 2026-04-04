@@ -1,5 +1,7 @@
 <template>
-  <section class="rounded-[28px] border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+  <section
+    class="rounded-sm border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm"
+  >
     <p class="text-xs uppercase tracking-[0.22em] text-slate-500">
       Order History
     </p>
@@ -11,9 +13,7 @@
     </p>
 
     <div class="mt-6 flex flex-wrap justify-center gap-3">
-      <UButton color="primary" to="/shop">
-        Browse Products
-      </UButton>
+      <UButton color="primary" to="/shop"> Browse Products </UButton>
       <UButton color="neutral" variant="outline" to="/cart">
         View Cart
       </UButton>

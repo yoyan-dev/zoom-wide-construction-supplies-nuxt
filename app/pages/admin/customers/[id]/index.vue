@@ -10,5 +10,5 @@ const customerId = computed(() => String(route.params.id));
 </script>
 
 <template>
-  <CustomerDetailView :customer-id="customerId" />
+  <CustomerDetailView :customer-id="customerId" back-to="/admin/customers" />
 </template>

@@ -7,6 +7,7 @@ import type {
   AdminActionSection,
 } from "../../../_components/admin-table";
 import OrderApproveModal from "../modals/OrderApproveModal.vue";
+import OrderProductsModal from "../modals/OrderProductsModal.vue";
 import OrderRejectModal from "../modals/OrderRejectModal.vue";
 
 const props = defineProps<{
@@ -22,6 +23,18 @@ const viewActions = computed<AdminActionItem[]>(() => [
     label: "View Order Details",
     icon: "i-lucide-eye",
     to: `${props.detailBasePath}/${orderId.value}`,
+  },
+  {
+    label: "View Products",
+    icon: "i-lucide-package",
+    onClick: () =>
+      openModal(OrderProductsModal, {
+        orderId: orderId.value,
+        eyebrow: "Order Products",
+        title: "Products in this order",
+        description:
+          "Review the products, quantities, and line totals included in this order.",
+      }),
   },
 ]);
 

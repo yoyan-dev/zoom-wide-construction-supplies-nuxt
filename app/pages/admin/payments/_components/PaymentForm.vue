@@ -139,6 +139,7 @@ const handleSubmit = () => {
       <div v-if="props.mode === 'create'" class="grid gap-4 md:grid-cols-2">
         <UFormField label="Order">
           <USelect
+            class="w-full"
             v-model="draft.order_id"
             :items="orderOptions"
             placeholder="Select order"
@@ -159,6 +160,7 @@ const handleSubmit = () => {
       <div class="grid gap-4 md:grid-cols-2">
         <UFormField v-if="props.mode === 'create'" label="Method">
           <USelect
+            class="w-full"
             v-model="draft.method"
             :items="methodOptions"
             placeholder="Select method"
@@ -167,6 +169,7 @@ const handleSubmit = () => {
 
         <UFormField label="Status">
           <USelect
+            class="w-full"
             v-model="draft.status"
             :items="statusOptions"
             placeholder="Select status"

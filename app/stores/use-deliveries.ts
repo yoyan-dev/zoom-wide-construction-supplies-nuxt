@@ -12,11 +12,23 @@ import { apiRequest } from "~/utils/api";
 
 export const useDeliveryStore = defineStore("deliveries", () => {
   const deliveries = ref<Delivery[]>([]);
+  const driverDeliveries = ref<Delivery[]>([]);
+  const availableDeliveries = ref<Delivery[]>([]);
   const delivery = ref<Delivery | null>(null);
   const totalDeliveries = ref(0);
+  const totalDriverDeliveries = ref(0);
+  const totalAvailableDeliveries = ref(0);
   const isLoading = ref(false);
 
   const query = ref<FetchDeliveryParams>({
+    q: "",
+    page: 1,
+  });
+  const driverQuery = ref<FetchDeliveryParams>({
+    q: "",
+    page: 1,
+  });
+  const availableQuery = ref<FetchDeliveryParams>({
     q: "",
     page: 1,
   });
@@ -27,22 +39,77 @@ export const useDeliveryStore = defineStore("deliveries", () => {
     total: 0,
     totalPages: 0,
   });
+  const driverPagination = ref<PaginationMeta>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+  const availablePagination = ref<PaginationMeta>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+
+  const syncPagination = (
+    target: typeof pagination.value,
+    result: {
+      total?: number;
+      meta?: PaginationMeta;
+      data?: Delivery[] | null;
+    },
+  ) => {
+    target.page = result.meta?.page || 1;
+    target.limit = result.meta?.limit || 10;
+    target.total = result.meta?.total || result.total || result.data?.length || 0;
+    target.totalPages = result.meta?.totalPages || 0;
+  };
+
+  const upsertDeliveryInCollection = (
+    collection: Delivery[],
+    nextDelivery: Delivery,
+  ) => {
+    const existingIndex = collection.findIndex((entry) => entry.id === nextDelivery.id);
+
+    if (existingIndex === -1) {
+      return [nextDelivery, ...collection];
+    }
+
+    return collection.map((entry) =>
+      entry.id === nextDelivery.id ? nextDelivery : entry,
+    );
+  };
 
   const syncDeliveryRecord = (nextDelivery: Delivery) => {
     delivery.value = nextDelivery;
-    const existingIndex = deliveries.value.findIndex(
+    const hadDelivery = deliveries.value.some((entry) => entry.id === nextDelivery.id);
+    const hadAvailableDelivery = availableDeliveries.value.some(
       (entry) => entry.id === nextDelivery.id,
     );
 
-    if (existingIndex === -1) {
-      deliveries.value = [nextDelivery, ...deliveries.value];
-      totalDeliveries.value += 1;
-      return;
+    deliveries.value = upsertDeliveryInCollection(deliveries.value, nextDelivery);
+
+    if (nextDelivery.driver_id) {
+      availableDeliveries.value = availableDeliveries.value.filter(
+        (entry) => entry.id !== nextDelivery.id,
+      );
+      if (hadAvailableDelivery) {
+        totalAvailableDeliveries.value = Math.max(0, totalAvailableDeliveries.value - 1);
+      }
+    } else {
+      availableDeliveries.value = upsertDeliveryInCollection(
+        availableDeliveries.value,
+        nextDelivery,
+      );
+      if (!hadAvailableDelivery) {
+        totalAvailableDeliveries.value += 1;
+      }
     }
 
-    deliveries.value = deliveries.value.map((entry) =>
-      entry.id === nextDelivery.id ? nextDelivery : entry,
-    );
+    if (!hadDelivery) {
+      totalDeliveries.value += 1;
+    }
   };
 
   async function fetchDeliveries(params?: FetchDeliveryParams) {
@@ -63,13 +130,7 @@ export const useDeliveryStore = defineStore("deliveries", () => {
       deliveries.value = result.data || [];
       totalDeliveries.value =
         result.total || result.meta?.total || result.data?.length || 0;
-
-      pagination.value = {
-        page: result.meta?.page || 1,
-        limit: result.meta?.limit || 10,
-        total: result.meta?.total || result.total || result.data?.length || 0,
-        totalPages: result.meta?.totalPages || 0,
-      };
+      syncPagination(pagination.value, result);
 
       return {
         status: "success",
@@ -117,6 +178,97 @@ export const useDeliveryStore = defineStore("deliveries", () => {
     }
   }
 
+  async function fetchDriverDeliveries(
+    driverId: string,
+    params?: FetchDeliveryParams,
+  ) {
+    isLoading.value = true;
+
+    try {
+      if (params) {
+        driverQuery.value = {
+          ...driverQuery.value,
+          ...params,
+        };
+      }
+
+      const result = await apiRequest<Delivery[]>(`/drivers/${driverId}/deliveries`, {
+        query: driverQuery.value,
+      });
+
+      driverDeliveries.value = result.data || [];
+      totalDriverDeliveries.value =
+        result.total || result.meta?.total || result.data?.length || 0;
+      syncPagination(driverPagination.value, result);
+
+      return {
+        status: "success",
+        message: result.message || "Driver deliveries fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching driver deliveries:", error);
+
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch driver deliveries",
+        statusMessage: "internal server error",
+      } as StoreResponse;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function fetchAvailableDeliveries(params?: FetchDeliveryParams) {
+    isLoading.value = true;
+
+    try {
+      if (params) {
+        availableQuery.value = {
+          ...availableQuery.value,
+          ...params,
+        };
+      }
+
+      const result = await apiRequest<Delivery[]>("/deliveries", {
+        query: {
+          ...availableQuery.value,
+          // Backend can interpret this sentinel to return only deliveries
+          // without an assigned driver. If the API shape changes, update here.
+          driver_id: "unassigned",
+        },
+      });
+
+      availableDeliveries.value = (result.data || []).filter(
+        (entry) => !entry.driver_id,
+      );
+      totalAvailableDeliveries.value =
+        result.total || result.meta?.total || availableDeliveries.value.length || 0;
+      syncPagination(availablePagination.value, {
+        ...result,
+        data: availableDeliveries.value,
+      });
+
+      return {
+        status: "success",
+        message: result.message || "Available deliveries fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching available deliveries:", error);
+
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch available deliveries",
+        statusMessage: "internal server error",
+      } as StoreResponse;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   async function updateDelivery(
     id: string,
     payload: UpdateDeliveryPayload,
@@ -135,6 +287,19 @@ export const useDeliveryStore = defineStore("deliveries", () => {
         deliveries.value = deliveries.value.map((entry) =>
           entry.id === id ? result.data : entry,
         );
+        driverDeliveries.value = driverDeliveries.value.map((entry) =>
+          entry.id === id ? result.data : entry,
+        );
+
+        if (result.data.driver_id) {
+          availableDeliveries.value = availableDeliveries.value.filter(
+            (entry) => entry.id !== id,
+          );
+        } else if (availableDeliveries.value.some((entry) => entry.id === id)) {
+          availableDeliveries.value = availableDeliveries.value.map((entry) =>
+            entry.id === id ? result.data : entry,
+          );
+        }
       }
 
       return {
@@ -193,12 +358,22 @@ export const useDeliveryStore = defineStore("deliveries", () => {
 
   return {
     deliveries,
+    driverDeliveries,
+    availableDeliveries,
     delivery,
     totalDeliveries,
+    totalDriverDeliveries,
+    totalAvailableDeliveries,
     isLoading,
     query,
+    driverQuery,
+    availableQuery,
     pagination,
+    driverPagination,
+    availablePagination,
     fetchDeliveries,
+    fetchDriverDeliveries,
+    fetchAvailableDeliveries,
     fetchDeliveryById,
     createDelivery,
     updateDelivery,

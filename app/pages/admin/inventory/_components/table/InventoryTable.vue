@@ -145,7 +145,11 @@ const stockBadge = (product: Product) =>
             {{ warehouseMap[row.original.warehouse_id ?? ""] ?? "Unassigned" }}
           </span>
           <span class="text-xs text-slate-500">
-            {{ row.original.warehouse_id ?? "No warehouse ID" }}
+            {{
+              row.original.warehouse_id
+                ? "Storage location assigned"
+                : "No storage location assigned"
+            }}
           </span>
         </div>
       </template>

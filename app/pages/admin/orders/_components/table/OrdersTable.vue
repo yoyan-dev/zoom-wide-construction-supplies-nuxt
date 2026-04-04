@@ -103,6 +103,25 @@ const statusBadge = (
 
 const resolveCustomer = (customerId: string) =>
   customerById.value.get(customerId) ?? null;
+
+const getCustomerDisplayName = (customerId: string) => {
+  const customer = resolveCustomer(customerId);
+  return (
+    customer?.company_name ??
+    customer?.contact_name ??
+    "Customer order"
+  );
+};
+
+const getCustomerSupportText = (customerId: string) => {
+  const customer = resolveCustomer(customerId);
+
+  if (customer?.company_name && customer?.contact_name) {
+    return customer.contact_name;
+  }
+
+  return customer?.email ?? customer?.phone ?? "Contact details unavailable";
+};
 </script>
 
 <template>
@@ -125,10 +144,10 @@ const resolveCustomer = (customerId: string) =>
             :to="`${props.detailBasePath}/${row.original.id}`"
             class="font-medium text-slate-900 transition hover:text-primary"
           >
-            Order {{ row.original.id }}
+            Order for {{ getCustomerDisplayName(row.original.customer_id) }}
           </NuxtLink>
           <span class="text-xs text-slate-500">
-            Updated {{ formatShortDateOrFallback(row.original.updated_at) }}
+            Placed {{ formatShortDateOrFallback(row.original.created_at) }}
           </span>
         </div>
       </template>
@@ -136,16 +155,10 @@ const resolveCustomer = (customerId: string) =>
       <template #customer-cell="{ row }">
         <div class="flex flex-col">
           <span class="font-medium text-slate-900">
-            {{
-              resolveCustomer(row.original.customer_id)?.company_name ??
-              "Customer record unavailable"
-            }}
+            {{ getCustomerDisplayName(row.original.customer_id) }}
           </span>
           <span class="text-xs text-slate-500">
-            {{
-              resolveCustomer(row.original.customer_id)?.contact_name ??
-              row.original.customer_id
-            }}
+            {{ getCustomerSupportText(row.original.customer_id) }}
           </span>
         </div>
       </template>
@@ -173,7 +186,7 @@ const resolveCustomer = (customerId: string) =>
             {{ formatShortDateOrFallback(row.original.created_at) }}
           </span>
           <span class="text-xs text-slate-500">
-            {{ formatShortDateOrFallback(row.original.updated_at) }}
+            Updated {{ formatShortDateOrFallback(row.original.updated_at) }}
           </span>
         </div>
       </template>

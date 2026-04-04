@@ -13,6 +13,7 @@ const props = defineProps<{
   search: string;
   accountStatus: string;
   isLoading: boolean;
+  detailBasePath: string;
 }>();
 
 const filteredCustomers = computed(() =>
@@ -95,12 +96,18 @@ const pagination = ref({
       <template #company-cell="{ row }">
         <div class="flex flex-col">
           <NuxtLink
-            :to="`/admin/customers/${row.original.id}`"
+            :to="`${props.detailBasePath}/${row.original.id}`"
             class="font-medium text-slate-900 transition hover:text-primary"
           >
             {{ row.original.company_name }}
           </NuxtLink>
-          <span class="text-xs text-slate-500">{{ row.original.id }}</span>
+          <span class="text-xs text-slate-500">
+            {{
+              row.original.user_id
+                ? "Online account linked"
+                : "Customer profile only"
+            }}
+          </span>
         </div>
       </template>
       <template #contact-cell="{ row }">
@@ -134,7 +141,10 @@ const pagination = ref({
       </template>
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <CustomerRowActions :customer="row.original" />
+          <CustomerRowActions
+            :customer="row.original"
+            :detail-base-path="props.detailBasePath"
+          />
         </div>
       </template>
     </UTable>

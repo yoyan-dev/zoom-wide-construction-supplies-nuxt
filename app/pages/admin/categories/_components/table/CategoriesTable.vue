@@ -147,7 +147,13 @@ const pagination = ref({
         <div class="flex items-center gap-3">
           <div class="flex flex-col">
             <span class="font-medium">{{ row.original.name }}</span>
-            <span class="text-xs text-slate-500">{{ row.original.id }}</span>
+            <span class="text-xs text-slate-500">
+              {{
+                row.original.overview
+                  ? "Category overview available"
+                  : "Category details available"
+              }}
+            </span>
           </div>
         </div>
       </template>

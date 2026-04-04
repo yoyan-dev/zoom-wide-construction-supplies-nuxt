@@ -10,9 +10,15 @@ import CustomerOverviewCard from "./CustomerOverviewCard.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
 import { useModal } from "~/composables/admin/useModal";
 
-const props = defineProps<{
-  customerId: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    customerId: string;
+    backTo?: string;
+  }>(),
+  {
+    backTo: "/admin/customers",
+  },
+);
 
 const customerStore = useCustomerStore();
 const { getLoadErrorMessage, isMissingResourceResponse } =
@@ -41,7 +47,7 @@ await loadPage();
 const { customer } = storeToRefs(customerStore);
 
 const goBack = () => {
-  void router.push("/admin/customers");
+  void router.push(props.backTo);
 };
 
 const editCustomer = () => {

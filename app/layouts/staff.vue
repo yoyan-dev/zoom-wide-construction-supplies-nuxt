@@ -21,12 +21,6 @@ const links = [
       onSelect: () => (open.value = false),
     },
     {
-      label: "Products Management",
-      icon: "i-lucide-package",
-      to: "/staff/products",
-      onSelect: () => (open.value = false),
-    },
-    {
       label: "Customers",
       icon: "i-lucide-users",
       to: "/staff/customers",

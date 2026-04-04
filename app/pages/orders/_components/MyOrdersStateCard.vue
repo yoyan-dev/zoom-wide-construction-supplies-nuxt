@@ -30,7 +30,7 @@ const toneClasses = computed(() =>
 </script>
 
 <template>
-  <section :class="`rounded-[28px] border p-6 shadow-sm ${toneClasses}`">
+  <section :class="`rounded-sm border p-6 shadow-sm ${toneClasses}`">
     <div class="mx-auto max-w-2xl text-center">
       <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
         {{ props.eyebrow }}
@@ -43,7 +43,11 @@ const toneClasses = computed(() =>
       </p>
 
       <div v-if="props.actionLabel" class="mt-6">
-        <UButton color="primary" :loading="props.actionLoading" @click="emit('action')">
+        <UButton
+          color="primary"
+          :loading="props.actionLoading"
+          @click="emit('action')"
+        >
           {{ props.actionLabel }}
         </UButton>
       </div>

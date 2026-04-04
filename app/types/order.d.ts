@@ -1,3 +1,5 @@
+import type { Delivery } from "./delivery";
+
 export type OrderStatus =
   | "pending"
   | "approved"
@@ -26,6 +28,12 @@ export interface OrderItem {
   line_total: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface DriverAssignedOrder extends Order {
+  delivery?: Delivery | null;
+  deliveries?: Delivery[] | null;
+  items?: OrderItem[] | null;
 }
 
 export interface CreateOrderItemPayload {

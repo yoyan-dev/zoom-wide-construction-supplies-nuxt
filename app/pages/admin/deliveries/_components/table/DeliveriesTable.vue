@@ -31,6 +31,10 @@ const customerById = computed(() =>
   new Map(props.customers.map((customer) => [customer.id, customer])),
 );
 
+const driverById = computed(() =>
+  new Map(props.drivers.map((driver) => [driver.id, driver])),
+);
+
 const hasRows = computed(() => props.deliveries.length > 0);
 const hasSearch = computed(() => props.search.trim().length > 0);
 const hasStatusFilter = computed(() => props.status !== "all");
@@ -55,6 +59,41 @@ const orderDetailBasePath = computed(() =>
 const resolveCustomer = (orderId: string) => {
   const order = resolveOrder(orderId);
   return order ? (customerById.value.get(order.customer_id) ?? null) : null;
+};
+
+const resolveDriver = (driverId?: string | null) =>
+  driverId ? (driverById.value.get(driverId) ?? null) : null;
+
+const getCustomerDisplayName = (orderId: string) => {
+  const customer = resolveCustomer(orderId);
+  return (
+    customer?.company_name ??
+    customer?.contact_name ??
+    "Customer delivery"
+  );
+};
+
+const getCustomerSupportText = (orderId: string) => {
+  const customer = resolveCustomer(orderId);
+
+  if (customer?.company_name && customer?.contact_name) {
+    return customer.contact_name;
+  }
+
+  return customer?.email ?? customer?.phone ?? "Contact details unavailable";
+};
+
+const getAssignmentLabel = (delivery: Delivery) => {
+  if (delivery.vehicle_number) {
+    return `Vehicle ${delivery.vehicle_number}`;
+  }
+
+  const driver = resolveDriver(delivery.driver_id);
+  if (driver?.name) {
+    return `Assigned to ${driver.name}`;
+  }
+
+  return "Assignment pending";
 };
 
 const columns: TableColumn<Delivery>[] = [
@@ -115,16 +154,10 @@ const pagination = ref({
             :to="`${props.detailBasePath}/${row.original.id}`"
             class="font-medium text-slate-900 transition hover:text-primary"
           >
-            Delivery {{ row.original.id }}
+            Delivery for {{ getCustomerDisplayName(row.original.order_id) }}
           </NuxtLink>
           <span class="text-xs text-slate-500">
-            {{
-              row.original.vehicle_number
-                ? `Vehicle ${row.original.vehicle_number}`
-                : row.original.driver_id
-                  ? `Driver ${row.original.driver_id}`
-                  : "Assignment pending"
-            }}
+            {{ getAssignmentLabel(row.original) }}
           </span>
         </div>
       </template>
@@ -135,7 +168,7 @@ const pagination = ref({
             :to="`${orderDetailBasePath}/${row.original.order_id}`"
             class="font-medium text-slate-900 transition hover:text-primary"
           >
-            Order {{ row.original.order_id }}
+            Order for {{ getCustomerDisplayName(row.original.order_id) }}
           </NuxtLink>
           <span class="text-xs text-slate-500">
             {{
@@ -150,17 +183,10 @@ const pagination = ref({
       <template #customer-cell="{ row }">
         <div class="flex flex-col">
           <span class="font-medium text-slate-900">
-            {{
-              resolveCustomer(row.original.order_id)?.company_name ??
-              "Customer summary unavailable"
-            }}
+            {{ getCustomerDisplayName(row.original.order_id) }}
           </span>
           <span class="text-xs text-slate-500">
-            {{
-              resolveCustomer(row.original.order_id)?.contact_name ??
-              resolveOrder(row.original.order_id)?.customer_id ??
-              "Customer record unavailable"
-            }}
+            {{ getCustomerSupportText(row.original.order_id) }}
           </span>
         </div>
       </template>

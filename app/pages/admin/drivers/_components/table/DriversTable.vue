@@ -132,7 +132,7 @@ const pagination = ref({
             {{ getDriverStatusLabel(row.original.is_active) }}
           </UBadge>
           <span class="text-xs text-slate-500">
-            {{ row.original.id }}
+            Driver account
           </span>
         </div>
       </template>

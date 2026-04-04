@@ -40,12 +40,16 @@ watch(
 );
 
 const availableProducts = computed(() =>
-  props.payload?.product ? [props.payload.product] : (props.payload?.products ?? []),
+  props.payload?.product
+    ? [props.payload.product]
+    : (props.payload?.products ?? []),
 );
 
 const productOptions = computed(() =>
   availableProducts.value
-    .filter((product): product is Product & { id: string } => Boolean(product?.id))
+    .filter((product): product is Product & { id: string } =>
+      Boolean(product?.id),
+    )
     .map((product) => ({
       label: `${product.name ?? "Unnamed product"}${product.sku ? ` - ${product.sku}` : ""}`,
       value: product.id,
@@ -78,8 +82,8 @@ const handleSave = async () => {
   isSaving.value = false;
 
   const productLabel =
-    availableProducts.value.find((product) => product.id === draft.product_id)?.name ??
-    "the selected product";
+    availableProducts.value.find((product) => product.id === draft.product_id)
+      ?.name ?? "the selected product";
 
   if (
     !notifyResponse(response, {
@@ -109,6 +113,7 @@ const handleSave = async () => {
       <div class="space-y-4">
         <UFormField label="Product">
           <USelect
+            class="w-full"
             v-model="draft.product_id"
             :items="productOptions"
             placeholder="Select product"
@@ -119,6 +124,7 @@ const handleSave = async () => {
         <div class="grid gap-4 md:grid-cols-2">
           <UFormField label="Movement type">
             <USelect
+              class="w-full"
               v-model="draft.movement_type"
               :items="movementTypeOptions"
               placeholder="Select movement type"

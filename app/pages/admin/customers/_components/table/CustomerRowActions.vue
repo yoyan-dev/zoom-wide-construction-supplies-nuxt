@@ -11,6 +11,7 @@ import CustomerDeleteModal from "../modals/CustomerDeleteModal.vue";
 
 const props = defineProps<{
   customer: Customer;
+  detailBasePath: string;
 }>();
 
 const { openModal } = useModal();
@@ -20,7 +21,7 @@ const viewActions = computed<AdminActionItem[]>(() => [
   {
     label: "View Customer Details",
     icon: "i-lucide-eye",
-    to: `/admin/customers/${customerId.value}`,
+    to: `${props.detailBasePath}/${customerId.value}`,
   },
 ]);
 

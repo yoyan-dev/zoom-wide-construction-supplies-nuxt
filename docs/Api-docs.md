@@ -145,12 +145,12 @@ access: bearer: admin, manager
 Products
 GET /api/products
 access: public
-input: query: q?, category_id?, supplier_id?, page?, limit?
+input: query: q?, category_id?, page?, limit?
 GET /api/products/:id
 access: public
 POST /api/products
 access: bearer: admin, manager, warehouse_manager
-input: multipart/form-data: category_id, supplier_id?, warehouse_id?, sku, name, description?, image_url? or image file, unit, price, stock_quantity?, minimum_stock_quantity?, handbook(json), is_active?
+input: multipart/form-data: category_id, warehouse_id?, sku, name, description?, image_url? or image file, unit, price, stock_quantity?, minimum_stock_quantity?, handbook(json), is_active?
 PATCH /api/products/:id
 access: bearer: admin, manager, warehouse_manager
 input: multipart/form-data partial product fields, optional image file
@@ -159,20 +159,6 @@ access: bearer: admin, manager, warehouse_manager
 GET /api/products/insights
 access: bearer: admin, manager, warehouse_manager
 input: query: limit?
-Suppliers
-GET /api/suppliers
-access: public
-input: query: q?, page?, limit?
-GET /api/suppliers/:id
-access: public
-POST /api/suppliers
-access: bearer: admin, manager
-input: multipart/form-data: name, contact_name?, phone?, email?, address?
-PATCH /api/suppliers/:id
-access: bearer: admin, manager
-input: json partial supplier fields
-DELETE /api/suppliers/:id
-access: bearer: admin, manager
 Warehouses
 GET /api/warehouses
 access: public
@@ -202,6 +188,21 @@ access: bearer: owner or customers:write
 input: json or multipart/form-data partial customer fields, optional profile image file
 DELETE /api/customers/:id
 access: bearer: admin, manager, staff
+GET /api/customers/:id/addresses
+access: bearer: owner or customers:read
+input: query: q?, page?, limit?
+note: Lists delivery addresses for a customer.
+POST /api/customers/:id/addresses
+access: bearer: owner or customers:write
+input: json: street, city, province, postal_code?, country?, address_line?
+note: Creates a delivery address for a customer.
+GET /api/customers/:id/addresses/:addressId
+access: bearer: owner or customers:read
+PATCH /api/customers/:id/addresses/:addressId
+access: bearer: owner or customers:write
+input: json partial address fields: street?, city?, province?, postal_code?, country?, address_line?
+DELETE /api/customers/:id/addresses/:addressId
+access: bearer: owner or customers:write
 Cart
 GET /api/cart
 access: bearer: owner or cart:read
@@ -268,6 +269,7 @@ POST /api/inventory
 access: bearer: admin, manager, warehouse_manager
 input: json: product_id, movement_type, quantity_change, reference_type?, reference_id?, note?, created_by?
 note: reference_type and reference_id must be paired.
+
 Payments
 GET /api/payments
 access: bearer: admin, finance, auditor, or order owner by order_id

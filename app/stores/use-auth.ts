@@ -134,7 +134,7 @@ const getRoleLandingPath = (role?: UserRole | null) => {
     case "staff":
       return "/staff";
     case "driver":
-      return "/staff/deliveries";
+      return "/driver";
     case "warehouse_manager":
       return "/warehouse";
     case "finance":
