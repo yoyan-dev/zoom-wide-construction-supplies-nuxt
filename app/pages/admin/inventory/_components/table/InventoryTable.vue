@@ -1,135 +1,87 @@
 <script setup lang="ts">
 import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
-import { storeToRefs } from "pinia";
-import type { InventoryLog, InventoryMovementType } from "~/types/inventory";
+import type { InventoryLog } from "~/types/inventory";
 import type { Product } from "~/types/product";
-import { formatNumber, formatShortDate } from "~/utils/format";
-import InventoryBulkDeleteModal from "../modals/InventoryBulkDeleteModal.vue";
-import { useModal } from "~/composables/admin/useModal";
+import type { Warehouse } from "~/types/warehouse";
+import { formatNumber, formatShortDateOrFallback } from "~/utils/format";
+import { buildInventoryBalanceMap } from "~/utils/inventory-balance";
+import { getInventoryStockState } from "../shared/inventory-stock";
+import AdminTableEmptyState from "../../../_components/AdminTableEmptyState.vue";
 import InventoryRowActions from "./InventoryRowActions.vue";
 
-type BadgeColor =
-  | "primary"
-  | "secondary"
-  | "success"
-  | "info"
-  | "warning"
-  | "error"
-  | "neutral";
-
 const table = useTemplateRef("table");
+
 const props = defineProps<{
-  logs: InventoryLog[];
   products: Product[];
+  inventoryLogs: InventoryLog[];
+  warehouses: Warehouse[];
+  search: string;
+  stockStatus: string;
+  detailBasePath: string;
+  productBasePath?: string;
+  isLoading: boolean;
 }>();
-const { openModal } = useModal();
-const inventoryStore = useInventoryStore();
-const { query } = storeToRefs(inventoryStore);
 
-const selectedIds = ref<Set<string>>(new Set());
+const stockMap = computed(() =>
+  buildInventoryBalanceMap(props.inventoryLogs, props.products),
+);
 
-const productMap = computed(() => {
-  const map: Record<string, Product> = {};
-  for (const product of props.products) {
-    if (!product.id) continue;
-    map[product.id] = product;
+const warehouseMap = computed(() => {
+  const map: Record<string, string> = {};
+  for (const warehouse of props.warehouses) {
+    if (!warehouse.id) continue;
+    map[warehouse.id] = warehouse.name;
   }
   return map;
 });
 
-const movementTone: Record<InventoryMovementType, BadgeColor> = {
-  in: "success",
-  out: "warning",
-  adjustment: "info",
-};
+const hasRows = computed(() => props.products.length > 0);
+const hasSearch = computed(() => props.search.trim().length > 0);
+const hasStockStatusFilter = computed(() => props.stockStatus !== "all");
 
-const selectableIds = computed(() => props.logs.map((log) => log.id));
-
-const selectedCount = computed(() => selectedIds.value.size);
-
-const allSelected = computed(
-  () =>
-    selectableIds.value.length > 0 &&
-    selectableIds.value.every((id) => selectedIds.value.has(id)),
+const emptyTitle = computed(() =>
+  hasSearch.value || hasStockStatusFilter.value
+    ? "No inventory items match the current filters"
+    : "No inventory items yet",
 );
 
-const toggleAll = (value: boolean) => {
-  const next = new Set(selectedIds.value);
-  if (value) {
-    selectableIds.value.forEach((id) => next.add(id));
-  } else {
-    selectableIds.value.forEach((id) => next.delete(id));
-  }
-  selectedIds.value = next;
-};
+const emptyDescription = computed(() =>
+  hasSearch.value || hasStockStatusFilter.value
+    ? "Try a different search term or stock status filter."
+    : "Products with stock visibility will appear here once they are available in the catalog.",
+);
 
-const toggleOne = (id: string, value: boolean) => {
-  const next = new Set(selectedIds.value);
-  if (value) {
-    next.add(id);
-  } else {
-    next.delete(id);
-  }
-  selectedIds.value = next;
-};
-
-const handleBulkDelete = async () => {
-  if (!selectedIds.value.size) return;
-  openModal(InventoryBulkDeleteModal, {
-    ids: Array.from(selectedIds.value),
-    onDeleted: () => {
-      selectedIds.value = new Set();
-    },
-  });
-};
-
-const handleSearch = async (value: string) => {
-  await inventoryStore.setSearch(value);
-};
-
-watch(selectableIds, (ids) => {
-  const next = new Set<string>();
-  for (const id of ids) {
-    if (selectedIds.value.has(id)) next.add(id);
-  }
-  selectedIds.value = next;
-});
-
-const columns: TableColumn<InventoryLog>[] = [
-  {
-    id: "select",
-    header: "",
-  },
-  {
-    id: "entry",
-    header: "Entry",
-    accessorFn: (row) => row.id,
-  },
+const columns: TableColumn<Product>[] = [
   {
     id: "product",
     header: "Product",
-    accessorFn: (row) => row.product_id,
+    accessorFn: (row) => row.name ?? "",
   },
   {
-    id: "movement",
-    header: "Movement",
-    accessorFn: (row) => row.movement_type,
+    id: "warehouse",
+    header: "Warehouse",
+    accessorFn: (row) => row.warehouse_id ?? "",
   },
   {
-    id: "quantity",
-    header: "Quantity",
-    accessorFn: (row) => row.quantity_change,
+    id: "current",
+    header: "Current stock",
+    accessorFn: (row) => stockMap.value[row.id ?? ""] ?? 0,
   },
   {
-    id: "reference",
-    header: "Reference",
-    accessorFn: (row) => row.reference_id ?? "",
+    id: "minimum",
+    header: "Minimum stock",
+    accessorFn: (row) => row.minimum_stock_quantity ?? 0,
   },
   {
-    id: "created",
-    header: "Date",
-    accessorFn: (row) => row.created_at,
+    id: "status",
+    header: "Stock status",
+    accessorFn: (row) => row.id ?? "",
+  },
+  {
+    id: "updated",
+    header: "Updated",
+    accessorFn: (row) => row.updated_at ?? "",
   },
   {
     id: "actions",
@@ -139,125 +91,119 @@ const columns: TableColumn<InventoryLog>[] = [
 
 const pagination = ref({
   pageIndex: 0,
-  pageSize: 5,
+  pageSize: 10,
 });
+
+const stockBadge = (product: Product) =>
+  getInventoryStockState(
+    stockMap.value[product.id ?? ""] ?? 0,
+    product.minimum_stock_quantity ?? 0,
+  );
 </script>
 
 <template>
   <UCard>
-    <div class="mb-4 flex items-center justify-between">
-      <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Inventory Ledger
-        </p>
-        <p class="mt-1 text-lg font-semibold">Inventory overview</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <UInput
-          :model-value="query.q ?? ''"
-          class="w-56"
-          icon="i-lucide-search"
-          placeholder="Search inventory"
-          @update:model-value="handleSearch(String($event))"
-        />
-        <UButton color="neutral" variant="ghost" icon="i-lucide-filter">
-          Filters
-        </UButton>
-        <UButton
-          v-if="selectedCount"
-          color="error"
-          variant="outline"
-          icon="i-lucide-trash-2"
-          @click="handleBulkDelete"
-        >
-          Delete selected ({{ selectedCount }})
-        </UButton>
-      </div>
-    </div>
-
     <UTable
+      v-if="props.isLoading || hasRows"
       ref="table"
       v-model:pagination="pagination"
-      :data="props.logs"
+      :data="props.products"
       :columns="columns"
       class="text-sm"
       :pagination-options="{
         getPaginationRowModel: getPaginationRowModel(),
       }"
+      :loading="props.isLoading"
     >
-      <template #select-header>
-        <div class="flex items-center justify-center">
-          <UCheckbox
-            :model-value="allSelected"
-            @update:model-value="toggleAll"
-          />
-        </div>
-      </template>
-      <template #select-cell="{ row }">
-        <div class="flex items-center justify-center">
-          <UCheckbox
-            :model-value="selectedIds.has(row.original.id)"
-            @update:model-value="toggleOne(row.original.id, $event)"
-          />
-        </div>
-      </template>
-      <template #entry-cell="{ row }">
-        <div class="flex flex-col">
-          <span class="font-medium">{{ row.original.id }}</span>
-          <span class="text-xs text-slate-500">
-            {{ row.original.reference_type ?? "Manual entry" }}
-          </span>
-        </div>
-      </template>
       <template #product-cell="{ row }">
         <div class="flex flex-col">
-          <span class="font-medium">
-            {{
-              productMap[row.original.product_id]?.name ??
-              row.original.product_id
-            }}
+          <NuxtLink
+            :to="`${props.detailBasePath}/${row.original.id}`"
+            class="font-medium text-slate-900 transition hover:text-primary"
+          >
+            {{ row.original.name ?? "Unnamed product" }}
+          </NuxtLink>
+          <span class="text-xs text-slate-500">
+            {{ row.original.sku ?? "No SKU" }}
+            <template v-if="row.original.unit">
+              | {{ row.original.unit }}
+            </template>
+          </span>
+          <NuxtLink
+            v-if="props.productBasePath && row.original.id"
+            :to="`${props.productBasePath}/${row.original.id}`"
+            class="text-xs text-primary transition hover:text-primary/80"
+          >
+            Open product details
+          </NuxtLink>
+        </div>
+      </template>
+
+      <template #warehouse-cell="{ row }">
+        <div class="flex flex-col">
+          <span class="font-medium text-slate-900">
+            {{ warehouseMap[row.original.warehouse_id ?? ""] ?? "Unassigned" }}
           </span>
           <span class="text-xs text-slate-500">
-            {{ productMap[row.original.product_id]?.sku ?? "No SKU" }}
+            {{
+              row.original.warehouse_id
+                ? "Storage location assigned"
+                : "No storage location assigned"
+            }}
           </span>
         </div>
       </template>
-      <template #movement-cell="{ row }">
-        <UBadge
-          :color="movementTone[row.original.movement_type]"
-          variant="subtle"
-        >
-          {{ row.original.movement_type }}
+
+      <template #current-cell="{ row }">
+        <div class="flex flex-col">
+          <span class="font-medium text-slate-900">
+            {{ formatNumber(stockMap[row.original.id ?? ""] ?? 0) }}
+            {{ row.original.unit ?? "" }}
+          </span>
+          <span class="text-xs text-slate-500">
+            Base {{ formatNumber(row.original.stock_quantity ?? 0) }}
+          </span>
+        </div>
+      </template>
+
+      <template #minimum-cell="{ row }">
+        <span class="font-medium text-slate-900">
+          {{ formatNumber(row.original.minimum_stock_quantity ?? 0) }}
+        </span>
+      </template>
+
+      <template #status-cell="{ row }">
+        <UBadge :color="stockBadge(row.original).color" variant="subtle">
+          {{ stockBadge(row.original).label }}
         </UBadge>
       </template>
-      <template #quantity-cell="{ row }">
-        <span class="font-medium">
-          {{ formatNumber(row.original.quantity_change) }}
-        </span>
+
+      <template #updated-cell="{ row }">
+        <div class="flex flex-col">
+          <span class="font-medium text-slate-900">
+            {{ formatShortDateOrFallback(row.original.updated_at, "_") }}
+          </span>
+          <span class="text-xs text-slate-500">
+            {{ row.original.is_active ? "Active product" : "Inactive product" }}
+          </span>
+        </div>
       </template>
-      <template #reference-cell="{ row }">
-        <span class="text-slate-600">
-          {{ row.original.reference_id ?? "No reference" }}
-        </span>
-      </template>
-      <template #created-cell="{ row }">
-        <span class="text-slate-600">
-          {{ formatShortDate(row.original.created_at) }}
-        </span>
-      </template>
+
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
-          <InventoryRowActions :log="row.original" />
+          <InventoryRowActions
+            :product="row.original"
+            :detail-base-path="props.detailBasePath"
+            :product-base-path="props.productBasePath"
+          />
         </div>
       </template>
     </UTable>
-    <div class="flex justify-end border-t border-default pt-4 px-4">
-      <UPagination
-        :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-        :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-        :total="table?.tableApi?.getFilteredRowModel().rows.length"
-        @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)"
-      />
-    </div>
+
+    <AdminTableEmptyState
+      v-else
+      :title="emptyTitle"
+      :description="emptyDescription"
+    />
   </UCard>
 </template>

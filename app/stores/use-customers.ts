@@ -1,139 +1,207 @@
-import { defineStore } from "pinia";
 import { ref } from "vue";
-import type {
-  Customer,
-  CustomerPagination,
-  FetchCustomerParams,
-} from "~/types/customer";
-import type { H3Response } from "~/types/h3Response";
-// TODO: Keep local seed-backed behavior until Nitro customer routes are implemented.
-import { customers as seedCustomers } from "~/seeds/customers";
-import { toErrorMessage } from "~/utils/api";
-
-const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
-  status: "ok",
-  statusCode: 200,
-  statusMessage: "ok",
-  data,
-  total,
-});
-
-const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
-  status: "error",
-  statusCode: 500,
-  statusMessage: "internal server error",
-  message: toErrorMessage(err),
-});
+import { defineStore } from "pinia";
+import type { Customer, FetchCustomerParams } from "~/types/customer";
+import type { PaginationMeta } from "~/types/pagination";
+import type { StoreResponse } from "~/types/store-response";
+import { apiRequest, apiRequestRaw } from "~/utils/api";
 
 export const useCustomerStore = defineStore("customers", () => {
-  const error = ref<string | null>(null);
-  const customer = ref<Customer | null>(null);
-  const isLoading = ref(false);
-
-  const allCustomers = ref<Customer[]>([...seedCustomers]);
   const customers = ref<Customer[]>([]);
+  const customer = ref<Customer | null>(null);
+  const totalCustomers = ref(0);
+  const isLoading = ref(false);
 
   const query = ref<FetchCustomerParams>({
     q: "",
     page: 1,
   });
 
-  const pagination = ref<CustomerPagination>({
+  const pagination = ref<PaginationMeta>({
     page: 1,
-    limit: seedCustomers.length,
+    limit: 10,
     total: 0,
-    total_pages: 0,
+    totalPages: 0,
   });
 
-  const fetchCustomers = async (): Promise<H3Response<Customer[]>> => {
+  async function fetchCustomers(params?: FetchCustomerParams) {
+    isLoading.value = true;
+
     try {
-      isLoading.value = true;
-
-      let filtered = [...allCustomers.value];
-
-      if (query.value.q) {
-        const q = query.value.q.toLowerCase();
-        filtered = filtered.filter((c) => {
-          const phone = c.phone ?? "";
-          return (
-            c.company_name.toLowerCase().includes(q) ||
-            c.contact_name.toLowerCase().includes(q) ||
-            c.email.toLowerCase().includes(q) ||
-            phone.toLowerCase().includes(q)
-          );
-        });
+      if (params) {
+        query.value = {
+          ...query.value,
+          ...params,
+        };
       }
 
-      const start = (query.value.page! - 1) * pagination.value.limit!;
-      const end = start + pagination.value.limit!;
+      const result = await apiRequest<Customer[]>("/customers", {
+        query: query.value,
+      });
 
-      pagination.value.total = filtered.length;
-      pagination.value.total_pages = Math.ceil(
-        filtered.length / pagination.value.limit!,
-      );
-      pagination.value.page = query.value.page;
+      customers.value = result.data || [];
+      totalCustomers.value = result.total || result.meta?.total || 0;
 
-      customers.value = filtered.slice(start, end);
-      return buildOkResponse(customers.value, pagination.value.total);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Customer[]>(err);
+      pagination.value = {
+        page: result.meta?.page || 1,
+        limit: result.meta?.limit || 10,
+        total: result.meta?.total || result.total || 0,
+        totalPages: result.meta?.totalPages || 0,
+      };
+
+      return {
+        status: "success",
+        message: result.message || "Customers fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch customers",
+        statusMessage: "internal server error",
+      } as StoreResponse;
     } finally {
       isLoading.value = false;
     }
-  };
+  }
 
-  const fetchCustomerById = async (
-    id: string,
-  ): Promise<H3Response<Customer | null>> => {
+  async function fetchCustomerById(id: string) {
+    isLoading.value = true;
+
     try {
-      const found = allCustomers.value.find((c) => c.id === id);
+      const result = await apiRequest<Customer>(`/customers/${id}`);
 
-      if (!found) {
-        customer.value = null;
-        return buildOkResponse(null, 0);
+      customer.value = result.data;
+
+      return {
+        status: "success",
+        message: result.message || "Customer fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching customer:", error);
+      customer.value = null;
+
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch customer",
+        statusMessage: "internal server error",
+      } as StoreResponse;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function addCustomer(
+    payload: Omit<Customer, "id" | "created_at" | "updated_at">,
+  ): Promise<StoreResponse> {
+    isLoading.value = true;
+
+    try {
+      const result = await apiRequest<Customer>("/customers", {
+        method: "POST",
+        body: payload,
+      });
+
+      await fetchCustomers();
+
+      return {
+        status: "success",
+        message: result.message || "Customer created successfully",
+        statusMessage: result.statusMessage || "created",
+      };
+    } catch (error) {
+      console.error("Error adding customer:", error);
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to add customer",
+        statusMessage: "internal server error",
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function updateCustomer(
+    id: string,
+    payload: Partial<Omit<Customer, "id" | "created_at" | "updated_at">>,
+  ): Promise<StoreResponse> {
+    isLoading.value = true;
+
+    try {
+      const result = await apiRequest<Customer>(`/customers/${id}`, {
+        method: "PATCH",
+        body: payload,
+      });
+
+      customer.value = result.data || customer.value;
+      await fetchCustomers();
+
+      return {
+        status: "success",
+        message: result.message || "Customer updated successfully",
+        statusMessage: result.statusMessage || "accepted",
+      };
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to update customer",
+        statusMessage: "internal server error",
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function deleteCustomer(id: string): Promise<StoreResponse> {
+    isLoading.value = true;
+
+    try {
+      const { data: result, ok } = await apiRequestRaw<null>(`/customers/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!ok || (result && result.status === "error")) {
+        throw new Error(result?.message || "Failed to delete customer");
       }
 
-      customer.value = found;
-      return buildOkResponse(customer.value, 1);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Customer | null>(err);
+      customers.value = customers.value.filter((item) => item.id !== id);
+      totalCustomers.value = Math.max(0, totalCustomers.value - 1);
+
+      return {
+        status: "success",
+        message: result?.message || "Customer deleted successfully",
+        statusMessage: result?.statusMessage || "no content",
+      };
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to delete customer",
+        statusMessage: "internal server error",
+      };
+    } finally {
+      isLoading.value = false;
     }
-  };
-
-  const setSearch = async (value: string) => {
-    query.value.q = value;
-    query.value.page = 1;
-    return await fetchCustomers();
-  };
-
-  const setFilter = async (filters: Partial<FetchCustomerParams>) => {
-    query.value = {
-      ...query.value,
-      ...filters,
-      page: 1,
-    };
-
-    return await fetchCustomers();
-  };
-
-  const setPage = async (page: number) => {
-    query.value.page = page;
-    return await fetchCustomers();
-  };
+  }
 
   return {
-    customer,
     customers,
+    customer,
+    totalCustomers,
+    isLoading,
     query,
     pagination,
-    isLoading,
-    error,
     fetchCustomers,
     fetchCustomerById,
-    setSearch,
-    setFilter,
-    setPage,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
   };
 });

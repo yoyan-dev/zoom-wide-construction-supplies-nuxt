@@ -1,521 +1,381 @@
-import { defineStore } from "pinia";
 import { ref } from "vue";
+import { defineStore } from "pinia";
 import type {
+  CreateDeliveryPayload,
   Delivery,
-  DeliveryPagination,
   FetchDeliveryParams,
+  UpdateDeliveryPayload,
 } from "~/types/delivery";
-import type { H3Response } from "~/types/h3Response";
-// TODO: Keep local seed-backed behavior until Nitro delivery routes are implemented.
-import { deliveries as seedDeliveries } from "~/seeds/deliveries";
-import { downloadText, printText } from "~/utils/documents";
-import { toErrorMessage } from "~/utils/api";
-import { useInventoryStore } from "./use-inventory";
-import { useOrderStore } from "./use-orders";
-import { useProductStore } from "./use-products";
-
-type DeliveryActivity = {
-  action: string;
-  at: string;
-  detail?: string;
-};
-
-type DeliveryMeta = {
-  warehouse_staff?: string;
-  route?: string;
-  location?: string;
-};
-
-const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
-  status: "ok",
-  statusCode: 200,
-  statusMessage: "ok",
-  data,
-  total,
-});
-
-const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
-  status: "error",
-  statusCode: 500,
-  statusMessage: "internal server error",
-  message: toErrorMessage(err),
-});
+import type { PaginationMeta } from "~/types/pagination";
+import type { StoreResponse } from "~/types/store-response";
+import { apiRequest } from "~/utils/api";
 
 export const useDeliveryStore = defineStore("deliveries", () => {
-  const error = ref<string | null>(null);
-  const delivery = ref<Delivery | null>(null);
-  const isLoading = ref(false);
-  const inventoryStore = useInventoryStore();
-  const orderStore = useOrderStore();
-  const productStore = useProductStore();
-
-  const allDeliveries = ref<Delivery[]>([...seedDeliveries]);
   const deliveries = ref<Delivery[]>([]);
-  const deliveryActivity = ref<Record<string, DeliveryActivity[]>>({});
-  const deliveryMeta = ref<Record<string, DeliveryMeta>>({});
+  const driverDeliveries = ref<Delivery[]>([]);
+  const availableDeliveries = ref<Delivery[]>([]);
+  const delivery = ref<Delivery | null>(null);
+  const totalDeliveries = ref(0);
+  const totalDriverDeliveries = ref(0);
+  const totalAvailableDeliveries = ref(0);
+  const isLoading = ref(false);
 
   const query = ref<FetchDeliveryParams>({
     q: "",
-    status: "",
-    order_id: "",
-    driver_id: "",
+    page: 1,
+  });
+  const driverQuery = ref<FetchDeliveryParams>({
+    q: "",
+    page: 1,
+  });
+  const availableQuery = ref<FetchDeliveryParams>({
+    q: "",
     page: 1,
   });
 
-  const pagination = ref<DeliveryPagination>({
+  const pagination = ref<PaginationMeta>({
     page: 1,
-    limit: seedDeliveries.length,
+    limit: 10,
     total: 0,
-    total_pages: 0,
+    totalPages: 0,
+  });
+  const driverPagination = ref<PaginationMeta>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+  const availablePagination = ref<PaginationMeta>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
   });
 
-  const fetchDeliveries = async (): Promise<H3Response<Delivery[]>> => {
-    try {
-      isLoading.value = true;
+  const syncPagination = (
+    target: typeof pagination.value,
+    result: {
+      total?: number;
+      meta?: PaginationMeta;
+      data?: Delivery[] | null;
+    },
+  ) => {
+    target.page = result.meta?.page || 1;
+    target.limit = result.meta?.limit || 10;
+    target.total = result.meta?.total || result.total || result.data?.length || 0;
+    target.totalPages = result.meta?.totalPages || 0;
+  };
 
-      let filtered = [...allDeliveries.value];
+  const upsertDeliveryInCollection = (
+    collection: Delivery[],
+    nextDelivery: Delivery,
+  ) => {
+    const existingIndex = collection.findIndex((entry) => entry.id === nextDelivery.id);
 
-      if (query.value.q) {
-        const q = query.value.q.toLowerCase();
-        filtered = filtered.filter((d) => {
-          const driver = d.driver_id ?? "";
-          const vehicle = d.vehicle_number ?? "";
-          return (
-            d.id.toLowerCase().includes(q) ||
-            d.order_id.toLowerCase().includes(q) ||
-            driver.toLowerCase().includes(q) ||
-            vehicle.toLowerCase().includes(q)
-          );
-        });
-      }
+    if (existingIndex === -1) {
+      return [nextDelivery, ...collection];
+    }
 
-      if (query.value.status) {
-        filtered = filtered.filter((d) => d.status === query.value.status);
-      }
+    return collection.map((entry) =>
+      entry.id === nextDelivery.id ? nextDelivery : entry,
+    );
+  };
 
-      if (query.value.order_id) {
-        filtered = filtered.filter((d) => d.order_id === query.value.order_id);
-      }
+  const syncDeliveryRecord = (nextDelivery: Delivery) => {
+    delivery.value = nextDelivery;
+    const hadDelivery = deliveries.value.some((entry) => entry.id === nextDelivery.id);
+    const hadAvailableDelivery = availableDeliveries.value.some(
+      (entry) => entry.id === nextDelivery.id,
+    );
 
-      if (query.value.driver_id) {
-        filtered = filtered.filter((d) => d.driver_id === query.value.driver_id);
-      }
+    deliveries.value = upsertDeliveryInCollection(deliveries.value, nextDelivery);
 
-      const start = (query.value.page! - 1) * pagination.value.limit!;
-      const end = start + pagination.value.limit!;
-
-      pagination.value.total = filtered.length;
-      pagination.value.total_pages = Math.ceil(
-        filtered.length / pagination.value.limit!,
+    if (nextDelivery.driver_id) {
+      availableDeliveries.value = availableDeliveries.value.filter(
+        (entry) => entry.id !== nextDelivery.id,
       );
-      pagination.value.page = query.value.page;
+      if (hadAvailableDelivery) {
+        totalAvailableDeliveries.value = Math.max(0, totalAvailableDeliveries.value - 1);
+      }
+    } else {
+      availableDeliveries.value = upsertDeliveryInCollection(
+        availableDeliveries.value,
+        nextDelivery,
+      );
+      if (!hadAvailableDelivery) {
+        totalAvailableDeliveries.value += 1;
+      }
+    }
 
-      deliveries.value = filtered.slice(start, end);
-      return buildOkResponse(deliveries.value, pagination.value.total);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Delivery[]>(err);
-    } finally {
-      isLoading.value = false;
+    if (!hadDelivery) {
+      totalDeliveries.value += 1;
     }
   };
 
-  const fetchDeliveryById = async (
-    id: string,
-  ): Promise<H3Response<Delivery | null>> => {
-    try {
-      const found = allDeliveries.value.find((d) => d.id === id);
+  async function fetchDeliveries(params?: FetchDeliveryParams) {
+    isLoading.value = true;
 
-      if (!found) {
-        delivery.value = null;
-        return buildOkResponse(null, 0);
+    try {
+      if (params) {
+        query.value = {
+          ...query.value,
+          ...params,
+        };
       }
 
-      delivery.value = found;
-      return buildOkResponse(delivery.value, 1);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Delivery | null>(err);
-    }
-  };
-
-  const logDeliveryActivity = (
-    deliveryId: string,
-    action: string,
-    detail?: string,
-  ) => {
-    const entry: DeliveryActivity = {
-      action,
-      detail,
-      at: new Date().toISOString(),
-    };
-    const current = deliveryActivity.value[deliveryId] ?? [];
-    deliveryActivity.value = {
-      ...deliveryActivity.value,
-      [deliveryId]: [entry, ...current],
-    };
-  };
-
-  const syncInventoryForDeliveryStatus = async (
-    current: Delivery,
-    nextStatus: Delivery["status"],
-  ) => {
-    if (current.status === nextStatus) return;
-
-    const deliveryLogs = inventoryStore.getLogsByReference(current.id, "delivery");
-    const netMovement = deliveryLogs.reduce(
-      (sum, entry) => sum + (entry.quantity_change ?? 0),
-      0,
-    );
-
-    const shouldDispatch =
-      (nextStatus === "in_transit" || nextStatus === "delivered") &&
-      netMovement === 0;
-    const shouldRestore =
-      (nextStatus === "cancelled" || nextStatus === "failed") &&
-      netMovement < 0;
-
-    if (!shouldDispatch && !shouldRestore) return;
-
-    const items = orderStore.orderItems.filter(
-      (item) => item.order_id === current.order_id,
-    );
-
-    for (const item of items) {
-      const quantity = Math.abs(item.quantity ?? 0);
-      if (!quantity) continue;
-
-      const quantityChange = shouldDispatch ? -quantity : quantity;
-
-      await inventoryStore.createInventoryLog({
-        product_id: item.product_id,
-        movement_type: shouldDispatch ? "out" : "in",
-        quantity_change: quantityChange,
-        reference_type: "delivery",
-        reference_id: current.id,
-        note: shouldDispatch
-          ? `Stock released for delivery ${current.id} (${current.order_id}) after status changed from ${current.status} to ${nextStatus}.`
-          : `Stock returned from delivery ${current.id} (${current.order_id}) after status changed from ${current.status} to ${nextStatus}.`,
-        created_by: "system",
+      const result = await apiRequest<Delivery[]>("/deliveries", {
+        query: query.value,
       });
 
-      await productStore.adjustProductStock(item.product_id, quantityChange);
-    }
+      deliveries.value = result.data || [];
+      totalDeliveries.value =
+        result.total || result.meta?.total || result.data?.length || 0;
+      syncPagination(pagination.value, result);
 
-    logDeliveryActivity(
-      current.id,
-      shouldDispatch ? "Inventory deducted" : "Inventory restored",
-      `Order ${current.order_id} ${shouldDispatch ? "deducted" : "restocked"} for ${nextStatus}`,
-    );
-  };
+      return {
+        status: "success",
+        message: result.message || "Deliveries fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching deliveries:", error);
 
-  const updateDeliveryMeta = (
-    deliveryId: string,
-    payload: Partial<DeliveryMeta>,
-  ) => {
-    deliveryMeta.value = {
-      ...deliveryMeta.value,
-      [deliveryId]: {
-        ...(deliveryMeta.value[deliveryId] ?? {}),
-        ...payload,
-      },
-    };
-  };
-
-  const createDelivery = async (
-    payload: Omit<Delivery, "id" | "created_at" | "updated_at">,
-  ): Promise<H3Response<Delivery>> => {
-    try {
-      isLoading.value = true;
-      const now = new Date().toISOString();
-      const created: Delivery = {
-        id: `del-${Date.now()}`,
-        order_id: payload.order_id,
-        driver_id: payload.driver_id,
-        vehicle_number: payload.vehicle_number,
-        status: payload.status,
-        scheduled_at: payload.scheduled_at,
-        delivered_at: payload.delivered_at,
-        created_at: now,
-        updated_at: now,
-      };
-
-      allDeliveries.value = [created, ...allDeliveries.value];
-      logDeliveryActivity(created.id, "Delivery created");
-      await fetchDeliveries();
-
-      return buildOkResponse(created, 1);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Delivery>(err);
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch deliveries",
+        statusMessage: "internal server error",
+      } as StoreResponse;
     } finally {
       isLoading.value = false;
     }
-  };
+  }
 
-  const updateDelivery = async (
+  async function fetchDeliveryById(id: string) {
+    isLoading.value = true;
+
+    try {
+      const result = await apiRequest<Delivery>(`/deliveries/${id}`);
+      delivery.value = result.data;
+
+      return {
+        status: "success",
+        message: result.message || "Delivery fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching delivery:", error);
+      delivery.value = null;
+
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch delivery",
+        statusMessage: "internal server error",
+      } as StoreResponse;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function fetchDriverDeliveries(
+    driverId: string,
+    params?: FetchDeliveryParams,
+  ) {
+    isLoading.value = true;
+
+    try {
+      if (params) {
+        driverQuery.value = {
+          ...driverQuery.value,
+          ...params,
+        };
+      }
+
+      const result = await apiRequest<Delivery[]>(`/drivers/${driverId}/deliveries`, {
+        query: driverQuery.value,
+      });
+
+      driverDeliveries.value = result.data || [];
+      totalDriverDeliveries.value =
+        result.total || result.meta?.total || result.data?.length || 0;
+      syncPagination(driverPagination.value, result);
+
+      return {
+        status: "success",
+        message: result.message || "Driver deliveries fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching driver deliveries:", error);
+
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch driver deliveries",
+        statusMessage: "internal server error",
+      } as StoreResponse;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function fetchAvailableDeliveries(params?: FetchDeliveryParams) {
+    isLoading.value = true;
+
+    try {
+      if (params) {
+        availableQuery.value = {
+          ...availableQuery.value,
+          ...params,
+        };
+      }
+
+      const result = await apiRequest<Delivery[]>("/deliveries", {
+        query: {
+          ...availableQuery.value,
+          // Backend can interpret this sentinel to return only deliveries
+          // without an assigned driver. If the API shape changes, update here.
+          driver_id: "unassigned",
+        },
+      });
+
+      availableDeliveries.value = (result.data || []).filter(
+        (entry) => !entry.driver_id,
+      );
+      totalAvailableDeliveries.value =
+        result.total || result.meta?.total || availableDeliveries.value.length || 0;
+      syncPagination(availablePagination.value, {
+        ...result,
+        data: availableDeliveries.value,
+      });
+
+      return {
+        status: "success",
+        message: result.message || "Available deliveries fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching available deliveries:", error);
+
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch available deliveries",
+        statusMessage: "internal server error",
+      } as StoreResponse;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function updateDelivery(
     id: string,
-    payload: Partial<Delivery>,
-    log?: { action: string; detail?: string },
-  ): Promise<H3Response<Delivery | null>> => {
+    payload: UpdateDeliveryPayload,
+  ): Promise<StoreResponse<Delivery>> {
+    isLoading.value = true;
+
     try {
-      isLoading.value = true;
-      const index = allDeliveries.value.findIndex((item) => item.id === id);
-      if (index === -1) {
-        return buildOkResponse(null, 0);
+      const result = await apiRequest<Delivery>(`/deliveries/${id}`, {
+        method: "PATCH",
+        body: payload,
+      });
+
+      delivery.value = result.data || delivery.value;
+
+      if (result.data) {
+        deliveries.value = deliveries.value.map((entry) =>
+          entry.id === id ? result.data : entry,
+        );
+        driverDeliveries.value = driverDeliveries.value.map((entry) =>
+          entry.id === id ? result.data : entry,
+        );
+
+        if (result.data.driver_id) {
+          availableDeliveries.value = availableDeliveries.value.filter(
+            (entry) => entry.id !== id,
+          );
+        } else if (availableDeliveries.value.some((entry) => entry.id === id)) {
+          availableDeliveries.value = availableDeliveries.value.map((entry) =>
+            entry.id === id ? result.data : entry,
+          );
+        }
       }
 
-      const current = allDeliveries.value[index];
-      if (!current) {
-        return buildOkResponse(null, 0);
-      }
-      const updated: Delivery = {
-        ...current,
-        ...payload,
-        id,
-        updated_at: new Date().toISOString(),
+      return {
+        status: "success",
+        message: result.message || "Delivery updated successfully",
+        statusMessage: result.statusMessage || "accepted",
+        data: result.data || null,
       };
+    } catch (error) {
+      console.error("Error updating delivery:", error);
 
-      allDeliveries.value.splice(index, 1, updated);
-
-      if (delivery.value?.id === id) {
-        delivery.value = updated;
-      }
-
-      if (log) {
-        logDeliveryActivity(id, log.action, log.detail);
-      }
-
-      if (payload.status) {
-        await syncInventoryForDeliveryStatus(current, updated.status);
-      }
-
-      await fetchDeliveries();
-
-      return buildOkResponse(updated, 1);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Delivery | null>(err);
+      return {
+        status: "error",
+        message: error instanceof Error ? error.message : "Failed to update delivery",
+        statusMessage: "internal server error",
+        data: null,
+      };
     } finally {
       isLoading.value = false;
     }
-  };
+  }
 
-  const deleteDelivery = async (id: string): Promise<H3Response<null>> => {
+  async function createDelivery(
+    payload: CreateDeliveryPayload,
+  ): Promise<StoreResponse<Delivery>> {
+    isLoading.value = true;
+
     try {
-      isLoading.value = true;
-      allDeliveries.value = allDeliveries.value.filter((item) => item.id !== id);
+      const result = await apiRequest<Delivery>("/deliveries", {
+        method: "POST",
+        body: payload,
+      });
 
-      if (delivery.value?.id === id) {
-        delivery.value = null;
+      if (result.data) {
+        syncDeliveryRecord(result.data);
       }
 
-      logDeliveryActivity(id, "Delivery deleted");
-      await fetchDeliveries();
-
-      return buildOkResponse(null, 1);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<null>(err);
+      return {
+        status: "success",
+        message: result.message || "Delivery created successfully",
+        statusMessage: result.statusMessage || "created",
+        data: result.data || null,
+      };
+    } catch (error) {
+      console.error("Error creating delivery:", error);
+      return {
+        status: "error",
+        message: error instanceof Error ? error.message : "Failed to create delivery",
+        statusMessage: "internal server error",
+        data: null,
+      };
     } finally {
       isLoading.value = false;
     }
-  };
-
-  const getDeliveryByOrderId = (orderId: string) =>
-    allDeliveries.value.find((item) => item.order_id === orderId) ?? null;
-
-  const ensureDeliveryForOrder = async (orderId: string) => {
-    const current = getDeliveryByOrderId(orderId);
-    if (current) return current;
-    const created = await createDelivery({
-      order_id: orderId,
-      driver_id: null,
-      vehicle_number: null,
-      status: "scheduled",
-      scheduled_at: new Date().toISOString(),
-      delivered_at: null,
-    });
-    return created.data;
-  };
-
-  const assignDriver = async (id: string, driverId: string) => {
-    await updateDelivery(
-      id,
-      { driver_id: driverId },
-      { action: "Driver assigned", detail: driverId },
-    );
-  };
-
-  const assignVehicle = async (id: string, vehicleNumber: string) => {
-    await updateDelivery(
-      id,
-      { vehicle_number: vehicleNumber },
-      { action: "Vehicle assigned", detail: vehicleNumber },
-    );
-  };
-
-  const assignWarehouseStaff = (id: string, staff: string) => {
-    updateDeliveryMeta(id, { warehouse_staff: staff });
-    logDeliveryActivity(id, "Warehouse staff assigned", staff);
-  };
-
-  const scheduleDelivery = async (id: string, scheduledAt: string) => {
-    await updateDelivery(
-      id,
-      { scheduled_at: scheduledAt },
-      { action: "Delivery scheduled", detail: scheduledAt },
-    );
-  };
-
-  const updateDeliveryStatus = async (id: string, status: Delivery["status"]) => {
-    await updateDelivery(
-      id,
-      {
-        status,
-        delivered_at: status === "delivered" ? new Date().toISOString() : null,
-      },
-      { action: `Status updated to ${status}` },
-    );
-  };
-
-  const updateDeliveryLocation = (id: string, location: string) => {
-    updateDeliveryMeta(id, { location });
-    logDeliveryActivity(id, "Location updated", location);
-  };
-
-  const updateDeliveryRoute = (id: string, route: string) => {
-    updateDeliveryMeta(id, { route });
-    logDeliveryActivity(id, "Route updated", route);
-  };
-
-  const updateDeliveryStatusByOrder = async (
-    orderId: string,
-    status: Delivery["status"],
-  ) => {
-    const current = await ensureDeliveryForOrder(orderId);
-    if (!current) return;
-    await updateDeliveryStatus(current.id, status);
-  };
-
-  const assignDriverByOrder = async (orderId: string, driverId: string) => {
-    const current = await ensureDeliveryForOrder(orderId);
-    if (!current) return;
-    await assignDriver(current.id, driverId);
-  };
-
-  const scheduleDeliveryByOrder = async (
-    orderId: string,
-    scheduledAt: string,
-  ) => {
-    const current = await ensureDeliveryForOrder(orderId);
-    if (!current) return;
-    await scheduleDelivery(current.id, scheduledAt);
-  };
-
-  const printDeliveryDocument = (id: string, type: string) => {
-    const current = allDeliveries.value.find((item) => item.id === id);
-    if (!current) return;
-    const content = [
-      `Delivery ${current.id}`,
-      `Order ${current.order_id}`,
-      `Status ${current.status}`,
-      `Driver ${current.driver_id ?? "Unassigned"}`,
-      `Vehicle ${current.vehicle_number ?? "Unassigned"}`,
-      `Scheduled ${current.scheduled_at ?? "TBD"}`,
-      `Document ${type}`,
-    ].join("\n");
-    printText(`Delivery ${id} ${type}`, content);
-    logDeliveryActivity(id, `Printed ${type}`);
-  };
-
-  const downloadDeliveryDocument = (id: string, type: string) => {
-    const current = allDeliveries.value.find((item) => item.id === id);
-    if (!current) return;
-    const content = [
-      `Delivery ${current.id}`,
-      `Order ${current.order_id}`,
-      `Status ${current.status}`,
-      `Driver ${current.driver_id ?? "Unassigned"}`,
-      `Vehicle ${current.vehicle_number ?? "Unassigned"}`,
-      `Scheduled ${current.scheduled_at ?? "TBD"}`,
-      `Document ${type}`,
-    ].join("\n");
-    downloadText(`delivery-${id}-${type}.txt`, content, "text/plain");
-    logDeliveryActivity(id, `Downloaded ${type}`);
-  };
-
-  const sendDeliveryCommunication = (id: string, type: string) => {
-    logDeliveryActivity(id, "Communication sent", type);
-  };
-
-  const exportDelivery = (id: string) => {
-    const current = allDeliveries.value.find((item) => item.id === id);
-    if (!current) return;
-    const payload = JSON.stringify(current, null, 2);
-    downloadText(`delivery-${id}.json`, payload, "application/json");
-    logDeliveryActivity(id, "Delivery exported");
-  };
-
-  const getDeliveryActivity = (id: string) =>
-    deliveryActivity.value[id] ?? [];
-
-  const setSearch = async (value: string) => {
-    query.value.q = value;
-    query.value.page = 1;
-    return await fetchDeliveries();
-  };
-
-  const setFilter = async (filters: Partial<FetchDeliveryParams>) => {
-    query.value = {
-      ...query.value,
-      ...filters,
-      page: 1,
-    };
-
-    return await fetchDeliveries();
-  };
-
-  const setPage = async (page: number) => {
-    query.value.page = page;
-    return await fetchDeliveries();
-  };
+  }
 
   return {
-    delivery,
     deliveries,
-    deliveryActivity,
-    deliveryMeta,
-    query,
-    pagination,
+    driverDeliveries,
+    availableDeliveries,
+    delivery,
+    totalDeliveries,
+    totalDriverDeliveries,
+    totalAvailableDeliveries,
     isLoading,
-    error,
+    query,
+    driverQuery,
+    availableQuery,
+    pagination,
+    driverPagination,
+    availablePagination,
     fetchDeliveries,
+    fetchDriverDeliveries,
+    fetchAvailableDeliveries,
     fetchDeliveryById,
     createDelivery,
     updateDelivery,
-    deleteDelivery,
-    getDeliveryByOrderId,
-    ensureDeliveryForOrder,
-    logDeliveryActivity,
-    updateDeliveryMeta,
-    assignDriver,
-    assignVehicle,
-    assignWarehouseStaff,
-    scheduleDelivery,
-    updateDeliveryStatus,
-    updateDeliveryStatusByOrder,
-    assignDriverByOrder,
-    scheduleDeliveryByOrder,
-    updateDeliveryLocation,
-    updateDeliveryRoute,
-    printDeliveryDocument,
-    downloadDeliveryDocument,
-    sendDeliveryCommunication,
-    exportDelivery,
-    getDeliveryActivity,
-    setSearch,
-    setFilter,
-    setPage,
   };
 });

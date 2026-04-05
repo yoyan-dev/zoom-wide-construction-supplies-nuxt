@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import MyOrdersPageView from "./_components/MyOrdersPageView.vue";
+
 definePageMeta({
-  layout: "orders",
+  layout: "shop",
+});
+
+useSeoMeta({
+  title: "My Orders | ZOOM WIDE Construction Supplies",
+  description:
+    "Review submitted customer orders, filter order history, and continue to tracking from the ZOOM WIDE storefront.",
 });
 </script>
 
 <template>
-  <div>User Orders List</div>
+  <MyOrdersPageView />
 </template>

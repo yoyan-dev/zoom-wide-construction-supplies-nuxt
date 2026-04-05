@@ -1,381 +1,200 @@
+import { ref } from "vue";
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
-import type {
-  FetchProductParams,
-  Product,
-  ProductPaginaton,
-} from "~/types/product";
-import type { H3Response } from "~/types/h3Response";
-import { downloadText, printText } from "~/utils/documents";
-import {
-  apiRequest,
-  buildErrorResponse,
-  buildOkResponse,
-  DEFAULT_API_PAGE_LIMIT,
-  getTotalPages,
-  toErrorMessage,
-} from "~/utils/api";
-
-type ProductMeta = {
-  archived?: boolean;
-};
+import type { PaginationMeta } from "~/types/pagination";
+import type { StoreResponse } from "~/types/store-response";
+import type { FetchProductParams, Product } from "~/types/product";
+import { apiRequest, apiRequestRaw, toErrorMessage } from "~/utils/api";
 
 export const useProductStore = defineStore("products", () => {
-  const error = ref<string | null>(null);
-  const product = ref<Product | null>(null);
-
-  const allProducts = ref<Product[]>([]);
   const products = ref<Product[]>([]);
-  const productMeta = ref<Record<string, ProductMeta>>({});
+  const product = ref<Product | null>(null);
+  const totalProducts = ref(0);
+  const isLoading = ref(false);
 
   const query = ref<FetchProductParams>({
     q: "",
-    category_id: "",
-    supplier_id: "",
     page: 1,
   });
 
-  const pagination = ref<ProductPaginaton>({
+  const pagination = ref<PaginationMeta>({
     page: 1,
-    limit: DEFAULT_API_PAGE_LIMIT,
+    limit: 10,
     total: 0,
-    total_pages: 0,
-  });
-  const isFetchingProducts = ref(false);
-  const isFetchingProduct = ref(false);
-
-  const isMutating = ref(false);
-  const isLoading = computed(
-    () => isFetchingProducts.value || isFetchingProduct.value || isMutating.value,
-  );
-
-  const syncPagination = (total: number, limit: number) => {
-    pagination.value = {
-      page: query.value.page ?? 1,
-      limit,
-      total,
-      total_pages: getTotalPages(total, limit),
-    };
-  };
-
-  const setCachedProduct = (value: Product) => {
-    if (!value.id) return;
-    const next = allProducts.value.filter((item) => item.id !== value.id);
-    allProducts.value = [value, ...next];
-  };
-
-  const findProductById = (id: string) =>
-    allProducts.value.find((item) => item.id === id) ??
-    products.value.find((item) => item.id === id) ??
-    (product.value?.id === id ? product.value : null);
-
-  const toProductPayload = (payload: Partial<Product>) => ({
-    category_id: payload.category_id,
-    supplier_id: payload.supplier_id,
-    warehouse_id: payload.warehouse_id,
-    sku: payload.sku,
-    name: payload.name,
-    description: payload.description,
-    image_url: payload.image_url,
-    unit: payload.unit,
-    price: payload.price,
-    stock_quantity: payload.stock_quantity,
-    minimum_stock_quantity: payload.minimum_stock_quantity,
-    handbook: payload.handbook,
-    is_active: payload.is_active,
+    totalPages: 0,
   });
 
-  const fetchProducts = async (): Promise<H3Response<Product[]>> => {
+  async function fetchProducts(params?: FetchProductParams) {
+    isLoading.value = true;
+
     try {
-      error.value = null;
-      isFetchingProducts.value = true;
-      const limit = pagination.value.limit ?? DEFAULT_API_PAGE_LIMIT;
-      const response = await apiRequest<Product[]>("/products", {
-        query: {
-          q: query.value.q,
-          category_id: query.value.category_id,
-          supplier_id: query.value.supplier_id,
-          page: query.value.page ?? 1,
-          limit,
-        },
+      if (params) {
+        query.value = {
+          ...query.value,
+          ...params,
+        };
+      }
+
+      const result = await apiRequest<Product[]>("/products", {
+        query: query.value,
       });
-      const items = response.data ?? [];
-      const total = response.total ?? items.length;
 
-      allProducts.value = items;
-      products.value = items;
-      syncPagination(total, limit);
+      products.value = result.data || [];
+      totalProducts.value = result.total || result.meta?.total || 0;
 
-      if (product.value?.id) {
-        product.value =
-          items.find((item) => item.id === product.value?.id) ?? product.value;
-      }
+      pagination.value = {
+        page: result.meta?.page || 1,
+        limit: result.meta?.limit || 10,
+        total: result.meta?.total || result.total || 0,
+        totalPages: result.meta?.totalPages || 0,
+      };
 
-      return buildOkResponse(products.value, total);
-    } catch (err: unknown) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Product[]>(err);
+      return {
+        status: "success",
+        message: result.message || "Products fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      return {
+        status: "error",
+        message: toErrorMessage(error) || "Failed to fetch products",
+        statusMessage: "internal server error",
+      } as StoreResponse;
     } finally {
-      isFetchingProducts.value = false;
+      isLoading.value = false;
     }
-  };
+  }
 
-  const fetchProductById = async (
-    id: string,
-  ): Promise<H3Response<Product | null>> => {
+  async function fetchProductById(id: string) {
+    isLoading.value = true;
+
     try {
-      error.value = null;
-      isFetchingProduct.value = true;
-      const cached = findProductById(id);
+      const result = await apiRequest<Product>(`/products/${id}`);
 
-      if (cached) {
-        product.value = cached;
-        return buildOkResponse(product.value, 1);
-      }
+      product.value = result.data;
 
-      const response = await apiRequest<Product | null>(`/products/${id}`);
-      product.value = response.data ?? null;
+      return {
+        status: "success",
+        message: result.message || "Product fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      product.value = null;
 
-      if (product.value) {
-        setCachedProduct(product.value);
-      }
-
-      return buildOkResponse(product.value, product.value ? 1 : 0);
-    } catch (err: unknown) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Product | null>(err);
+      return {
+        status: "error",
+        message: toErrorMessage(error) || "Failed to fetch product",
+        statusMessage: "internal server error",
+      } as StoreResponse;
     } finally {
-      isFetchingProduct.value = false;
+      isLoading.value = false;
     }
-  };
+  }
 
-  const createProduct = async (
-    payload: Omit<Product, "id" | "created_at" | "updated_at">,
-  ): Promise<H3Response<Product>> => {
+  async function addProduct(
+    payload: FormData,
+  ): Promise<StoreResponse<Product>> {
+    isLoading.value = true;
+
     try {
-      error.value = null;
-      isMutating.value = true;
-
-      const response = await apiRequest<Product>("/products", {
+      const result = await apiRequest<Product>("/products", {
         method: "POST",
-        body: toProductPayload(payload),
+        body: payload,
       });
-      const created = response.data as Product;
 
-      setCachedProduct(created);
-      product.value = created;
       await fetchProducts();
-
-      return buildOkResponse(created, 1);
-    } catch (err: unknown) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Product>(err);
+      return {
+        status: "success",
+        message: result.message || "Product created successfully",
+        statusMessage: result.statusMessage || "created",
+        data: result.data || null,
+      };
+    } catch (error) {
+      return {
+        status: "error",
+        message: toErrorMessage(error) || "Failed to add product",
+        statusMessage: "internal server error",
+        data: null,
+      };
     } finally {
-      isMutating.value = false;
+      isLoading.value = false;
     }
-  };
+  }
 
-  const updateProduct = async (
+  async function updateProduct(
     id: string,
-    payload: Partial<Product>,
-  ): Promise<H3Response<Product | null>> => {
-    try {
-      error.value = null;
-      isMutating.value = true;
+    payload: FormData,
+  ): Promise<StoreResponse<Product>> {
+    isLoading.value = true;
 
-      const response = await apiRequest<Product | null>(`/products/${id}`, {
+    try {
+      const result = await apiRequest<Product>(`/products/${id}`, {
         method: "PATCH",
-        body: toProductPayload(payload),
+        body: payload,
       });
-      const updated = response.data ?? null;
 
-      if (!updated) {
-        return buildOkResponse(null, 0);
-      }
-
-      setCachedProduct(updated);
-
-      if (product.value?.id === id) {
-        product.value = updated;
-      }
-
+      product.value = result.data || null;
       await fetchProducts();
 
-      return buildOkResponse(updated, 1);
-    } catch (err: unknown) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Product | null>(err);
+      return {
+        status: "success",
+        message: result.message || "Product updated successfully",
+        statusMessage: result.statusMessage || "accepted",
+        data: result.data || null,
+      };
+    } catch (error) {
+      return {
+        status: "error",
+        message: toErrorMessage(error) || "Failed to update product",
+        statusMessage: "internal server error",
+        data: null,
+      };
     } finally {
-      isMutating.value = false;
+      isLoading.value = false;
     }
-  };
+  }
 
-  const adjustProductStock = async (
-    id: string,
-    delta: number,
-  ): Promise<H3Response<Product | null>> => {
-    const current = findProductById(id) ?? (await fetchProductById(id)).data ?? null;
+  async function deleteProduct(id: string): Promise<StoreResponse> {
+    isLoading.value = true;
 
-    if (!current) {
-      return buildOkResponse(null, 0);
-    }
-
-    const nextQuantity = Math.max((current.stock_quantity ?? 0) + delta, 0);
-    return await updateProduct(id, { stock_quantity: nextQuantity });
-  };
-
-  const setProductArchived = (id: string, archived: boolean) => {
-    productMeta.value = {
-      ...productMeta.value,
-      [id]: {
-        ...(productMeta.value[id] ?? {}),
-        archived,
-      },
-    };
-  };
-
-  const duplicateProduct = async (
-    id: string,
-  ): Promise<H3Response<Product | null>> => {
     try {
-      const current = findProductById(id);
-
-      if (!current) {
-        return buildOkResponse(null, 0);
-      }
-
-      const response = await createProduct({
-        category_id: current.category_id,
-        supplier_id: current.supplier_id,
-        warehouse_id: current.warehouse_id,
-        sku: current.sku ? `${current.sku}-COPY` : undefined,
-        name: `${current.name ?? "Product"} (Copy)`,
-        description: current.description,
-        image_url: current.image_url,
-        unit: current.unit,
-        price: current.price,
-        stock_quantity: current.stock_quantity,
-        minimum_stock_quantity: current.minimum_stock_quantity,
-        category: undefined,
-        supplier: undefined,
-        warehouse: undefined,
-        handbook: current.handbook,
-        is_active: current.is_active,
-      });
-
-      return buildOkResponse(response.data ?? null, response.total ?? 0);
-    } catch (err: unknown) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Product | null>(err);
-    }
-  };
-
-  const exportProduct = (id: string) => {
-    const current = findProductById(id);
-    if (!current) return;
-    const payload = JSON.stringify(current, null, 2);
-    downloadText(`product-${id}.json`, payload, "application/json");
-  };
-
-  const printProductSheet = (id: string) => {
-    const current = findProductById(id);
-    if (!current) return;
-    const content = [
-      `Product ${current.id}`,
-      `Name: ${current.name ?? ""}`,
-      `SKU: ${current.sku ?? ""}`,
-      `Price: ${current.price ?? 0}`,
-      `Stock: ${current.stock_quantity ?? 0}`,
-      `Minimum stock: ${current.minimum_stock_quantity ?? 0}`,
-      `Status: ${current.is_active ? "Active" : "Inactive"}`,
-    ].join("\n");
-    printText(`Product ${id} sheet`, content);
-  };
-
-  const downloadProductSheet = (id: string) => {
-    const current = findProductById(id);
-    if (!current) return;
-    const content = [
-      `Product ${current.id}`,
-      `Name: ${current.name ?? ""}`,
-      `SKU: ${current.sku ?? ""}`,
-      `Price: ${current.price ?? 0}`,
-      `Stock: ${current.stock_quantity ?? 0}`,
-      `Minimum stock: ${current.minimum_stock_quantity ?? 0}`,
-      `Status: ${current.is_active ? "Active" : "Inactive"}`,
-    ].join("\n");
-    downloadText(`product-${id}.txt`, content, "text/plain");
-  };
-
-  const deleteProduct = async (id: string): Promise<H3Response<null>> => {
-    try {
-      error.value = null;
-      isMutating.value = true;
-
-      await apiRequest<null>(`/products/${id}`, {
+      const { data: result, ok } = await apiRequestRaw<null>(`/products/${id}`, {
         method: "DELETE",
       });
 
-      allProducts.value = allProducts.value.filter((item) => item.id !== id);
-      products.value = products.value.filter((item) => item.id !== id);
-
-      if (product.value?.id === id) {
-        product.value = null;
+      if (!ok || (result && result.status === "error")) {
+        throw new Error(result?.message || "Failed to delete product");
       }
 
-      await fetchProducts();
+      products.value = products.value.filter((item) => item.id !== id);
+      totalProducts.value = Math.max(0, totalProducts.value - 1);
 
-      return buildOkResponse(null, 1);
-    } catch (err: unknown) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<null>(err);
+      return {
+        status: "success",
+        message: result?.message || "Product deleted successfully",
+        statusMessage: result?.statusMessage || "no content",
+      };
+    } catch (error) {
+      return {
+        status: "error",
+        message: toErrorMessage(error) || "Failed to delete product",
+        statusMessage: "internal server error",
+      };
     } finally {
-      isMutating.value = false;
+      isLoading.value = false;
     }
-  };
-
-  const setSearch = async (value: string) => {
-    query.value.q = value;
-    query.value.page = 1;
-    return await fetchProducts();
-  };
-
-  const setFilter = async (filters: Partial<FetchProductParams>) => {
-    query.value = {
-      ...query.value,
-      ...filters,
-      page: 1,
-    };
-
-    return await fetchProducts();
-  };
-
-  const setPage = async (page: number) => {
-    query.value.page = page;
-    return await fetchProducts();
-  };
+  }
 
   return {
-    product,
     products,
-    productMeta,
+    product,
+    totalProducts,
+    isLoading,
     query,
     pagination,
-    isLoading,
-    error,
     fetchProducts,
     fetchProductById,
-    createProduct,
+    addProduct,
     updateProduct,
-    adjustProductStock,
     deleteProduct,
-    setProductArchived,
-    duplicateProduct,
-    exportProduct,
-    printProductSheet,
-    downloadProductSheet,
-    setSearch,
-    setFilter,
-    setPage,
   };
 });

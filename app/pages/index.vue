@@ -1,3 +1,11 @@
+<script setup lang="ts">
+const authStore = useAuthStore();
+
+await navigateTo(
+  authStore.isAuthenticated ? authStore.getRoleLandingPath() : "/shop",
+);
+</script>
+
 <template>
-  <h1>Index page</h1>
+  <div />
 </template>

@@ -1,185 +1,227 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { buildInventoryBalanceMap } from "~/utils/inventory-balance";
-import {
-  storefrontPromoBanners,
-  storefrontQuickTerms,
-  storefrontSteps,
-  storefrontTrustPoints,
-} from "./_components/storefront.data";
-import StorefrontBestSellers from "./_components/StorefrontBestSellers.vue";
-import StorefrontCategoryShortcuts from "./_components/StorefrontCategoryShortcuts.vue";
-import StorefrontCtaBanner from "./_components/StorefrontCtaBanner.vue";
-import StorefrontFeaturedProducts from "./_components/StorefrontFeaturedProducts.vue";
-import StorefrontHero from "./_components/StorefrontHero.vue";
-import StorefrontHowItWorks from "./_components/StorefrontHowItWorks.vue";
-import StorefrontProductGrid from "./_components/StorefrontProductGrid.vue";
-import StorefrontPromoBanners from "./_components/StorefrontPromoBanners.vue";
-import StorefrontTrustSection from "./_components/StorefrontTrustSection.vue";
+import StorefrontStateCard from "~/components/storefront/StorefrontStateCard.vue";
+import ShopHomeCategoryGrid from "./_components/ShopHomeCategoryGrid.vue";
+import ShopHomeFeaturedProducts from "./_components/ShopHomeFeaturedProducts.vue";
+import ShopHomeHero from "./_components/ShopHomeHero.vue";
+import ShopHomeTrustSection from "./_components/ShopHomeTrustSection.vue";
 
 definePageMeta({
   layout: "shop",
+});
+
+useSeoMeta({
+  title: "Shop | ZOOM WIDE Construction Supplies",
+  description:
+    "Explore featured construction materials, trusted categories, and specification-ready products from ZOOM WIDE.",
 });
 
 const route = useRoute();
 const router = useRouter();
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
-const inventoryStore = useInventoryStore();
-const orderStore = useOrderStore();
+const cartStore = useCartStore();
 
-await Promise.all([
-  productStore.fetchProducts(),
-  categoryStore.fetchCategories(),
-  inventoryStore.fetchInventoryLogs(),
-]);
+const pageError = ref<string | null>(null);
+const isRetrying = ref(false);
 
-const { products } = storeToRefs(productStore);
-const { categories } = storeToRefs(categoryStore);
-const { logs } = storeToRefs(inventoryStore);
-const { orderItems } = storeToRefs(orderStore);
+const loadPage = async () => {
+  const [productsResponse, categoriesResponse] = await Promise.all([
+    productStore.fetchProducts({ page: 1 }),
+    categoryStore.fetchCategories({ page: 1 }),
+  ]);
 
-const search = ref(typeof route.query.q === "string" ? route.query.q : "");
+  pageError.value =
+    productsResponse.status === "success" &&
+    categoriesResponse.status === "success"
+      ? null
+      : "The storefront home could not load all live catalog data right now. You can retry without losing the rest of the page.";
+};
 
-watch(
-  () => route.query.q,
-  (value) => {
-    search.value = typeof value === "string" ? value : "";
-  },
-  { immediate: true },
+await loadPage();
+
+const {
+  products,
+  isLoading: isProductsLoading,
+  totalProducts,
+} = storeToRefs(productStore);
+const {
+  categories,
+  isLoading: isCategoriesLoading,
+  totalCategories,
+} = storeToRefs(categoryStore);
+const { items, isSyncing } = storeToRefs(cartStore);
+
+const searchQuery = computed(() =>
+  typeof route.query.q === "string" ? route.query.q.trim().toLowerCase() : "",
 );
 
-const applySearch = async () => {
-  const query = search.value.trim();
-  await router.replace({
+const activeCategoryId = computed(() =>
+  typeof route.query.category_id === "string" ? route.query.category_id : "",
+);
+
+const activeCategory = computed(
+  () =>
+    categories.value.find((category) => category.id === activeCategoryId.value) ??
+    null,
+);
+
+const liveProducts = computed(() =>
+  products.value.filter((product) => product.is_active !== false),
+);
+
+const matchesSearch = (value: string, search: string) =>
+  value.toLowerCase().includes(search);
+
+const filteredProducts = computed(() =>
+  liveProducts.value.filter((product) => {
+    const matchesCategory = activeCategoryId.value
+      ? product.category_id === activeCategoryId.value
+      : true;
+
+    if (!matchesCategory) {
+      return false;
+    }
+
+    if (!searchQuery.value) {
+      return true;
+    }
+
+    return [
+      product.name,
+      product.sku,
+      product.description,
+      product.handbook?.summary,
+      ...(product.handbook?.features ?? []),
+      ...(product.handbook?.applications ?? []),
+      ...(product.handbook?.specifications ?? []).flatMap((item) => [
+        item.label,
+        item.value,
+      ]),
+    ].some((entry) =>
+      typeof entry === "string" ? matchesSearch(entry, searchQuery.value) : false,
+    );
+  }),
+);
+
+const featuredProducts = computed(() => filteredProducts.value.slice(0, 4));
+
+const featuredCategories = computed(() => {
+  const selected = activeCategory.value
+    ? categories.value.filter((category) => category.id === activeCategory.value?.id)
+    : [];
+  const remaining = categories.value.filter(
+    (category) => category.id !== activeCategory.value?.id,
+  );
+
+  return [...selected, ...remaining].slice(0, 4);
+});
+
+const featuredProduct = computed(
+  () => featuredProducts.value[0] ?? liveProducts.value[0] ?? null,
+);
+
+const heroStats = computed(() => [
+  {
+    label: "Active products",
+    value: String(totalProducts.value || liveProducts.value.length || 0),
+  },
+  {
+    label: "Core categories",
+    value: String(totalCategories.value || categories.value.length || 0),
+  },
+  {
+    label: "Cart-ready items",
+    value: String(items.value.length),
+  },
+]);
+
+const cartQuantities = computed<Record<string, number>>(() =>
+  Object.fromEntries(
+    items.value.map((item) => [item.product_id, item.quantity]),
+  ),
+);
+
+const hasFilters = computed(
+  () => Boolean(searchQuery.value || activeCategoryId.value),
+);
+
+const clearFilters = async () => {
+  await router.push({
     path: "/shop",
-    query: query ? { q: query } : {},
+    hash: "#featured",
   });
 };
 
-const activeProducts = computed(() =>
-  products.value.filter((product) => product.is_active !== false && product.id),
-);
+const handleRetry = async () => {
+  isRetrying.value = true;
+  await loadPage();
+  isRetrying.value = false;
+};
 
-const stockMap = computed(() =>
-  buildInventoryBalanceMap(logs.value, activeProducts.value),
-);
-
-const categoryCounts = computed(() => {
-  const counts: Record<string, number> = {};
-  for (const product of activeProducts.value) {
-    if (!product.category_id) continue;
-    counts[product.category_id] = (counts[product.category_id] ?? 0) + 1;
-  }
-  return counts;
-});
-
-const categoryShortcutItems = computed(() =>
-  categories.value
-    .map((category) => ({
-      category,
-      productCount: categoryCounts.value[category.id] ?? 0,
-    }))
-    .filter((item) => item.productCount > 0)
-    .slice(0, 8),
-);
-
-const productMap = computed(() => {
-  const map: Record<string, typeof activeProducts.value[number]> = {};
-  for (const product of activeProducts.value) {
-    if (!product.id) continue;
-    map[product.id] = product;
-  }
-  return map;
-});
-
-const rankedBestSellerIds = computed(() => {
-  const counts: Record<string, number> = {};
-  for (const item of orderItems.value) {
-    counts[item.product_id] = (counts[item.product_id] ?? 0) + item.quantity;
+const handleAddToCart = async (productId?: string) => {
+  if (!productId) {
+    return;
   }
 
-  return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([id]) => id);
-});
+  const product = liveProducts.value.find((item) => item.id === productId);
 
-const featuredProductIds = [
-  "prod-conc-bag",
-  "prod-conc-25mpa",
-  "prod-rebar-16",
-  "prod-ply-18",
-];
+  if (!product) {
+    return;
+  }
 
-const featuredProducts = computed(() =>
-  featuredProductIds
-    .map((id) => productMap.value[id])
-    .filter(Boolean)
-    .slice(0, 4),
-);
-
-const bestSellerProducts = computed(() =>
-  rankedBestSellerIds.value
-    .map((id) => productMap.value[id])
-    .filter(Boolean)
-    .slice(0, 4),
-);
-
-const filteredBrowseProducts = computed(() => {
-  const term = search.value.trim().toLowerCase();
-  if (!term) return activeProducts.value.slice(0, 8);
-
-  return activeProducts.value.filter((product) =>
-    [
-      product.name ?? "",
-      product.sku ?? "",
-      product.description ?? "",
-      product.category?.name ?? "",
-      product.handbook?.summary ?? "",
-      ...(product.handbook?.features ?? []),
-      ...(product.handbook?.applications ?? []),
-    ]
-      .join(" ")
-      .toLowerCase()
-      .includes(term),
-  );
-});
+  await cartStore.addToCart(product, 1);
+};
 </script>
 
 <template>
-  <div class="min-h-screen">
-    <div class="mx-auto max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-      <StorefrontHero
-        :search="search"
-        :quick-terms="storefrontQuickTerms"
-        @update:search="search = $event"
-        @search="applySearch"
-      />
+  <div class="pb-20 md:pb-24">
+    <ShopHomeHero
+      :stats="heroStats"
+      :featured-product-name="featuredProduct?.name"
+      :featured-product-image="featuredProduct?.image_url"
+    />
 
-      <StorefrontCategoryShortcuts :items="categoryShortcutItems" />
+    <StorefrontPageContainer v-if="pageError" size="wide" class="mt-8">
+      <StorefrontStateCard
+        eyebrow="Storefront"
+        title="Live catalog data is temporarily unavailable"
+        :description="pageError"
+        tone="error"
+      >
+        <template #actions>
+          <StorefrontButton
+            tone="danger"
+            :loading="isRetrying"
+            @click="handleRetry"
+          >
+            Retry
+          </StorefrontButton>
+        </template>
+      </StorefrontStateCard>
+    </StorefrontPageContainer>
 
-      <StorefrontPromoBanners :banners="storefrontPromoBanners" />
+    <ShopHomeCategoryGrid
+      :categories="featuredCategories"
+      :is-loading="isCategoriesLoading"
+      :active-category-id="activeCategoryId"
+    />
 
-      <StorefrontFeaturedProducts
-        :products="featuredProducts"
-        :stock-map="stockMap"
-      />
+    <ShopHomeFeaturedProducts
+      :products="featuredProducts"
+      :is-loading="isProductsLoading"
+      :active-category-name="activeCategory?.name"
+      :search-query="searchQuery"
+      :cart-quantities="cartQuantities"
+      :is-cart-busy="isSyncing"
+      :has-filters="hasFilters"
+      @add-to-cart="handleAddToCart"
+      @clear-filters="clearFilters"
+    />
 
-      <StorefrontBestSellers
-        :products="bestSellerProducts"
-        :stock-map="stockMap"
-      />
-
-      <StorefrontProductGrid
-        :products="filteredBrowseProducts"
-        :stock-map="stockMap"
-      />
-
-      <StorefrontTrustSection :points="storefrontTrustPoints" />
-
-      <StorefrontHowItWorks :steps="storefrontSteps" />
-
-      <StorefrontCtaBanner />
-    </div>
+    <ShopHomeTrustSection
+      :product-count="totalProducts || liveProducts.length"
+      :category-count="totalCategories || categories.length"
+    />
   </div>
 </template>

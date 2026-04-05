@@ -34,7 +34,7 @@ const statusOptions = [
       <UInput
         :model-value="props.search"
         icon="i-lucide-search"
-        placeholder="Search products, SKU, supplier, or handbook notes"
+        placeholder="Search products, SKU, or handbook notes"
         @update:model-value="emit('update:search', $event)"
       />
       <USelect

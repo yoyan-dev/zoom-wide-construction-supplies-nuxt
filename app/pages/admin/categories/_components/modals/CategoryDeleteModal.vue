@@ -1,66 +1,37 @@
 <script setup lang="ts">
-import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast";
+import ActionConfirmModal from "~/pages/admin/_components/modals/ActionConfirmModal.vue";
+import { useAdminDeleteFeedback } from "~/composables/admin/useAdminDeleteFeedback";
 import type { Category } from "~/types/category";
 
 const props = defineProps<{
   payload: Category | null;
 }>();
 
-const category = ref<Category | null>(props.payload);
 const categoryStore = useCategoryStore();
-const { notifyResponse } = useAdminResponseToast();
-const isDeleting = ref(false);
+const { getSingleDeleteDescription, handleSingleDelete } =
+  useAdminDeleteFeedback();
 const emit = defineEmits<{ close: [boolean] }>();
 
-const handleDelete = async () => {
-  if (!category.value?.id) return;
-  isDeleting.value = true;
-  const response = await categoryStore.deleteCategory(category.value.id);
-  isDeleting.value = false;
+const payload = computed(() => ({
+  eyebrow: "Delete Category",
+  title: props.payload?.name ?? "Category",
+  description: getSingleDeleteDescription("Category"),
+  confirmLabel: "Delete",
+  confirmColor: "error" as const,
+  onConfirm: async () => {
+    if (!props.payload?.id) return false;
 
-  if (
-    !notifyResponse(response, {
-      successTitle: "Category deleted",
-      successDescription: `Removed ${category.value.name ?? "the category"}.`,
-      errorTitle: "Category not deleted",
-    })
-  ) {
-    return;
-  }
-
-  emit("close", false);
-};
+    return handleSingleDelete(
+      await categoryStore.deleteCategory(props.payload.id),
+      {
+        resourceLabel: "Category",
+        subject: props.payload.name ?? "the category",
+      },
+    );
+  },
+}));
 </script>
 
 <template>
-  <UModal :close="{ onClick: () => emit('close', false) }">
-    <template #header>
-      <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Delete Category
-        </p>
-        <h3 class="mt-2 text-lg font-semibold">
-          {{ category?.name ?? "Category" }}
-        </h3>
-      </div>
-    </template>
-
-    <template #body>
-      <div class="text-sm text-slate-600">
-        This action cannot be undone. Are you sure you want to delete this
-        category?
-      </div>
-    </template>
-
-    <template #footer>
-      <div class="flex justify-end gap-2 w-full">
-        <UButton color="neutral" variant="ghost" @click="emit('close', false)">
-          Cancel
-        </UButton>
-        <UButton color="error" :loading="isDeleting" @click="handleDelete">
-          Delete
-        </UButton>
-      </div>
-    </template>
-  </UModal>
+  <ActionConfirmModal :payload="payload" @close="emit('close', $event)" />
 </template>

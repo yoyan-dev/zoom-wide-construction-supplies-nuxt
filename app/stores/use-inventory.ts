@@ -1,347 +1,124 @@
-import { defineStore } from "pinia";
 import { ref } from "vue";
+import { defineStore } from "pinia";
+import type { PaginationMeta } from "~/types/pagination";
+import type { StoreResponse } from "~/types/store-response";
 import type {
+  CreateInventoryMovementPayload,
   FetchInventoryParams,
   InventoryLog,
-  InventoryPagination,
 } from "~/types/inventory";
-import type { H3Response } from "~/types/h3Response";
-// TODO: Keep local seed-backed behavior until the backend supports the signed adjustment flow used by the current UI.
-import { inventoryLogs as seedInventoryLogs } from "~/seeds/inventory";
-import { products as seedProducts } from "~/seeds/products";
-import { downloadText } from "~/utils/documents";
-import { toErrorMessage } from "~/utils/api";
-
-type InventoryMeta = {
-  status?: "available" | "unavailable" | "archived";
-  location?: string;
-  warehouse?: string;
-};
-
-const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
-  status: "ok",
-  statusCode: 200,
-  statusMessage: "ok",
-  data,
-  total,
-});
-
-const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
-  status: "error",
-  statusCode: 500,
-  statusMessage: "internal server error",
-  message: toErrorMessage(err),
-});
+import { apiRequest } from "~/utils/api";
 
 export const useInventoryStore = defineStore("inventory", () => {
-  const error = ref<string | null>(null);
-  const log = ref<InventoryLog | null>(null);
-  const isLoading = ref(false);
-
-  const allLogs = ref<InventoryLog[]>([...seedInventoryLogs]);
   const logs = ref<InventoryLog[]>([]);
-  const inventoryMeta = ref<Record<string, InventoryMeta>>({});
+  const totalLogs = ref(0);
+  const isLoading = ref(false);
 
   const query = ref<FetchInventoryParams>({
     q: "",
-    movement_type: "",
-    product_id: "",
     page: 1,
+    limit: 100,
   });
 
-  const pagination = ref<InventoryPagination>({
+  const pagination = ref<PaginationMeta>({
     page: 1,
-    limit: seedInventoryLogs.length,
+    limit: 100,
     total: 0,
-    total_pages: 0,
+    totalPages: 0,
   });
 
-  const fetchInventoryLogs = async (): Promise<H3Response<InventoryLog[]>> => {
+  async function fetchInventoryLogs(params?: FetchInventoryParams) {
+    isLoading.value = true;
+
     try {
-      isLoading.value = true;
-
-      let filtered = [...allLogs.value];
-
-      if (query.value.q) {
-        const q = query.value.q.toLowerCase();
-        const productMap = new Map(
-          seedProducts.map((product) => [
-            product.id ?? "",
-            { name: product.name ?? "", sku: product.sku ?? "" },
-          ]),
-        );
-        filtered = filtered.filter((entry) => {
-          const note = entry.note ?? "";
-          const refType = entry.reference_type ?? "";
-          const refId = entry.reference_id ?? "";
-          const product = productMap.get(entry.product_id);
-          const productName = product?.name ?? "";
-          const productSku = product?.sku ?? "";
-          return (
-            entry.id.toLowerCase().includes(q) ||
-            entry.product_id.toLowerCase().includes(q) ||
-            note.toLowerCase().includes(q) ||
-            refType.toLowerCase().includes(q) ||
-            refId.toLowerCase().includes(q) ||
-            productName.toLowerCase().includes(q) ||
-            productSku.toLowerCase().includes(q)
-          );
-        });
+      if (params) {
+        query.value = {
+          ...query.value,
+          ...params,
+        };
       }
 
-      if (query.value.movement_type) {
-        filtered = filtered.filter(
-          (entry) => entry.movement_type === query.value.movement_type,
-        );
-      }
+      const result = await apiRequest<InventoryLog[]>("/inventory/movements", {
+        query: query.value,
+      });
 
-      if (query.value.product_id) {
-        filtered = filtered.filter(
-          (entry) => entry.product_id === query.value.product_id,
-        );
-      }
+      logs.value = result.data || [];
+      totalLogs.value = result.total || result.meta?.total || result.data?.length || 0;
 
-      const start = (query.value.page! - 1) * pagination.value.limit!;
-      const end = start + pagination.value.limit!;
-
-      pagination.value.total = filtered.length;
-      pagination.value.total_pages = Math.ceil(
-        filtered.length / pagination.value.limit!,
-      );
-      pagination.value.page = query.value.page;
-
-      logs.value = filtered.slice(start, end);
-      return buildOkResponse(logs.value, pagination.value.total);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<InventoryLog[]>(err);
-    } finally {
-      isLoading.value = false;
-    }
-  };
-
-  const fetchInventoryLogById = async (
-    id: string,
-  ): Promise<H3Response<InventoryLog | null>> => {
-    try {
-      const found = allLogs.value.find((entry) => entry.id === id);
-
-      if (!found) {
-        log.value = null;
-        return buildOkResponse(null, 0);
-      }
-
-      log.value = found;
-      return buildOkResponse(log.value, 1);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<InventoryLog | null>(err);
-    }
-  };
-
-  const createInventoryLog = async (
-    payload: Omit<InventoryLog, "id" | "created_at">,
-  ): Promise<H3Response<InventoryLog>> => {
-    try {
-      isLoading.value = true;
-      const now = new Date().toISOString();
-      const created: InventoryLog = {
-        id: `inv-${Date.now()}`,
-        product_id: payload.product_id,
-        movement_type: payload.movement_type,
-        quantity_change: payload.quantity_change,
-        reference_type: payload.reference_type ?? null,
-        reference_id: payload.reference_id ?? null,
-        note: payload.note ?? null,
-        created_by: payload.created_by ?? null,
-        created_at: now,
+      pagination.value = {
+        page: result.meta?.page || 1,
+        limit: result.meta?.limit || query.value.limit || 100,
+        total: result.meta?.total || result.total || result.data?.length || 0,
+        totalPages: result.meta?.totalPages || 0,
       };
 
-      allLogs.value = [created, ...allLogs.value];
-      await fetchInventoryLogs();
+      return {
+        status: "success",
+        message: result.message || "Inventory movements fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching inventory movements:", error);
 
-      return buildOkResponse(created, 1);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<InventoryLog>(err);
+      return {
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch inventory movements",
+        statusMessage: "internal server error",
+      } as StoreResponse;
     } finally {
       isLoading.value = false;
     }
-  };
+  }
 
-  const updateInventoryLog = async (
-    id: string,
-    payload: Partial<InventoryLog>,
-  ): Promise<H3Response<InventoryLog | null>> => {
+  async function createInventoryMovement(
+    payload: CreateInventoryMovementPayload,
+  ): Promise<StoreResponse<InventoryLog>> {
+    isLoading.value = true;
+
     try {
-      isLoading.value = true;
-      const index = allLogs.value.findIndex((entry) => entry.id === id);
+      const result = await apiRequest<InventoryLog>("/inventory", {
+        method: "POST",
+        body: payload,
+      });
 
-      if (index === -1) {
-        return buildOkResponse(null, 0);
+      if (result.data) {
+        logs.value = [result.data, ...logs.value];
+        totalLogs.value += 1;
       }
 
-      const current = allLogs.value[index];
-      if (!current) {
-        return buildOkResponse(null, 0);
-      }
-
-      const updated: InventoryLog = {
-        ...current,
-        ...payload,
-        id,
+      return {
+        status: "success",
+        message: result.message || "Inventory adjustment recorded successfully",
+        statusMessage: result.statusMessage || "created",
+        data: result.data || null,
       };
+    } catch (error) {
+      console.error("Error creating inventory movement:", error);
 
-      allLogs.value.splice(index, 1, updated);
-
-      if (log.value?.id === id) {
-        log.value = updated;
-      }
-
-      await fetchInventoryLogs();
-
-      return buildOkResponse(updated, 1);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<InventoryLog | null>(err);
-    } finally {
-      isLoading.value = false;
-    }
-  };
-
-  const setInventoryStatus = (id: string, status: InventoryMeta["status"]) => {
-    inventoryMeta.value = {
-      ...inventoryMeta.value,
-      [id]: {
-        ...(inventoryMeta.value[id] ?? {}),
-        status,
-      },
-    };
-  };
-
-  const updateInventoryLocation = (id: string, location: string) => {
-    inventoryMeta.value = {
-      ...inventoryMeta.value,
-      [id]: {
-        ...(inventoryMeta.value[id] ?? {}),
-        location,
-      },
-    };
-  };
-
-  const updateInventoryWarehouse = (id: string, warehouse: string) => {
-    inventoryMeta.value = {
-      ...inventoryMeta.value,
-      [id]: {
-        ...(inventoryMeta.value[id] ?? {}),
-        warehouse,
-      },
-    };
-  };
-
-  const duplicateInventoryLog = async (
-    id: string,
-  ): Promise<H3Response<InventoryLog | null>> => {
-    try {
-      isLoading.value = true;
-      const current = allLogs.value.find((entry) => entry.id === id);
-      if (!current) return buildOkResponse(null, 0);
-
-      const now = new Date().toISOString();
-      const duplicated: InventoryLog = {
-        ...current,
-        id: `inv-${Date.now()}`,
-        created_at: now,
+      return {
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to create inventory movement",
+        statusMessage: "internal server error",
+        data: null,
       };
-
-      allLogs.value = [duplicated, ...allLogs.value];
-      await fetchInventoryLogs();
-
-      return buildOkResponse(duplicated, 1);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<InventoryLog | null>(err);
     } finally {
       isLoading.value = false;
     }
-  };
-
-  const exportInventoryLog = (id: string) => {
-    const current = allLogs.value.find((entry) => entry.id === id);
-    if (!current) return;
-    const payload = JSON.stringify(current, null, 2);
-    downloadText(`inventory-${id}.json`, payload, "application/json");
-  };
-
-  const getLogsByReference = (referenceId: string, referenceType?: string) =>
-    allLogs.value.filter(
-      (entry) =>
-        entry.reference_id === referenceId &&
-        (referenceType ? entry.reference_type === referenceType : true),
-    );
-
-  const deleteInventoryLog = async (id: string): Promise<H3Response<null>> => {
-    try {
-      isLoading.value = true;
-      allLogs.value = allLogs.value.filter((entry) => entry.id !== id);
-
-      if (log.value?.id === id) {
-        log.value = null;
-      }
-
-      await fetchInventoryLogs();
-
-      return buildOkResponse(null, 1);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<null>(err);
-    } finally {
-      isLoading.value = false;
-    }
-  };
-
-  const setSearch = async (value: string) => {
-    query.value.q = value;
-    query.value.page = 1;
-    return await fetchInventoryLogs();
-  };
-
-  const setFilter = async (filters: Partial<FetchInventoryParams>) => {
-    query.value = {
-      ...query.value,
-      ...filters,
-      page: 1,
-    };
-
-    return await fetchInventoryLogs();
-  };
-
-  const setPage = async (page: number) => {
-    query.value.page = page;
-    return await fetchInventoryLogs();
-  };
+  }
 
   return {
-    log,
     logs,
-    inventoryMeta,
+    totalLogs,
+    isLoading,
     query,
     pagination,
-    isLoading,
-    error,
     fetchInventoryLogs,
-    fetchInventoryLogById,
-    createInventoryLog,
-    updateInventoryLog,
-    deleteInventoryLog,
-    setInventoryStatus,
-    updateInventoryLocation,
-    updateInventoryWarehouse,
-    duplicateInventoryLog,
-    exportInventoryLog,
-    getLogsByReference,
-    setSearch,
-    setFilter,
-    setPage,
+    createInventoryMovement,
   };
 });

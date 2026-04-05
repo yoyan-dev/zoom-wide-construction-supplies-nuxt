@@ -2,6 +2,8 @@
 import type { NavigationMenuItem } from "@nuxt/ui";
 
 const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 const open = ref(false);
 
 const links = [
@@ -60,6 +62,11 @@ const groups = computed(() => [
     items: links.flat(),
   },
 ]);
+
+const handleLogout = async () => {
+  await authStore.logout();
+  await router.push("/auth/login");
+};
 </script>
 <template>
   <UDashboardGroup unit="rem">
@@ -118,7 +125,12 @@ const groups = computed(() => [
           </template>
 
           <template #right>
-            <UAvatar src="https://github.com/benjamincanac.png" />
+            <div class="flex items-center gap-3">
+              <UButton color="neutral" variant="ghost" @click="handleLogout">
+                Logout
+              </UButton>
+              <UAvatar src="https://github.com/benjamincanac.png" />
+            </div>
           </template>
         </UDashboardNavbar>
       </template>

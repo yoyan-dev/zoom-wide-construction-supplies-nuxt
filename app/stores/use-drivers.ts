@@ -1,142 +1,231 @@
-import { defineStore } from "pinia";
 import { ref } from "vue";
+import { defineStore } from "pinia";
 import type {
+  CreateDriverPayload,
   Driver,
-  DriverPagination,
   FetchDriverParams,
+  UpdateDriverPayload,
 } from "~/types/driver";
-import type { H3Response } from "~/types/h3Response";
-import { drivers as seedDrivers } from "~/seeds/drivers";
-import { toErrorMessage } from "~/utils/api";
-
-const buildOkResponse = <T>(data: T, total?: number): H3Response<T> => ({
-  status: "ok",
-  statusCode: 200,
-  statusMessage: "ok",
-  data,
-  total,
-});
-
-const buildErrorResponse = <T>(err: unknown): H3Response<T> => ({
-  status: "error",
-  statusCode: 500,
-  statusMessage: "internal server error",
-  message: toErrorMessage(err),
-});
+import type { PaginationMeta } from "~/types/pagination";
+import type { StoreResponse } from "~/types/store-response";
+import { apiRequest, apiRequestRaw } from "~/utils/api";
 
 export const useDriverStore = defineStore("drivers", () => {
-  const error = ref<string | null>(null);
-  const driver = ref<Driver | null>(null);
-  const isLoading = ref(false);
-
-  const allDrivers = ref<Driver[]>([...seedDrivers]);
   const drivers = ref<Driver[]>([]);
+  const driver = ref<Driver | null>(null);
+  const totalDrivers = ref(0);
+  const isLoading = ref(false);
 
   const query = ref<FetchDriverParams>({
     q: "",
     page: 1,
   });
 
-  const pagination = ref<DriverPagination>({
+  const pagination = ref<PaginationMeta>({
     page: 1,
-    limit: seedDrivers.length,
+    limit: 10,
     total: 0,
-    total_pages: 0,
+    totalPages: 0,
   });
 
-  const fetchDrivers = async (): Promise<H3Response<Driver[]>> => {
+  const syncDriverRecord = (nextDriver: Driver) => {
+    driver.value = nextDriver;
+    drivers.value = drivers.value.map((entry) =>
+      entry.id === nextDriver.id ? nextDriver : entry,
+    );
+  };
+
+  async function fetchDrivers(params?: FetchDriverParams) {
+    isLoading.value = true;
+
     try {
-      isLoading.value = true;
-
-      let filtered = [...allDrivers.value];
-
-      if (query.value.q) {
-        const q = query.value.q.toLowerCase();
-        filtered = filtered.filter((d) => {
-          const phone = d.phone ?? "";
-          const email = d.email ?? "";
-          const license = d.license_number ?? "";
-          const vehicle = d.vehicle_number ?? "";
-          return (
-            d.name.toLowerCase().includes(q) ||
-            phone.toLowerCase().includes(q) ||
-            email.toLowerCase().includes(q) ||
-            license.toLowerCase().includes(q) ||
-            vehicle.toLowerCase().includes(q)
-          );
-        });
+      if (params) {
+        query.value = {
+          ...query.value,
+          ...params,
+        };
       }
 
-      const start = (query.value.page! - 1) * pagination.value.limit!;
-      const end = start + pagination.value.limit!;
+      const result = await apiRequest<Driver[]>("/drivers", {
+        query: query.value,
+      });
 
-      pagination.value.total = filtered.length;
-      pagination.value.total_pages = Math.ceil(
-        filtered.length / pagination.value.limit!,
-      );
-      pagination.value.page = query.value.page;
+      drivers.value = result.data || [];
+      totalDrivers.value = result.total || result.meta?.total || result.data?.length || 0;
 
-      drivers.value = filtered.slice(start, end);
-      return buildOkResponse(drivers.value, pagination.value.total);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Driver[]>(err);
+      pagination.value = {
+        page: result.meta?.page || 1,
+        limit: result.meta?.limit || query.value.limit || 10,
+        total: result.meta?.total || result.total || result.data?.length || 0,
+        totalPages: result.meta?.totalPages || 0,
+      };
+
+      return {
+        status: "success",
+        message: result.message || "Drivers fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching drivers:", error);
+
+      return {
+        status: "error",
+        message: error instanceof Error ? error.message : "Failed to fetch drivers",
+        statusMessage: "internal server error",
+      } as StoreResponse;
     } finally {
       isLoading.value = false;
     }
-  };
+  }
 
-  const fetchDriverById = async (
-    id: string,
-  ): Promise<H3Response<Driver | null>> => {
+  async function fetchDriverById(id: string) {
+    isLoading.value = true;
+
     try {
-      const found = allDrivers.value.find((d) => d.id === id);
+      const result = await apiRequest<Driver>(`/drivers/${id}`);
+      driver.value = result.data;
 
-      if (!found) {
-        driver.value = null;
-        return buildOkResponse(null, 0);
+      return {
+        status: "success",
+        message: result.message || "Driver fetched successfully",
+        statusMessage: result.statusMessage,
+      } as StoreResponse;
+    } catch (error) {
+      console.error("Error fetching driver:", error);
+      driver.value = null;
+
+      return {
+        status: "error",
+        message: error instanceof Error ? error.message : "Failed to fetch driver",
+        statusMessage: "internal server error",
+      } as StoreResponse;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function addDriver(
+    payload: CreateDriverPayload,
+  ): Promise<StoreResponse<Driver>> {
+    isLoading.value = true;
+
+    try {
+      const result = await apiRequest<Driver>("/drivers", {
+        method: "POST",
+        body: payload,
+      });
+
+      if (result.data) {
+        drivers.value = [
+          result.data,
+          ...drivers.value.filter((entry) => entry.id !== result.data?.id),
+        ];
+        totalDrivers.value += 1;
       }
 
-      driver.value = found;
-      return buildOkResponse(driver.value, 1);
-    } catch (err: any) {
-      error.value = toErrorMessage(err);
-      return buildErrorResponse<Driver | null>(err);
+      return {
+        status: "success",
+        message: result.message || "Driver created successfully",
+        statusMessage: result.statusMessage || "created",
+        data: result.data || null,
+      };
+    } catch (error) {
+      console.error("Error adding driver:", error);
+      return {
+        status: "error",
+        message: error instanceof Error ? error.message : "Failed to add driver",
+        statusMessage: "internal server error",
+        data: null,
+      };
+    } finally {
+      isLoading.value = false;
     }
-  };
+  }
 
-  const setSearch = async (value: string) => {
-    query.value.q = value;
-    query.value.page = 1;
-    return await fetchDrivers();
-  };
+  async function updateDriver(
+    id: string,
+    payload: UpdateDriverPayload,
+  ): Promise<StoreResponse<Driver>> {
+    isLoading.value = true;
 
-  const setFilter = async (filters: Partial<FetchDriverParams>) => {
-    query.value = {
-      ...query.value,
-      ...filters,
-      page: 1,
-    };
+    try {
+      const result = await apiRequest<Driver>(`/drivers/${id}`, {
+        method: "PATCH",
+        body: payload,
+      });
 
-    return await fetchDrivers();
-  };
+      if (result.data) {
+        syncDriverRecord(result.data);
+      }
 
-  const setPage = async (page: number) => {
-    query.value.page = page;
-    return await fetchDrivers();
-  };
+      return {
+        status: "success",
+        message: result.message || "Driver updated successfully",
+        statusMessage: result.statusMessage || "accepted",
+        data: result.data || null,
+      };
+    } catch (error) {
+      console.error("Error updating driver:", error);
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to update driver",
+        statusMessage: "internal server error",
+        data: null,
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function deleteDriver(id: string): Promise<StoreResponse> {
+    isLoading.value = true;
+
+    try {
+      const { data: result, ok } = await apiRequestRaw<null>(`/drivers/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!ok || (result && result.status === "error")) {
+        throw new Error(result?.message || "Failed to delete driver");
+      }
+
+      drivers.value = drivers.value.filter((entry) => entry.id !== id);
+      totalDrivers.value = Math.max(0, totalDrivers.value - 1);
+
+      if (driver.value?.id === id) {
+        driver.value = null;
+      }
+
+      return {
+        status: "success",
+        message: result?.message || "Driver deleted successfully",
+        statusMessage: result?.statusMessage || "no content",
+      };
+    } catch (error) {
+      console.error("Error deleting driver:", error);
+      return {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to delete driver",
+        statusMessage: "internal server error",
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   return {
-    driver,
     drivers,
+    driver,
+    totalDrivers,
+    isLoading,
     query,
     pagination,
-    isLoading,
-    error,
     fetchDrivers,
     fetchDriverById,
-    setSearch,
-    setFilter,
-    setPage,
+    addDriver,
+    updateDriver,
+    deleteDriver,
   };
 });

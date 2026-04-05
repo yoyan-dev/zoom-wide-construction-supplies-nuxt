@@ -2,6 +2,8 @@
 import type { NavigationMenuItem } from "@nuxt/ui";
 
 const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 const open = ref(false);
 
 const links = [
@@ -29,11 +31,6 @@ const links = [
           onSelect: () => (open.value = false),
         },
         {
-          label: "Suppliers",
-          to: "/admin/suppliers",
-          onSelect: () => (open.value = false),
-        },
-        {
           label: "Inventory",
           to: "/admin/inventory",
           onSelect: () => (open.value = false),
@@ -51,6 +48,12 @@ const links = [
       label: "Orders",
       icon: "i-lucide-shopping-cart",
       to: "/admin/orders",
+      onSelect: () => (open.value = false),
+    },
+    {
+      label: "Customers",
+      icon: "i-lucide-users",
+      to: "/admin/customers",
       onSelect: () => (open.value = false),
     },
 
@@ -128,6 +131,13 @@ const groups = computed(() => [
     items: links.flat(),
   },
 ]);
+
+const avatarSrc = computed(() => authStore.user?.image_url || undefined);
+
+const handleLogout = async () => {
+  await authStore.logout();
+  await router.push("/auth/login");
+};
 </script>
 <template>
   <UDashboardGroup unit="rem">
@@ -186,7 +196,12 @@ const groups = computed(() => [
           </template>
 
           <template #right>
-            <UAvatar src="https://github.com/benjamincanac.png" />
+            <div class="flex items-center gap-3">
+              <UButton color="neutral" variant="ghost" @click="handleLogout">
+                Logout
+              </UButton>
+              <UAvatar :src="avatarSrc" :alt="authStore.displayName" />
+            </div>
           </template>
         </UDashboardNavbar>
       </template>

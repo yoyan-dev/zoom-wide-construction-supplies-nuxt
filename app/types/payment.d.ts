@@ -21,9 +21,17 @@ export interface FetchPaymentParams {
   page?: number;
 }
 
-export interface PaymentPagination {
-  page?: number;
-  limit?: number;
-  total?: number;
-  total_pages?: number;
+export interface CreatePaymentPayload {
+  order_id: string;
+  amount: number;
+  method: PaymentMethod;
+  status?: PaymentStatus;
+  transaction_ref?: string | null;
+  paid_at?: string | null;
+}
+
+export interface UpdatePaymentPayload {
+  status: PaymentStatus;
+  transaction_ref?: string | null;
+  paid_at?: string | null;
 }

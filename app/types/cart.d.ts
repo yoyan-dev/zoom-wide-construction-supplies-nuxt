@@ -17,3 +17,16 @@ export interface CartItem {
   created_at: string;
   updated_at: string;
 }
+
+export interface CartLineItem {
+  id?: string | null;
+  cart_id?: string | null;
+  product_id: string;
+  sku?: string | null;
+  category_id?: string | null;
+  name: string;
+  image_url: string | null;
+  unit: string;
+  price: number;
+  quantity: number;
+}

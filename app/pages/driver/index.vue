@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import DriverDeliveriesPageView from "./_components/DriverDeliveriesPageView.vue";
+
 definePageMeta({
   layout: "driver",
 });
 </script>
 
 <template>
-  <div>Dashboard</div>
+  <DriverDeliveriesPageView scope="assigned" />
 </template>

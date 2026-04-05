@@ -16,12 +16,18 @@ export interface FetchInventoryParams {
   q?: string;
   movement_type?: InventoryMovementType | "";
   product_id?: string;
-  page?: number;
-}
-
-export interface InventoryPagination {
+  from?: string;
+  to?: string;
   page?: number;
   limit?: number;
-  total?: number;
-  total_pages?: number;
+}
+
+export interface CreateInventoryMovementPayload {
+  product_id: string;
+  movement_type: InventoryMovementType;
+  quantity_change: number;
+  reference_type?: string | null;
+  reference_id?: string | null;
+  note?: string | null;
+  created_by?: string | null;
 }

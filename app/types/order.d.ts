@@ -1,3 +1,5 @@
+import type { Delivery } from "./delivery";
+
 export type OrderStatus =
   | "pending"
   | "approved"
@@ -26,6 +28,35 @@ export interface OrderItem {
   line_total: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface DriverAssignedOrder extends Order {
+  delivery?: Delivery | null;
+  deliveries?: Delivery[] | null;
+  items?: OrderItem[] | null;
+}
+
+export interface CreateOrderItemPayload {
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+}
+
+export interface CreateOrderPayload {
+  customer_id?: string;
+  status?: OrderStatus;
+  total_amount: number;
+  notes?: string | null;
+  items: CreateOrderItemPayload[];
+}
+
+export interface ApproveOrderPayload {
+  approved_by?: string | null;
+}
+
+export interface RejectOrderPayload {
+  rejection_reason: string;
 }
 
 export interface FetchOrderParams {

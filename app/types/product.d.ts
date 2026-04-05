@@ -1,5 +1,4 @@
 import type { Category } from "./category";
-import type { Supplier } from "./supplier";
 import type { Warehouse } from "./warehouse";
 
 export interface ProductSpecification {
@@ -17,7 +16,6 @@ export interface ProductHandbookDetails {
 export interface Product {
   id?: string;
   category_id?: string;
-  supplier_id?: string | null;
   warehouse_id?: string | null;
   sku?: string;
   name?: string;
@@ -28,7 +26,6 @@ export interface Product {
   stock_quantity?: number;
   minimum_stock_quantity?: number;
   category?: Category;
-  supplier?: Supplier;
   warehouse?: Warehouse;
   handbook?: ProductHandbookDetails;
   is_active?: boolean;
@@ -36,10 +33,14 @@ export interface Product {
   updated_at?: string;
 }
 
+export interface ProductFormSubmitValue {
+  product: Omit<Product, "id" | "created_at" | "updated_at">;
+  imageFile: File | null;
+}
+
 export interface FetchProductParams {
   q?: string;
   category_id?: string;
-  supplier_id?: string;
   page?: number;
 }
 
