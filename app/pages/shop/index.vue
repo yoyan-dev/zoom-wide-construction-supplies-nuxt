@@ -1,134 +1,155 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import ShopHero from "./_components/ShopHero.vue";
-import ShopFilters from "./_components/ShopFilters.vue";
-import ShopProductsGrid from "./_components/ShopProductsGrid.vue";
-import ShopStateCard from "./_components/ShopStateCard.vue";
-import ShopCategorySpotlight from "./_components/ShopCategorySpotlight.vue";
-import ShopTrustSection from "./_components/ShopTrustSection.vue";
-import ShopProcurementFlow from "./_components/ShopProcurementFlow.vue";
-import ShopFaqSection from "./_components/ShopFaqSection.vue";
+import StorefrontStateCard from "~/components/storefront/StorefrontStateCard.vue";
+import ShopHomeCategoryGrid from "./_components/ShopHomeCategoryGrid.vue";
+import ShopHomeFeaturedProducts from "./_components/ShopHomeFeaturedProducts.vue";
+import ShopHomeHero from "./_components/ShopHomeHero.vue";
+import ShopHomeTrustSection from "./_components/ShopHomeTrustSection.vue";
 
 definePageMeta({
   layout: "shop",
+});
+
+useSeoMeta({
+  title: "Shop | ZOOM WIDE Construction Supplies",
+  description:
+    "Explore featured construction materials, trusted categories, and specification-ready products from ZOOM WIDE.",
 });
 
 const route = useRoute();
 const router = useRouter();
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
+const cartStore = useCartStore();
+
 const pageError = ref<string | null>(null);
 const isRetrying = ref(false);
-const selectedSupplier = ref("all");
-const maxPrice = ref<number | null>(null);
-
-const currentSearch = computed(() =>
-  typeof route.query.q === "string" ? route.query.q : "",
-);
-
-const currentCategoryId = computed(() =>
-  typeof route.query.category === "string" ? route.query.category : "all",
-);
 
 const loadPage = async () => {
-  const categoryId =
-    currentCategoryId.value !== "all" ? currentCategoryId.value : undefined;
-
   const [productsResponse, categoriesResponse] = await Promise.all([
-    productStore.fetchProducts({
-      q: currentSearch.value || undefined,
-      category_id: categoryId,
-      page: 1,
-    }),
-    categoryStore.fetchCategories(),
+    productStore.fetchProducts({ page: 1 }),
+    categoryStore.fetchCategories({ page: 1 }),
   ]);
 
   pageError.value =
-    productsResponse.status === "success" && categoriesResponse.status === "success"
+    productsResponse.status === "success" &&
+    categoriesResponse.status === "success"
       ? null
-      : productsResponse.status === "error"
-        ? productsResponse.message
-        : categoriesResponse.message;
+      : "The storefront home could not load all live catalog data right now. You can retry without losing the rest of the page.";
 };
 
 await loadPage();
 
-watch([currentSearch, currentCategoryId], async () => {
-  await loadPage();
-});
+const {
+  products,
+  isLoading: isProductsLoading,
+  totalProducts,
+} = storeToRefs(productStore);
+const {
+  categories,
+  isLoading: isCategoriesLoading,
+  totalCategories,
+} = storeToRefs(categoryStore);
+const { items, isSyncing } = storeToRefs(cartStore);
 
-const { products, isLoading } = storeToRefs(productStore);
-const { categories } = storeToRefs(categoryStore);
-
-const visibleProductCount = computed(
-  () => products.value.filter((product) => product.is_active !== false).length,
+const searchQuery = computed(() =>
+  typeof route.query.q === "string" ? route.query.q.trim().toLowerCase() : "",
 );
 
-const categoryOptions = computed(() => [
-  { label: "All categories", value: "all" },
-  ...categories.value.map((category) => ({
-    label: category.name,
-    value: category.id,
-  })),
+const activeCategoryId = computed(() =>
+  typeof route.query.category_id === "string" ? route.query.category_id : "",
+);
+
+const activeCategory = computed(
+  () =>
+    categories.value.find((category) => category.id === activeCategoryId.value) ??
+    null,
+);
+
+const liveProducts = computed(() =>
+  products.value.filter((product) => product.is_active !== false),
+);
+
+const matchesSearch = (value: string, search: string) =>
+  value.toLowerCase().includes(search);
+
+const filteredProducts = computed(() =>
+  liveProducts.value.filter((product) => {
+    const matchesCategory = activeCategoryId.value
+      ? product.category_id === activeCategoryId.value
+      : true;
+
+    if (!matchesCategory) {
+      return false;
+    }
+
+    if (!searchQuery.value) {
+      return true;
+    }
+
+    return [
+      product.name,
+      product.sku,
+      product.description,
+      product.handbook?.summary,
+      ...(product.handbook?.features ?? []),
+      ...(product.handbook?.applications ?? []),
+      ...(product.handbook?.specifications ?? []).flatMap((item) => [
+        item.label,
+        item.value,
+      ]),
+    ].some((entry) =>
+      typeof entry === "string" ? matchesSearch(entry, searchQuery.value) : false,
+    );
+  }),
+);
+
+const featuredProducts = computed(() => filteredProducts.value.slice(0, 4));
+
+const featuredCategories = computed(() => {
+  const selected = activeCategory.value
+    ? categories.value.filter((category) => category.id === activeCategory.value?.id)
+    : [];
+  const remaining = categories.value.filter(
+    (category) => category.id !== activeCategory.value?.id,
+  );
+
+  return [...selected, ...remaining].slice(0, 4);
+});
+
+const featuredProduct = computed(
+  () => featuredProducts.value[0] ?? liveProducts.value[0] ?? null,
+);
+
+const heroStats = computed(() => [
+  {
+    label: "Active products",
+    value: String(totalProducts.value || liveProducts.value.length || 0),
+  },
+  {
+    label: "Core categories",
+    value: String(totalCategories.value || categories.value.length || 0),
+  },
+  {
+    label: "Cart-ready items",
+    value: String(items.value.length),
+  },
 ]);
 
-const categoryCount = computed(() => categories.value.length);
-const supplierOptions = computed(() => {
-  const suppliers = Array.from(
-    new Set(
-      products.value
-        .map((product) => product.supplier?.name?.trim())
-        .filter((supplier): supplier is string => Boolean(supplier)),
-    ),
-  ).sort((left, right) => left.localeCompare(right));
+const cartQuantities = computed<Record<string, number>>(() =>
+  Object.fromEntries(
+    items.value.map((item) => [item.product_id, item.quantity]),
+  ),
+);
 
-  return [
-    { label: "All suppliers", value: "all" },
-    ...suppliers.map((supplier) => ({ label: supplier, value: supplier })),
-  ];
-});
+const hasFilters = computed(
+  () => Boolean(searchQuery.value || activeCategoryId.value),
+);
 
-const maxPriceLimit = computed(() => {
-  const prices = products.value
-    .map((product) => Number(product.price ?? 0))
-    .filter((price) => Number.isFinite(price) && price > 0);
-
-  if (!prices.length) {
-    return 0;
-  }
-
-  return Math.ceil(Math.max(...prices));
-});
-
-const activeCategoryLabel = computed(() => {
-  if (currentCategoryId.value === "all") {
-    return "All categories";
-  }
-
-  return (
-    categories.value.find((category) => category.id === currentCategoryId.value)
-      ?.name ?? "Selected category"
-  );
-});
-
-const handleCategoryChange = async (value: string) => {
-  if (value === currentCategoryId.value) {
-    return;
-  }
-
-  const nextQuery: Record<string, string> = {};
-
-  if (currentSearch.value) {
-    nextQuery.q = currentSearch.value;
-  }
-
-  if (value !== "all") {
-    nextQuery.category = value;
-  }
-
+const clearFilters = async () => {
   await router.push({
     path: "/shop",
-    query: nextQuery,
+    hash: "#featured",
   });
 };
 
@@ -138,74 +159,69 @@ const handleRetry = async () => {
   isRetrying.value = false;
 };
 
-watch(supplierOptions, (options) => {
-  if (!options.some((option) => option.value === selectedSupplier.value)) {
-    selectedSupplier.value = "all";
-  }
-});
-
-watch(maxPriceLimit, (limit) => {
-  if (!limit) {
-    maxPrice.value = null;
+const handleAddToCart = async (productId?: string) => {
+  if (!productId) {
     return;
   }
 
-  if (maxPrice.value !== null && maxPrice.value > limit) {
-    maxPrice.value = limit;
+  const product = liveProducts.value.find((item) => item.id === productId);
+
+  if (!product) {
+    return;
   }
-});
+
+  await cartStore.addToCart(product, 1);
+};
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-    <ShopHero
-      :total="visibleProductCount"
-      :category-count="categoryCount"
-      :search="currentSearch"
-      :active-category-label="activeCategoryLabel"
+  <div class="pb-20 md:pb-24">
+    <ShopHomeHero
+      :stats="heroStats"
+      :featured-product-name="featuredProduct?.name"
+      :featured-product-image="featuredProduct?.image_url"
     />
 
-    <template v-if="pageError">
-      <ShopStateCard
+    <StorefrontPageContainer v-if="pageError" size="wide" class="mt-8">
+      <StorefrontStateCard
         eyebrow="Storefront"
-        title="Products unavailable"
+        title="Live catalog data is temporarily unavailable"
         :description="pageError"
         tone="error"
-        action-label="Retry"
-        :action-loading="isRetrying"
-        @action="handleRetry"
-      />
-    </template>
-    <template v-else>
-      <div class="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
-        <ShopFilters
-          :category-id="currentCategoryId"
-          :category-options="categoryOptions"
-          :supplier="selectedSupplier"
-          :supplier-options="supplierOptions"
-          :max-price="maxPrice"
-          :max-price-limit="maxPriceLimit"
-          :search="currentSearch"
-          @update:category-id="handleCategoryChange"
-          @update:supplier="selectedSupplier = $event"
-          @update:max-price="maxPrice = $event"
-        />
+      >
+        <template #actions>
+          <StorefrontButton
+            tone="danger"
+            :loading="isRetrying"
+            @click="handleRetry"
+          >
+            Retry
+          </StorefrontButton>
+        </template>
+      </StorefrontStateCard>
+    </StorefrontPageContainer>
 
-        <ShopProductsGrid
-          :products="products"
-          :categories="categories"
-          :search="currentSearch"
-          :active-category-label="activeCategoryLabel"
-          :supplier-filter="selectedSupplier"
-          :max-price-filter="maxPrice"
-          :is-loading="isLoading"
-        />
-      </div>
+    <ShopHomeCategoryGrid
+      :categories="featuredCategories"
+      :is-loading="isCategoriesLoading"
+      :active-category-id="activeCategoryId"
+    />
 
-      <ShopCategorySpotlight :categories="categories" :products="products" />
-      <ShopTrustSection />
-      <ShopProcurementFlow />
-      <ShopFaqSection />
-    </template>
+    <ShopHomeFeaturedProducts
+      :products="featuredProducts"
+      :is-loading="isProductsLoading"
+      :active-category-name="activeCategory?.name"
+      :search-query="searchQuery"
+      :cart-quantities="cartQuantities"
+      :is-cart-busy="isSyncing"
+      :has-filters="hasFilters"
+      @add-to-cart="handleAddToCart"
+      @clear-filters="clearFilters"
+    />
+
+    <ShopHomeTrustSection
+      :product-count="totalProducts || liveProducts.length"
+      :category-count="totalCategories || categories.length"
+    />
   </div>
 </template>

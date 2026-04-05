@@ -154,7 +154,7 @@ const loginLink = computed(() =>
       class="mx-auto flex justify-center items-center w-full max-w-6xl gap-8"
     >
       <section
-        class="rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-lg shadow-slate-200/70 sm:p-8"
+        class="rounded-xl border border-slate-200/80 bg-white p-6 shadow-lg shadow-slate-200/70 sm:p-8"
       >
         <div class="space-y-6">
           <div>
@@ -220,7 +220,7 @@ const loginLink = computed(() =>
               </UFormField>
             </div>
 
-            <div class="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5">
+            <div class="rounded-xl border border-slate-200/80 bg-slate-50/80 p-5">
               <PsgcAddressFields
                 v-model="form.address"
                 title="Delivery Address"
@@ -263,7 +263,7 @@ const loginLink = computed(() =>
           </UForm>
 
           <div
-            class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600"
+            class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600"
           >
             Already registered?
             <NuxtLink

@@ -2,7 +2,7 @@
 import OrderTrackingView from "../_components/OrderTrackingView.vue";
 
 definePageMeta({
-  layout: "orders",
+  layout: "shop",
 });
 </script>
 
