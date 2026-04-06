@@ -121,7 +121,7 @@ const retryLoad = async () => {
             <div
               class="flex h-72 items-center justify-center overflow-hidden rounded-sm border border-slate-200/70 bg-gradient-to-br from-slate-100 via-white to-amber-50"
             >
-              <img
+              <NuxtImg
                 v-if="product.image_url"
                 :src="product.image_url"
                 :alt="product.name"

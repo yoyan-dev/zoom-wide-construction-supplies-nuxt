@@ -29,6 +29,8 @@ const form = reactive({
 });
 
 const formError = ref<string | null>(null);
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
 const redirectTarget = computed(() =>
   typeof route.query.redirect === "string" ? route.query.redirect : null,
 );
@@ -118,7 +120,8 @@ const handleSubmit = async () => {
     icon: "i-lucide-circle-check",
   });
 
-  const customerId = loginResponse.data?.customer?.id ?? authStore.customer?.id ?? null;
+  const customerId =
+    loginResponse.data?.customer?.id ?? authStore.customer?.id ?? null;
 
   if (customerId) {
     const addressResponse = await customerAddressesStore.addAddress(
@@ -149,131 +152,194 @@ const loginLink = computed(() =>
 </script>
 
 <template>
-  <div class="min-h-screen px-4 py-10 text-slate-900 sm:px-6 lg:px-8">
+  <div
+    class="relative min-h-screen overflow-hidden px-4 py-10 text-slate-900 sm:px-6 lg:px-8"
+  >
     <div
-      class="mx-auto flex justify-center items-center w-full max-w-6xl gap-8"
+      class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(0,70,135,0.12),transparent_28rem),radial-gradient(circle_at_bottom_right,rgba(254,117,11,0.08),transparent_24rem)]"
+    />
+    <div
+      class="pointer-events-none absolute inset-0 opacity-[0.08]"
+      style="
+        background-image: radial-gradient(#001e40 1px, transparent 1px);
+        background-size: 40px 40px;
+      "
+    />
+    <div
+      class="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-[#003366]/10 blur-3xl"
+    />
+    <div
+      class="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-amber-500/10 blur-3xl"
+    />
+
+    <div
+      class="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-4xl items-center justify-center"
     >
-      <section
-        class="rounded-xl border border-slate-200/80 bg-white p-6 shadow-lg shadow-slate-200/70 sm:p-8"
-      >
-        <div class="space-y-6">
-          <div>
-            <p class="text-xs uppercase tracking-[0.22em] text-lime-700">
-              Create Account
-            </p>
-            <h2
-              class="mt-3 text-3xl font-semibold tracking-tight text-slate-900"
-            >
-              Register your customer profile
-            </h2>
-            <p class="mt-3 text-sm leading-6 text-slate-600">
-              This signup is limited to customer accounts and signs you in right
-              after the API responds successfully.
-            </p>
+      <section class="relative w-full">
+        <div class="mb-10 flex flex-col items-center text-center">
+          <NuxtLink
+            to="/shop"
+            class="flex h-16 w-16 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-lg font-black tracking-[-0.08em] text-[#001e40] shadow-sm"
+          >
+            ZW
+          </NuxtLink>
+          <h1
+            class="mt-6 text-3xl font-bold tracking-tight text-[#001e40] uppercase"
+          >
+            Create Account
+          </h1>
+          <p
+            class="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-slate-500"
+          >
+            Precision Systems Access
+          </p>
+        </div>
+
+        <div
+          class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-[0_32px_64px_-12px_rgba(0,31,42,0.08)]"
+        >
+          <div class="h-1.5 w-full bg-amber-500" />
+
+          <div class="p-8 md:p-10">
+            <div class="mb-8">
+              <p
+                class="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-amber-700"
+              >
+                Customer registration
+              </p>
+              <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                Register your customer profile
+              </h2>
+              <p class="mt-3 text-sm leading-7 text-slate-600">
+                This signup is limited to customer accounts and signs you in
+                after the API responds successfully.
+              </p>
+            </div>
+
+            <UAlert
+              v-if="formError"
+              color="error"
+              variant="soft"
+              icon="i-lucide-circle-alert"
+              :title="formError"
+              class="mb-6"
+            />
+
+            <UForm class="space-y-6" @submit.prevent="handleSubmit">
+              <div class="grid gap-5 md:grid-cols-2">
+                <UFormField label="Company name" required>
+                  <UInput
+                    v-model="form.companyName"
+                    class="w-full"
+                    placeholder="ZOOM Wide Builders Inc."
+                  />
+                </UFormField>
+
+                <UFormField label="Contact name" required>
+                  <UInput
+                    v-model="form.contactName"
+                    class="w-full"
+                    placeholder="Jamie Santos"
+                  />
+                </UFormField>
+              </div>
+
+              <div class="grid gap-5 md:grid-cols-2">
+                <UFormField label="Email address" required>
+                  <UInput
+                    v-model="form.email"
+                    type="email"
+                    class="w-full"
+                    placeholder="buyer@company.com"
+                    autocomplete="email"
+                  />
+                </UFormField>
+
+                <UFormField label="Phone number">
+                  <UInput
+                    v-model="form.phone"
+                    class="w-full"
+                    placeholder="+63 900 000 0000"
+                    autocomplete="tel"
+                  />
+                </UFormField>
+              </div>
+
+              <div
+                class="rounded-xl border border-slate-200/80 bg-slate-50/80 p-5"
+              >
+                <PsgcAddressFields
+                  v-model="form.address"
+                  title="Delivery Address"
+                  description="This will be saved as your first delivery address for checkout."
+                />
+              </div>
+
+              <div class="grid gap-5 md:grid-cols-2">
+                <UFormField label="Password" required>
+                  <UInput
+                    v-model="form.password"
+                    :type="showPassword ? 'text' : 'password'"
+                    class="w-full"
+                    placeholder="Create a password"
+                    autocomplete="new-password"
+                    :trailing-icon="
+                      showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'
+                    "
+                    @click:trailing="showPassword = !showPassword"
+                  />
+                </UFormField>
+
+                <UFormField label="Confirm password" required>
+                  <UInput
+                    v-model="form.confirmPassword"
+                    :type="showConfirmPassword ? 'text' : 'password'"
+                    class="w-full"
+                    placeholder="Repeat your password"
+                    autocomplete="new-password"
+                    :trailing-icon="
+                      showConfirmPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'
+                    "
+                    @click:trailing="showConfirmPassword = !showConfirmPassword"
+                  />
+                </UFormField>
+              </div>
+
+              <StorefrontButton
+                type="submit"
+                tone="primary"
+                block
+                :loading="isLoading"
+                :disabled="!canSubmit"
+              >
+                Submit
+              </StorefrontButton>
+            </UForm>
           </div>
-
-          <UAlert
-            v-if="formError"
-            color="error"
-            variant="soft"
-            icon="i-lucide-circle-alert"
-            :title="formError"
-          />
-
-          <UForm class="space-y-5" @submit.prevent="handleSubmit">
-            <div class="grid gap-5 md:grid-cols-2">
-              <UFormField label="Company name" required>
-                <UInput
-                  v-model="form.companyName"
-                  class="w-full"
-                  placeholder="ZOOM Wide Builders Inc."
-                />
-              </UFormField>
-
-              <UFormField label="Contact name" required>
-                <UInput
-                  v-model="form.contactName"
-                  class="w-full"
-                  placeholder="Jamie Santos"
-                />
-              </UFormField>
-            </div>
-
-            <div class="grid gap-5 md:grid-cols-2">
-              <UFormField label="Email address" required>
-                <UInput
-                  v-model="form.email"
-                  type="email"
-                  class="w-full"
-                  placeholder="buyer@company.com"
-                  autocomplete="email"
-                />
-              </UFormField>
-
-              <UFormField label="Phone number">
-                <UInput
-                  v-model="form.phone"
-                  class="w-full"
-                  placeholder="+63 900 000 0000"
-                  autocomplete="tel"
-                />
-              </UFormField>
-            </div>
-
-            <div class="rounded-xl border border-slate-200/80 bg-slate-50/80 p-5">
-              <PsgcAddressFields
-                v-model="form.address"
-                title="Delivery Address"
-                description="This will be saved as your first delivery address for checkout."
-              />
-            </div>
-
-            <div class="grid gap-5 md:grid-cols-2">
-              <UFormField label="Password" required>
-                <UInput
-                  v-model="form.password"
-                  type="password"
-                  class="w-full"
-                  placeholder="Create a password"
-                  autocomplete="new-password"
-                />
-              </UFormField>
-
-              <UFormField label="Confirm password" required>
-                <UInput
-                  v-model="form.confirmPassword"
-                  type="password"
-                  class="w-full"
-                  placeholder="Repeat your password"
-                  autocomplete="new-password"
-                />
-              </UFormField>
-            </div>
-
-            <UButton
-              type="submit"
-              color="success"
-              size="xl"
-              block
-              :loading="isLoading"
-              :disabled="!canSubmit"
-            >
-              Create customer account
-            </UButton>
-          </UForm>
 
           <div
-            class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600"
+            class="border-t border-slate-200 bg-slate-50 px-6 py-6 text-center"
           >
-            Already registered?
-            <NuxtLink
-              :to="loginLink"
-              class="font-semibold text-lime-700 hover:text-lime-800"
-            >
-              Sign in instead.
-            </NuxtLink>
+            <p class="text-xs text-slate-600">
+              Already registered?
+              <NuxtLink
+                :to="loginLink"
+                class="ml-1 font-semibold uppercase tracking-tight text-[#001e40] transition hover:text-amber-700"
+              >
+                Sign in instead
+              </NuxtLink>
+            </p>
           </div>
         </div>
+
+        <footer class="mt-10 text-center">
+          <p
+            class="text-[10px] font-semibold uppercase tracking-[0.22em] leading-6 text-slate-400"
+          >
+            (C) 2024 Zoom Wide Construction Supplies.<br />
+            Built for Precision. Enterprise-Grade Security Active.
+          </p>
+        </footer>
       </section>
     </div>
   </div>

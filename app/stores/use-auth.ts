@@ -141,6 +141,7 @@ const getRoleLandingPath = (role?: UserRole | null) => {
     case "auditor":
       return "/finance/payments";
     case "customer":
+      return "/shop/account";
     case "supplier":
       return "/shop";
     default:

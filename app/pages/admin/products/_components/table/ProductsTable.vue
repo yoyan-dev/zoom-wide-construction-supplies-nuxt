@@ -246,7 +246,7 @@ const productInitials = (name?: string) => {
           <div
             class="h-10 w-10 overflow-hidden rounded-lg bg-slate-100 text-slate-500"
           >
-            <img
+            <NuxtImg
               v-if="row.original.image_url"
               :src="row.original.image_url"
               :alt="row.original.name ?? 'Product image'"

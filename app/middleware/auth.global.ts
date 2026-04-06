@@ -23,7 +23,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   const isAuthPath = isSectionPath(to.path, "/auth");
   const isCustomerPath =
-    isSectionPath(to.path, "/orders") || isSectionPath(to.path, "/checkout");
+    isSectionPath(to.path, "/orders") ||
+    isSectionPath(to.path, "/checkout") ||
+    isSectionPath(to.path, "/shop/account");
   const isStaffPath = isSectionPath(to.path, "/staff");
   const isDriverPath = isSectionPath(to.path, "/driver");
   const isAdminPath = isSectionPath(to.path, "/admin");

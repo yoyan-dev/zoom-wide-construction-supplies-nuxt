@@ -72,7 +72,7 @@ onBeforeUnmount(() => {
       class="relative h-48 w-48 cursor-pointer overflow-hidden rounded-xl border border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 transition"
       @click="triggerFile"
     >
-      <img
+      <NuxtImg
         v-if="previewImage"
         :src="previewImage"
         class="h-full w-full object-cover"

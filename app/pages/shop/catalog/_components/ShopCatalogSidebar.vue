@@ -18,11 +18,31 @@ const emit = defineEmits<{
   (e: "reset"): void;
 }>();
 
+const isExpanded = ref(false);
+
 const sliderValue = computed(() =>
   props.maxPrice !== null && props.maxPrice !== undefined
     ? props.maxPrice
     : props.maxPriceLimit || 0,
 );
+
+const activeFilterCount = computed(() => {
+  let count = 0;
+
+  if (props.activeCategoryId) {
+    count += 1;
+  }
+
+  if ((props.stockFilter || "all") !== "all") {
+    count += 1;
+  }
+
+  if (props.maxPrice !== null && props.maxPrice !== undefined) {
+    count += 1;
+  }
+
+  return count;
+});
 
 const stockOptions = [
   { label: "All stock", value: "all" },
@@ -51,7 +71,7 @@ const handlePriceInput = (event: Event) => {
 
 <template>
   <div class="space-y-5">
-    <StorefrontSectionCard padding="lg" class="sticky top-28">
+    <StorefrontSectionCard padding="lg" class="lg:sticky lg:top-28">
       <div class="flex items-center justify-between gap-3">
         <div>
           <p
@@ -62,14 +82,41 @@ const handlePriceInput = (event: Event) => {
           <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-950">
             Narrow the catalog
           </h2>
+          <p class="mt-2 text-sm text-slate-500 lg:hidden">
+            {{
+              activeFilterCount
+                ? `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`
+                : "Open filters to refine this catalog."
+            }}
+          </p>
         </div>
 
-        <StorefrontButton tone="ghost" size="sm" @click="emit('reset')">
-          Reset
-        </StorefrontButton>
+        <div class="flex items-center gap-2">
+          <StorefrontButton
+            v-if="activeFilterCount"
+            tone="ghost"
+            size="sm"
+            @click="emit('reset')"
+          >
+            Reset
+          </StorefrontButton>
+
+          <button
+            type="button"
+            class="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 lg:hidden"
+            :aria-expanded="isExpanded"
+            aria-label="Toggle catalog filters"
+            @click="isExpanded = !isExpanded"
+          >
+            <UIcon
+              :name="isExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              class="text-base"
+            />
+          </button>
+        </div>
       </div>
 
-      <div class="mt-8 space-y-8">
+      <div :class="[isExpanded ? 'block' : 'hidden', 'mt-8 space-y-8 lg:block']">
         <div>
           <p
             class="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-slate-500"

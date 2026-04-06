@@ -21,11 +21,6 @@ const viewActions = computed<AdminActionItem[]>(() => [
   {
     label: "View Category",
     icon: "i-lucide-eye",
-    to: `/admin/categories/${categoryId.value}`,
-  },
-  {
-    label: "View Category Details",
-    icon: "i-lucide-clipboard",
     onClick: () => openModal(CategoryViewModal, props.category),
   },
 ]);

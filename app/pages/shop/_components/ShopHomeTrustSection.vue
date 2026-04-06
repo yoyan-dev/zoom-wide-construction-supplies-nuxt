@@ -33,27 +33,38 @@ const highlights = [
         class="overflow-hidden bg-slate-950 text-white"
         padding="none"
       >
-        <div class="grid gap-0 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <div
+          class="grid gap-0 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]"
+        >
           <div class="relative overflow-hidden p-6 md:p-8 lg:p-10">
             <div
               class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(254,117,11,0.18),transparent_28%),linear-gradient(135deg,#031425_0%,#05203d_100%)]"
             />
             <div
               class="absolute inset-0 opacity-20"
-              style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 32px 32px;"
+              style="
+                background-image: radial-gradient(#ffffff 1px, transparent 1px);
+                background-size: 32px 32px;
+              "
             />
 
             <div class="relative">
-              <p class="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-amber-300">
+              <p
+                class="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-amber-300"
+              >
                 Built for engineering precision
               </p>
-              <h2 class="mt-4 text-4xl font-bold tracking-[-0.05em] text-white md:text-5xl">
+              <h2
+                class="mt-4 text-4xl font-bold tracking-[-0.05em] text-white md:text-5xl"
+              >
                 Stronger trust signals for serious buyers.
               </h2>
-              <p class="mt-5 max-w-2xl text-sm leading-8 text-slate-300 md:text-base">
+              <p
+                class="mt-5 max-w-2xl text-sm leading-8 text-slate-300 md:text-base"
+              >
                 This home page keeps the storefront modern and restrained while
-                still speaking to construction buyers who care about reliability,
-                stock confidence, and clean procurement decisions.
+                still speaking to construction buyers who care about
+                reliability, stock confidence, and clean procurement decisions.
               </p>
 
               <div class="mt-10 grid gap-5">
@@ -80,9 +91,11 @@ const highlights = [
             </div>
           </div>
 
-          <div class="border-t border-white/8 bg-white/6 p-6 md:p-8 lg:border-l lg:border-t-0 lg:p-10">
+          <div
+            class="border-t border-white/8 bg-white/6 p-6 md:p-8 lg:border-l lg:border-t-0 lg:p-10"
+          >
             <div class="overflow-hidden rounded-xl border border-white/10">
-              <img
+              <NuxtImg
                 src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1200&q=80"
                 alt="Architectural blueprint and construction planning materials"
                 class="h-[260px] w-full object-cover"
@@ -95,7 +108,9 @@ const highlights = [
                 <p class="text-3xl font-bold tracking-tight text-white">
                   {{ props.productCount }}
                 </p>
-                <p class="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <p
+                  class="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-400"
+                >
                   Published products
                 </p>
               </div>
@@ -104,13 +119,17 @@ const highlights = [
                 <p class="text-3xl font-bold tracking-tight text-white">
                   {{ props.categoryCount }}
                 </p>
-                <p class="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <p
+                  class="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-400"
+                >
                   Shop categories
                 </p>
               </div>
             </div>
 
-            <div class="mt-6 rounded-xl border border-amber-400/18 bg-amber-400/8 p-5">
+            <div
+              class="mt-6 rounded-xl border border-amber-400/18 bg-amber-400/8 p-5"
+            >
               <p class="text-sm leading-7 text-slate-200">
                 Next steps can extend this exact language into catalog, product
                 detail, and cart pages without changing the underlying project
