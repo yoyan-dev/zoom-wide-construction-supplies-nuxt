@@ -36,7 +36,10 @@ const stockRatio = computed(() => {
 
   return Math.min(
     100,
-    Math.max(10, Math.round((stockQuantity.value / (minimumStock.value * 3)) * 100)),
+    Math.max(
+      10,
+      Math.round((stockQuantity.value / (minimumStock.value * 3)) * 100),
+    ),
   );
 });
 
@@ -101,7 +104,7 @@ const summaryTiles = computed(() => {
           class="col-span-6 overflow-hidden"
           padding="none"
         >
-          <img
+          <NuxtImg
             :src="imageSrc"
             :alt="props.product.name || 'Construction product detail image'"
             class="h-[360px] w-full object-cover md:h-[500px]"
@@ -112,7 +115,7 @@ const summaryTiles = computed(() => {
           class="col-span-2 overflow-hidden border-slate-900"
           padding="none"
         >
-          <img
+          <NuxtImg
             :src="imageSrc"
             :alt="`${props.product.name || 'Product'} alternate view`"
             class="aspect-square h-full w-full object-cover"
@@ -124,11 +127,15 @@ const summaryTiles = computed(() => {
           padding="lg"
         >
           <div>
-            <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-300">
+            <p
+              class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-300"
+            >
               Handbook
             </p>
             <p class="mt-2 text-lg font-bold tracking-tight">
-              {{ props.product.handbook?.features?.[0] || "Built for field use" }}
+              {{
+                props.product.handbook?.features?.[0] || "Built for field use"
+              }}
             </p>
           </div>
         </StorefrontSectionCard>
@@ -138,7 +145,9 @@ const summaryTiles = computed(() => {
           padding="lg"
         >
           <div>
-            <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            <p
+              class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500"
+            >
               Stock signal
             </p>
             <p class="mt-2 text-lg font-bold tracking-tight text-slate-950">
@@ -156,7 +165,9 @@ const summaryTiles = computed(() => {
         >
           {{ props.categoryName || "Catalog item" }}
         </span>
-        <h1 class="mt-4 text-4xl font-black tracking-[-0.06em] text-slate-950 md:text-5xl">
+        <h1
+          class="mt-4 text-4xl font-black tracking-[-0.06em] text-slate-950 md:text-5xl"
+        >
           {{ props.product.name || "Unnamed product" }}
         </h1>
         <div
@@ -166,7 +177,9 @@ const summaryTiles = computed(() => {
           <span>/</span>
           <span>{{ formatNumber(stockQuantity) }} in stock</span>
           <span v-if="props.quantityInCart">/</span>
-          <span v-if="props.quantityInCart">{{ props.quantityInCart }} already in cart</span>
+          <span v-if="props.quantityInCart"
+            >{{ props.quantityInCart }} already in cart</span
+          >
         </div>
       </div>
 
@@ -176,7 +189,9 @@ const summaryTiles = computed(() => {
             <p class="text-4xl font-bold tracking-[-0.05em] text-slate-950">
               {{ formatCurrency(props.product.price ?? 0) }}
             </p>
-            <p class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <p
+              class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500"
+            >
               per {{ props.product.unit || "unit" }}
             </p>
           </div>
@@ -188,14 +203,18 @@ const summaryTiles = computed(() => {
                 :style="{ width: `${stockRatio}%` }"
               />
             </div>
-            <p class="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-amber-700">
+            <p
+              class="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-amber-700"
+            >
               {{ stockLabel }}
             </p>
           </div>
         </div>
 
         <div class="mt-6 flex items-center gap-3">
-          <div class="flex items-center rounded-xl border border-slate-200 bg-white">
+          <div
+            class="flex items-center rounded-xl border border-slate-200 bg-white"
+          >
             <button
               type="button"
               class="px-4 py-3 text-lg font-bold text-slate-700 transition hover:text-slate-950"
@@ -204,7 +223,9 @@ const summaryTiles = computed(() => {
             >
               -
             </button>
-            <span class="min-w-12 text-center text-sm font-semibold text-slate-950">
+            <span
+              class="min-w-12 text-center text-sm font-semibold text-slate-950"
+            >
               {{ props.quantity }}
             </span>
             <button
@@ -246,7 +267,9 @@ const summaryTiles = computed(() => {
           padding="md"
           class="bg-white"
         >
-          <p class="text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p
+            class="text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-slate-500"
+          >
             {{ tile.label }}
           </p>
           <p class="mt-2 text-lg font-bold tracking-tight text-slate-950">

@@ -74,21 +74,30 @@ const forgotPasswordLink = computed(() =>
 </script>
 
 <template>
-  <div class="relative min-h-screen overflow-hidden px-4 py-10 text-slate-900 sm:px-6 lg:px-8">
+  <div
+    class="relative min-h-screen overflow-hidden px-4 py-10 text-slate-900 sm:px-6 lg:px-8"
+  >
     <div
       class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(0,70,135,0.12),transparent_28rem),radial-gradient(circle_at_bottom_right,rgba(254,117,11,0.08),transparent_24rem)]"
     />
     <div
       class="pointer-events-none absolute inset-0 opacity-[0.08]"
-      style="background-image: radial-gradient(#001e40 1px, transparent 1px); background-size: 40px 40px;"
+      style="
+        background-image: radial-gradient(#001e40 1px, transparent 1px);
+        background-size: 40px 40px;
+      "
     />
-    <div class="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-[#003366]/10 blur-3xl" />
-    <div class="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-amber-500/10 blur-3xl" />
+    <div
+      class="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-[#003366]/10 blur-3xl"
+    />
+    <div
+      class="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-amber-500/10 blur-3xl"
+    />
 
-    <div class="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center justify-center">
-      <section
-        class="relative w-full"
-      >
+    <div
+      class="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center justify-center"
+    >
+      <section class="relative w-full">
         <div class="mb-10 flex flex-col items-center text-center">
           <NuxtLink
             to="/shop"
@@ -96,15 +105,21 @@ const forgotPasswordLink = computed(() =>
           >
             ZW
           </NuxtLink>
-          <h1 class="mt-6 text-3xl font-bold tracking-tight text-[#001e40] uppercase">
+          <h1
+            class="mt-6 text-3xl font-bold tracking-tight text-[#001e40] uppercase"
+          >
             Portal Login
           </h1>
-          <p class="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-slate-500">
+          <p
+            class="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-slate-500"
+          >
             Precision Systems Access
           </p>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-[0_32px_64px_-12px_rgba(0,31,42,0.08)]">
+        <div
+          class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-[0_32px_64px_-12px_rgba(0,31,42,0.08)]"
+        >
           <div class="h-1.5 w-full bg-amber-500" />
 
           <div class="p-8 md:p-10">
@@ -187,7 +202,6 @@ const forgotPasswordLink = computed(() =>
               <StorefrontButton
                 type="submit"
                 tone="primary"
-                size="xl"
                 block
                 :loading="isLoading"
                 :disabled="!canSubmit"
@@ -201,7 +215,9 @@ const forgotPasswordLink = computed(() =>
                 <div class="w-full border-t border-slate-200" />
               </div>
               <div class="relative flex justify-center text-xs">
-                <span class="bg-white px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <span
+                  class="bg-white px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400"
+                >
                   Verification Protocol
                 </span>
               </div>
@@ -213,7 +229,9 @@ const forgotPasswordLink = computed(() =>
                 disabled
                 class="flex items-center justify-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 opacity-70"
               >
-                <span class="flex h-4 w-4 items-center justify-center rounded-sm bg-white text-[9px] font-bold text-slate-700">
+                <span
+                  class="flex h-4 w-4 items-center justify-center rounded-sm bg-white text-[9px] font-bold text-slate-700"
+                >
                   G
                 </span>
                 Google
@@ -223,7 +241,7 @@ const forgotPasswordLink = computed(() =>
                 disabled
                 class="flex items-center justify-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 opacity-70"
               >
-                <span class="grid h-4 w-4 grid-cols-2 gap-[1px]">
+                <span class="grid h-4 w-4 grid-cols-2 gap-px">
                   <span class="bg-[#f25022]" />
                   <span class="bg-[#7fba00]" />
                   <span class="bg-[#00a4ef]" />
@@ -234,7 +252,9 @@ const forgotPasswordLink = computed(() =>
             </div>
           </div>
 
-          <div class="border-t border-slate-200 bg-slate-50 px-6 py-6 text-center">
+          <div
+            class="border-t border-slate-200 bg-slate-50 px-6 py-6 text-center"
+          >
             <p class="text-xs text-slate-600">
               New to the Zoom Wide network?
               <NuxtLink
@@ -248,8 +268,10 @@ const forgotPasswordLink = computed(() =>
         </div>
 
         <footer class="mt-10 text-center">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.22em] leading-6 text-slate-400">
-            (C) 2024 Zoom Wide Construction Supplies.<br>
+          <p
+            class="text-[10px] font-semibold uppercase tracking-[0.22em] leading-6 text-slate-400"
+          >
+            (C) 2024 Zoom Wide Construction Supplies.<br />
             Built for Precision. Enterprise-Grade Security Active.
           </p>
         </footer>

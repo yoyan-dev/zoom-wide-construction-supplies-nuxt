@@ -35,7 +35,7 @@ const handleRemove = async (productId: string) => {
           :to="`/shop/${item.product_id}`"
           class="h-32 w-full overflow-hidden rounded-xl bg-slate-100 md:w-32 md:min-w-32"
         >
-          <img
+          <NuxtImg
             :src="
               item.image_url ||
               `https://placehold.co/320x320/e2e8f0/0f172a?text=${encodeURIComponent(item.name)}`
@@ -49,7 +49,9 @@ const handleRemove = async (productId: string) => {
         <div class="flex-1">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-700">
+              <p
+                class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-700"
+              >
                 {{ item.category_id ? "Catalog item" : "Project supply" }}
               </p>
               <NuxtLink
@@ -58,7 +60,9 @@ const handleRemove = async (productId: string) => {
               >
                 {{ item.name }}
               </NuxtLink>
-              <p class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p
+                class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500"
+              >
                 <span v-if="item.sku">SKU {{ item.sku }}</span>
                 <span v-if="item.sku"> / </span>
                 <span>{{ item.unit }}</span>
@@ -75,8 +79,12 @@ const handleRemove = async (productId: string) => {
             </button>
           </div>
 
-          <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1">
+          <div
+            class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+          >
+            <div
+              class="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1"
+            >
               <button
                 type="button"
                 class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-700 transition hover:bg-white"
@@ -85,7 +93,9 @@ const handleRemove = async (productId: string) => {
               >
                 <UIcon name="i-lucide-minus" class="text-sm" />
               </button>
-              <span class="min-w-12 text-center text-sm font-semibold text-slate-950">
+              <span
+                class="min-w-12 text-center text-sm font-semibold text-slate-950"
+              >
                 {{ item.quantity }}
               </span>
               <button
@@ -99,7 +109,9 @@ const handleRemove = async (productId: string) => {
             </div>
 
             <div class="text-right">
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p
+                class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500"
+              >
                 Unit {{ formatCurrency(item.price) }}
               </p>
               <p class="mt-1 text-2xl font-bold tracking-tight text-slate-950">

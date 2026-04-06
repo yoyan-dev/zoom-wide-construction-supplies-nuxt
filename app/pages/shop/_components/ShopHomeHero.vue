@@ -20,7 +20,7 @@ const heroImage = computed(
 <template>
   <section class="relative overflow-hidden border-b border-slate-200/70">
     <div class="absolute inset-0">
-      <img
+      <NuxtImg
         :src="heroImage"
         :alt="featuredProductName || 'Construction site overview'"
         class="h-full w-full object-cover"
@@ -33,19 +33,28 @@ const heroImage = computed(
       />
     </div>
 
-    <StorefrontPageContainer size="wide" class="relative py-18 md:py-24 lg:py-30">
-      <div class="grid gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] lg:items-end">
+    <StorefrontPageContainer
+      size="wide"
+      class="relative py-18 md:py-24 lg:py-30"
+    >
+      <div
+        class="grid gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] lg:items-end"
+      >
         <div class="max-w-3xl">
           <p
             class="inline-flex rounded-md border border-amber-300/35 bg-amber-400/14 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-amber-100"
           >
             Industrial Grade Excellence
           </p>
-          <h1 class="mt-6 text-5xl font-bold tracking-[-0.06em] text-white sm:text-6xl lg:text-8xl">
+          <h1
+            class="mt-6 text-5xl font-bold tracking-[-0.06em] text-white sm:text-6xl lg:text-8xl"
+          >
             Precision in every
             <span class="block text-amber-300">beam, board, and bolt.</span>
           </h1>
-          <p class="mt-6 max-w-2xl text-base leading-8 text-slate-200 sm:text-lg">
+          <p
+            class="mt-6 max-w-2xl text-base leading-8 text-slate-200 sm:text-lg"
+          >
             ZOOM WIDE supports contractors, procurement teams, and repeat buyers
             with dependable materials, clear stock visibility, and a cleaner
             buying path for every build stage.
@@ -55,8 +64,8 @@ const heroImage = computed(
             <StorefrontButton tone="primary" size="xl" to="/shop/catalog">
               Browse Materials
             </StorefrontButton>
-            <StorefrontButton tone="secondary" size="xl" to="/shop#trust">
-              Bulk Estimates
+            <StorefrontButton tone="secondary" size="xl" to="/shop/standards">
+              View Standards
             </StorefrontButton>
           </div>
 
@@ -69,7 +78,9 @@ const heroImage = computed(
               <p class="text-2xl font-bold tracking-tight text-white">
                 {{ stat.value }}
               </p>
-              <p class="mt-1 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-slate-300">
+              <p
+                class="mt-1 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-slate-300"
+              >
                 {{ stat.label }}
               </p>
             </div>
@@ -82,8 +93,12 @@ const heroImage = computed(
           padding="none"
         >
           <div class="grid gap-0 md:grid-cols-[1.1fr_0.9fr] lg:grid-cols-1">
-            <div class="border-b border-white/12 p-6 lg:border-b-0 lg:border-r lg:border-white/12">
-              <p class="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-amber-200">
+            <div
+              class="border-b border-white/12 p-6 lg:border-b-0 lg:border-r lg:border-white/12"
+            >
+              <p
+                class="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-amber-200"
+              >
                 Featured supply
               </p>
               <h2 class="mt-3 text-3xl font-bold tracking-tight">
@@ -96,9 +111,11 @@ const heroImage = computed(
             </div>
 
             <div class="relative min-h-[280px] lg:min-h-[340px]">
-              <img
+              <NuxtImg
                 :src="heroImage"
-                :alt="props.featuredProductName || 'Featured construction material'"
+                :alt="
+                  props.featuredProductName || 'Featured construction material'
+                "
                 class="absolute inset-0 h-full w-full object-cover"
               />
               <div

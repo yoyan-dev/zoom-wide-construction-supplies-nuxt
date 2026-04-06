@@ -17,7 +17,7 @@ useHead({
   },
 });
 
-const title = "ZOOM WIDE Construction Supplies";
+const title = "ZOOM WIDE";
 const description = "zoom wide construction supplies management system";
 useSeoMeta({
   title,

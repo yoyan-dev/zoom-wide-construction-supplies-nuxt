@@ -35,10 +35,11 @@ const fallbackImage = `https://placehold.co/1200x900/e2e8f0/0f172a?text=${encode
     class="group relative flex min-h-[260px] overflow-hidden rounded-xl border border-slate-200/70"
     :class="[
       props.isLarge ? 'md:min-h-[340px]' : 'md:min-h-[280px]',
-      props.isActive && 'ring-2 ring-amber-400 ring-offset-4 ring-offset-slate-50',
+      props.isActive &&
+        'ring-2 ring-amber-400 ring-offset-4 ring-offset-slate-50',
     ]"
   >
-    <img
+    <NuxtImg
       :src="props.category.image_url || fallbackImage"
       :alt="props.category.name"
       class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
@@ -51,7 +52,9 @@ const fallbackImage = `https://placehold.co/1200x900/e2e8f0/0f172a?text=${encode
     <div class="relative mt-auto flex w-full flex-col gap-4 p-6 md:p-8">
       <div class="flex items-start justify-between gap-4">
         <div>
-          <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-amber-200">
+          <p
+            class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-amber-200"
+          >
             Core category
           </p>
           <h3 class="mt-2 text-2xl font-bold text-white md:text-3xl">

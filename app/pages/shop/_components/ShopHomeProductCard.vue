@@ -14,7 +14,9 @@ const emit = defineEmits<{
 }>();
 
 const stockQuantity = computed(() => props.product.stock_quantity ?? 0);
-const minimumStock = computed(() => Math.max(props.product.minimum_stock_quantity ?? 1, 1));
+const minimumStock = computed(() =>
+  Math.max(props.product.minimum_stock_quantity ?? 1, 1),
+);
 
 const stockRatio = computed(() => {
   if (stockQuantity.value <= 0) {
@@ -23,7 +25,10 @@ const stockRatio = computed(() => {
 
   return Math.min(
     100,
-    Math.max(12, Math.round((stockQuantity.value / (minimumStock.value * 3)) * 100)),
+    Math.max(
+      12,
+      Math.round((stockQuantity.value / (minimumStock.value * 3)) * 100),
+    ),
   );
 });
 
@@ -64,7 +69,7 @@ const imageSrc = computed(
       :to="props.product.id ? `/shop/${props.product.id}` : '/shop/catalog'"
       class="aspect-square overflow-hidden bg-slate-100"
     >
-      <img
+      <NuxtImg
         :src="imageSrc"
         :alt="props.product.name || 'Construction product'"
         class="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
@@ -82,7 +87,9 @@ const imageSrc = computed(
             {{ props.categoryName }}
           </p>
           <NuxtLink
-            :to="props.product.id ? `/shop/${props.product.id}` : '/shop/catalog'"
+            :to="
+              props.product.id ? `/shop/${props.product.id}` : '/shop/catalog'
+            "
             class="mt-2 block text-xl font-bold tracking-tight text-slate-950 transition hover:text-[#004687]"
           >
             {{ props.product.name || "Unnamed product" }}
@@ -147,7 +154,9 @@ const imageSrc = computed(
             Ready for shortlist
           </span>
           <NuxtLink
-            :to="props.product.id ? `/shop/${props.product.id}` : '/shop/catalog'"
+            :to="
+              props.product.id ? `/shop/${props.product.id}` : '/shop/catalog'
+            "
             class="text-xs font-semibold uppercase tracking-[0.16em] text-[#004687] transition hover:text-[#031b34]"
           >
             View details
