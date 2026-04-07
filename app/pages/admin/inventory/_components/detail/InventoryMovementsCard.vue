@@ -80,7 +80,7 @@ const movementBadge = (
         <div
           v-for="index in 3"
           :key="index"
-          class="rounded-xl border border-slate-200/70 p-4"
+          class="rounded-lg border border-slate-200/70 p-4"
         >
           <div class="space-y-3">
             <USkeleton class="h-5 w-28" />
@@ -97,7 +97,7 @@ const movementBadge = (
         <div
           v-for="entry in orderedMovements"
           :key="entry.id"
-          class="rounded-xl border border-slate-200/70 p-4"
+          class="rounded-lg border border-slate-200/70 p-4"
         >
           <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div class="space-y-2">

@@ -159,11 +159,7 @@ const loginLink = computed(() =>
       class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(0,70,135,0.12),transparent_28rem),radial-gradient(circle_at_bottom_right,rgba(254,117,11,0.08),transparent_24rem)]"
     />
     <div
-      class="pointer-events-none absolute inset-0 opacity-[0.08]"
-      style="
-        background-image: radial-gradient(#001e40 1px, transparent 1px);
-        background-size: 40px 40px;
-      "
+      class="pointer-events-none absolute inset-0 bg-[radial-gradient(#001e40_1px,transparent_1px)] bg-[length:40px_40px] opacity-[0.08]"
     />
     <div
       class="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-[#003366]/10 blur-3xl"

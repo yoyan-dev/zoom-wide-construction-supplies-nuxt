@@ -27,7 +27,18 @@ const resolvedVariant = computed(() => {
   }
 });
 
-const sizeClass = computed(() => `sf-button--${props.size}`);
+const sizeClass = computed(() => {
+  switch (props.size) {
+    case "sm":
+      return "min-h-9";
+    case "lg":
+      return "min-h-12";
+    case "xl":
+      return "min-h-14";
+    default:
+      return "min-h-11";
+  }
+});
 </script>
 
 <template>
@@ -36,7 +47,11 @@ const sizeClass = computed(() => `sf-button--${props.size}`);
     :color="resolvedVariant.color"
     :variant="resolvedVariant.variant"
     :size="props.size"
-    :class="['sf-button', sizeClass, props.block && 'w-full justify-center']"
+    :class="[
+      'rounded-lg font-bold uppercase tracking-[0.08em]',
+      sizeClass,
+      props.block && 'w-full justify-center',
+    ]"
   >
     <slot />
   </UButton>

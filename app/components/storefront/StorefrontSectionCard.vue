@@ -15,13 +15,13 @@ const props = withDefaults(
 const toneClass = computed(() => {
   switch (props.tone) {
     case "muted":
-      return "sf-card--muted";
+      return "bg-slate-50/90";
     case "dashed":
-      return "sf-card--dashed";
+      return "border-dashed bg-white/70";
     case "error":
-      return "sf-card--danger";
+      return "border-red-200 bg-red-50/95";
     default:
-      return "";
+      return "bg-white/90";
   }
 });
 
@@ -40,7 +40,14 @@ const paddingClass = computed(() => {
 </script>
 
 <template>
-  <component :is="props.as" :class="['sf-card', toneClass, paddingClass]">
+  <component
+    :is="props.as"
+    :class="[
+      'rounded-lg border border-slate-300/75 shadow-[0_20px_40px_rgba(15,23,42,0.05)]',
+      toneClass,
+      paddingClass,
+    ]"
+  >
     <slot />
   </component>
 </template>

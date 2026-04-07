@@ -32,6 +32,6 @@ const inputUi = {
     :icon="props.icon || undefined"
     :size="props.size"
     :ui="inputUi"
-    class="sf-input w-full"
+    class="w-full"
   />
 </template>

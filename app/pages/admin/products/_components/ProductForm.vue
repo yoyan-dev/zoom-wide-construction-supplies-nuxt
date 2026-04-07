@@ -304,7 +304,7 @@ watch(
           />
         </UFormField>
 
-        <div class="rounded-2xl border border-slate-200/70 p-5">
+        <div class="rounded-lg border border-slate-200/70 p-5">
           <div class="mb-4">
             <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
               Handbook Details
@@ -371,7 +371,7 @@ watch(
         </div>
       </div>
       <div
-        class="mt-6 flex items-center justify-between rounded-2xl border border-slate-200/70 p-4"
+        class="mt-6 flex items-center justify-between rounded-lg border border-slate-200/70 p-4"
       >
         <div>
           <p class="text-sm font-medium">Active in catalog</p>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Product } from "~/types/product";
 import { formatCurrency, formatNumber } from "~/utils/format";
+import { progressWidthClass } from "~/utils/tailwind";
 
 const props = defineProps<{
   product: Product;
@@ -31,6 +32,7 @@ const stockRatio = computed(() => {
     ),
   );
 });
+const stockRatioClass = computed(() => progressWidthClass(stockRatio.value));
 
 const stockLabel = computed(() => {
   if (stockQuantity.value <= 0) {
@@ -136,8 +138,7 @@ const imageSrc = computed(
 
         <div class="mt-3 h-1.5 rounded-full bg-slate-200">
           <div
-            class="h-full rounded-full bg-amber-500"
-            :style="{ width: `${stockRatio}%` }"
+            :class="['h-full rounded-full bg-amber-500', stockRatioClass]"
           />
         </div>
       </div>

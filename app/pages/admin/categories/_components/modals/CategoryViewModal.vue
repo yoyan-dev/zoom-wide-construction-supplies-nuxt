@@ -87,7 +87,7 @@ const emit = defineEmits<{ close: [boolean] }>();
             <div
               v-for="spec in category?.featured_specs ?? []"
               :key="spec.label"
-              class="rounded-2xl border border-slate-200/70 p-4"
+              class="rounded-lg border border-slate-200/70 p-4"
             >
               <p class="text-[11px] uppercase tracking-[0.18em] text-slate-500">
                 {{ spec.label }}

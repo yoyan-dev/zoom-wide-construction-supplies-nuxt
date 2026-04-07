@@ -5,6 +5,7 @@ import type { OrderStatus } from "~/types/order";
 import type { PaymentStatus } from "~/types/payment";
 import AdminPageStateCard from "../_components/AdminPageStateCard.vue";
 import { formatCurrency, formatShortDateOrFallback } from "~/utils/format";
+import { progressWidthClass } from "~/utils/tailwind";
 
 definePageMeta({
   layout: "admin",
@@ -154,7 +155,9 @@ const orderTrendBars = computed(() => {
 
   return rows.map((row) => ({
     ...row,
-    width: maxTotal > 0 ? Math.max((row.total / maxTotal) * 100, 6) : 0,
+    widthClass: progressWidthClass(
+      maxTotal > 0 ? Math.max((row.total / maxTotal) * 100, 6) : 0,
+    ),
   }));
 });
 
@@ -204,7 +207,7 @@ const handleRetry = async () => {
 
 <template>
   <div class="min-h-screen space-y-6">
-    <section class="rounded-xl bg-white/95 shadow-sm p-6 md:p-8">
+    <section class="rounded-sm bg-white p-6 shadow-sm dark:bg-gray-900 md:p-8">
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p class="text-xs font-medium uppercase tracking-[0.2em] text-amber-700">Operations Dashboard</p>
@@ -239,11 +242,11 @@ const handleRetry = async () => {
 
     <template v-else>
       <section v-if="isLoading && !orders.length && !products.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <USkeleton v-for="idx in 4" :key="idx" class="h-32 rounded-[24px]" />
+        <USkeleton v-for="idx in 4" :key="idx" class="h-32 rounded-lg" />
       </section>
 
       <section v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article v-for="card in kpiCards" :key="card.title" class="rounded-xl bg-white/95 shadow-sm p-5">
+        <article v-for="card in kpiCards" :key="card.title" class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
           <div class="flex items-start justify-between gap-3">
             <div>
               <p class="text-xs uppercase tracking-[0.16em] text-slate-500">{{ card.title }}</p>
@@ -254,7 +257,7 @@ const handleRetry = async () => {
                 {{ card.description }}
               </p>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
               <UIcon :name="card.icon" />
             </div>
           </div>
@@ -263,7 +266,7 @@ const handleRetry = async () => {
 
       <section class="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
         <div class="space-y-4">
-          <article class="rounded-xl bg-white/95 shadow-sm p-5">
+          <article class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
             <div class="flex items-center justify-between gap-3">
               <h2 class="text-xl font-semibold tracking-tight text-slate-900">
                 Top Order Value Days
@@ -281,8 +284,7 @@ const handleRetry = async () => {
                 </div>
                 <div class="h-2 rounded-full bg-slate-100">
                   <div
-                    class="h-full rounded-full bg-amber-500"
-                    :style="{ width: `${row.width}%` }"
+                    :class="['h-full rounded-full bg-amber-500', row.widthClass]"
                   />
                 </div>
               </div>
@@ -293,7 +295,7 @@ const handleRetry = async () => {
           </article>
 
           <div class="grid gap-4 md:grid-cols-3">
-            <article class="rounded-xl bg-white/95 shadow-sm p-5">
+            <article class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
               <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Order Status</p>
               <div class="mt-3 space-y-2">
                 <div
@@ -307,7 +309,7 @@ const handleRetry = async () => {
               </div>
             </article>
 
-            <article class="rounded-xl bg-white/95 shadow-sm p-5">
+            <article class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
               <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Delivery Status</p>
               <div class="mt-3 space-y-2">
                 <div
@@ -321,7 +323,7 @@ const handleRetry = async () => {
               </div>
             </article>
 
-            <article class="rounded-xl bg-white/95 shadow-sm p-5">
+            <article class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
               <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Payment Status</p>
               <div class="mt-3 space-y-2">
                 <div
@@ -337,7 +339,7 @@ const handleRetry = async () => {
           </div>
         </div>
 
-        <aside class="rounded-xl bg-white/95 shadow-sm p-5">
+        <aside class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
           <div class="flex items-center justify-between gap-3">
             <h2 class="text-xl font-semibold tracking-tight text-slate-900">
               Activity Feed
@@ -351,7 +353,7 @@ const handleRetry = async () => {
             <article
               v-for="entry in dashboardActivity"
               :key="entry.id"
-              class="rounded-lg bg-slate-50/80 flex items-start gap-3 p-3"
+              class="flex items-start gap-3 rounded-sm bg-white p-3 dark:bg-gray-900"
             >
               <div class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
                 <UIcon :name="entry.icon" />

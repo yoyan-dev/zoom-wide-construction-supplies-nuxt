@@ -132,9 +132,9 @@ watch(
     <template #body>
       <div class="space-y-4">
         <div v-if="isLoading" class="space-y-3">
-          <USkeleton class="h-16 w-full rounded-xl" />
-          <USkeleton class="h-20 w-full rounded-xl" />
-          <USkeleton class="h-20 w-full rounded-xl" />
+          <USkeleton class="h-16 w-full rounded-lg" />
+          <USkeleton class="h-20 w-full rounded-lg" />
+          <USkeleton class="h-20 w-full rounded-lg" />
         </div>
 
         <template v-else>
@@ -179,7 +179,7 @@ watch(
             <div
               v-for="item in items"
               :key="item.id"
-              class="flex items-start justify-between gap-4 rounded-2xl border border-slate-200/70 p-4"
+              class="flex items-start justify-between gap-4 rounded-lg border border-slate-200/70 p-4"
             >
               <div class="min-w-0">
                 <p class="font-medium text-slate-900">
@@ -201,7 +201,7 @@ watch(
 
           <div
             v-else-if="!loadError"
-            class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 py-8"
+            class="rounded-sm border border-dashed border-slate-200 bg-white px-6 py-8 dark:bg-gray-900"
           >
             <p class="text-sm font-medium text-slate-900">
               No products available

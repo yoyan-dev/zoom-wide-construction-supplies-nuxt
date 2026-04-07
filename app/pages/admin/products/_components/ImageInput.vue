@@ -69,7 +69,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex flex-col gap-4">
     <div
-      class="relative h-48 w-48 cursor-pointer overflow-hidden rounded-xl border border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 transition"
+      class="relative h-48 w-48 cursor-pointer overflow-hidden rounded-sm border border-dashed border-gray-300 bg-white transition hover:bg-white dark:bg-gray-900"
       @click="triggerFile"
     >
       <NuxtImg

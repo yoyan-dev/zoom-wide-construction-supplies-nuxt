@@ -25,7 +25,7 @@ const destination = computed(() => {
 
     <div
       v-if="destination"
-      class="mt-6 rounded-2xl bg-slate-50 p-4"
+      class="mt-6 rounded-sm bg-white p-4 dark:bg-gray-900"
     >
       <p class="whitespace-pre-line text-sm leading-6 text-slate-700">
         {{ destination }}
@@ -34,7 +34,7 @@ const destination = computed(() => {
 
     <div
       v-else
-      class="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 py-8"
+      class="mt-6 rounded-sm border border-dashed border-slate-200 bg-white px-6 py-8 dark:bg-gray-900"
     >
       <p class="text-sm font-medium text-slate-900">
         No structured destination available

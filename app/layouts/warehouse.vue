@@ -75,7 +75,7 @@ const handleLogout = async () => {
       v-model:open="open"
       collapsible
       resizable
-      class="bg-elevated/25"
+      class="bg-white dark:bg-gray-900"
     >
       <template #header="{ collapsed }">
         <div class="flex items-center gap-2" v-if="!collapsed">
@@ -119,7 +119,10 @@ const handleLogout = async () => {
     <UDashboardSearch :groups="groups" />
     <UDashboardPanel id="staff">
       <template #header>
-        <UDashboardNavbar title="ZOOM WIDE Construction Supplies">
+        <UDashboardNavbar
+          title="ZOOM WIDE Construction Supplies"
+          class="bg-white dark:bg-gray-900"
+        >
           <template #leading>
             <UDashboardSidebarCollapse />
           </template>

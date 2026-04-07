@@ -175,7 +175,7 @@ const handleSubmit = () => {
 
     <div
       v-if="props.showStatusField"
-      class="flex items-center justify-between rounded-2xl border border-slate-200/70 p-4"
+      class="flex items-center justify-between rounded-lg border border-slate-200/70 p-4"
     >
       <div>
         <p class="text-sm font-medium">Driver account active</p>

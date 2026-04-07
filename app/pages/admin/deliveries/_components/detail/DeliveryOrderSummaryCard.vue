@@ -99,7 +99,7 @@ const statusBadge = computed<{ color: BadgeColor; label: string }>(() => {
 
     <div
       v-if="props.order?.notes"
-      class="mt-6 rounded-2xl bg-slate-50 p-4"
+      class="mt-6 rounded-sm bg-white p-4 dark:bg-gray-900"
     >
       <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
         Order Notes
@@ -111,7 +111,7 @@ const statusBadge = computed<{ color: BadgeColor; label: string }>(() => {
 
     <div
       v-else-if="!props.order"
-      class="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 py-8"
+      class="mt-6 rounded-sm border border-dashed border-slate-200 bg-white px-6 py-8 dark:bg-gray-900"
     >
       <p class="text-sm font-medium text-slate-900">
         Linked order unavailable
