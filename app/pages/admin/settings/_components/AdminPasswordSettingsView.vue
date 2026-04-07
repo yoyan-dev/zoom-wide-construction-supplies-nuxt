@@ -79,7 +79,7 @@ const goBack = () => {
 
 <template>
   <div class="min-h-screen space-y-6">
-    <section class="rounded-3xl border border-slate-200/70 bg-white p-6 shadow-sm md:p-8">
+    <section class="rounded-sm border border-slate-200/70 bg-white p-6 shadow-sm md:p-8 dark:bg-gray-900">
       <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
@@ -173,13 +173,13 @@ const goBack = () => {
           </div>
 
           <div class="space-y-3">
-            <div class="rounded-2xl border border-slate-200/70 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <div class="rounded-sm border border-slate-200/70 bg-white px-4 py-3 text-sm text-slate-700 dark:bg-gray-900">
               Use a password that is different from your previous one.
             </div>
-            <div class="rounded-2xl border border-slate-200/70 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <div class="rounded-sm border border-slate-200/70 bg-white px-4 py-3 text-sm text-slate-700 dark:bg-gray-900">
               Update credentials from the current authenticated session only.
             </div>
-            <div class="rounded-2xl border border-slate-200/70 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <div class="rounded-sm border border-slate-200/70 bg-white px-4 py-3 text-sm text-slate-700 dark:bg-gray-900">
               Profile edits and password changes stay separated for clarity.
             </div>
           </div>

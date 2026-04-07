@@ -129,7 +129,6 @@ const normalizeSession = (value: unknown): AuthSession | null => {
 const getRoleLandingPath = (role?: UserRole | null) => {
   switch (role) {
     case "admin":
-    case "manager":
       return "/admin/dashboard";
     case "staff":
       return "/staff";
@@ -137,12 +136,7 @@ const getRoleLandingPath = (role?: UserRole | null) => {
       return "/driver";
     case "warehouse_manager":
       return "/warehouse";
-    case "finance":
-    case "auditor":
-      return "/finance/payments";
     case "customer":
-      return "/shop/account";
-    case "supplier":
       return "/shop";
     default:
       return DEFAULT_AUTH_REDIRECT;
@@ -166,7 +160,9 @@ export const useAuthStore = defineStore("auth", () => {
   );
   const refreshToken = computed(
     () =>
-      session.value?.refresh_token ?? session.value?.session?.refresh_token ?? null,
+      session.value?.refresh_token ??
+      session.value?.session?.refresh_token ??
+      null,
   );
   const hasSessionToken = computed(
     () => Boolean(token.value) || Boolean(refreshToken.value),

@@ -9,7 +9,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UCard>
+  <UCard class="bg-white dark:bg-gray-900 rounded-sm">
     <div class="grid gap-4 md:grid-cols-[minmax(0,320px)_1fr]">
       <UInput
         :model-value="props.search"

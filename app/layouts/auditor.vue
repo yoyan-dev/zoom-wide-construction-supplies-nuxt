@@ -1,5 +1,5 @@
 <template>
-  <div class="page-layout page-layout--auditor">
+  <div class="w-full">
     <slot />
   </div>
 </template>

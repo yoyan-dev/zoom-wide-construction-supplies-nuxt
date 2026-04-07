@@ -57,7 +57,10 @@ const props = defineProps<{
           }}
         </span>
       </div>
-      <div v-if="props.order?.notes" class="rounded-2xl bg-slate-50 p-4">
+      <div
+        v-if="props.order?.notes"
+        class="rounded-sm bg-white p-4 dark:bg-gray-900"
+      >
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
           Order Notes
         </p>

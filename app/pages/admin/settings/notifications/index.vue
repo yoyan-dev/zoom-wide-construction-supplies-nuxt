@@ -21,7 +21,7 @@ const notificationGroups = [
 
 <template>
   <div class="min-h-screen space-y-6">
-    <section class="rounded-3xl border border-slate-200/70 bg-white p-6 shadow-sm md:p-8">
+    <section class="rounded-sm border border-slate-200/70 bg-white p-6 shadow-sm md:p-8 dark:bg-gray-900">
       <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
         Admin Settings
       </p>
@@ -38,7 +38,7 @@ const notificationGroups = [
           <div
             v-for="item in group.items"
             :key="item"
-            class="rounded-2xl border border-slate-200/70 bg-slate-50 px-4 py-3 text-sm text-slate-700"
+            class="rounded-sm border border-slate-200/70 bg-white px-4 py-3 text-sm text-slate-700 dark:bg-gray-900"
           >
             {{ item }}
           </div>

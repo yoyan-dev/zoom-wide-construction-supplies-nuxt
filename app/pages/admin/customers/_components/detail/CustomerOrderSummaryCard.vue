@@ -98,7 +98,7 @@ const summaryItems = computed(() => [
 
     <div
       v-if="!hasOrderSource"
-      class="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-4"
+      class="mt-6 rounded-sm border border-dashed border-slate-200 bg-white p-4 dark:bg-gray-900"
     >
       <p class="text-sm text-slate-600">
         Order history is not available in this workspace. The repository
@@ -143,7 +143,7 @@ const summaryItems = computed(() => [
           <div
             v-for="order in recentOrders"
             :key="order.id"
-            class="flex flex-col gap-3 rounded-2xl border border-slate-200/70 p-4 md:flex-row md:items-center md:justify-between"
+            class="flex flex-col gap-3 rounded-lg border border-slate-200/70 p-4 md:flex-row md:items-center md:justify-between"
           >
             <div>
               <p class="font-medium text-slate-900">Order {{ order.id }}</p>
@@ -166,7 +166,7 @@ const summaryItems = computed(() => [
 
     <div
       v-else
-      class="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-4"
+      class="mt-6 rounded-sm border border-dashed border-slate-200 bg-white p-4 dark:bg-gray-900"
     >
       <p class="text-sm text-slate-600">
         No orders are linked to this customer in the currently available data.

@@ -18,7 +18,7 @@ const props = defineProps<{
       {{ props.description }}
     </p>
 
-    <div class="mt-6 rounded-2xl border border-slate-200/70 p-4">
+    <div class="mt-6 rounded-lg border border-slate-200/70 p-4">
       <p class="text-sm leading-7 text-slate-700">
         {{ props.address || "No address has been added for this record yet." }}
       </p>

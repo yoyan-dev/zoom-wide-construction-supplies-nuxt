@@ -41,11 +41,7 @@ const highlights = [
               class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(254,117,11,0.18),transparent_28%),linear-gradient(135deg,#031425_0%,#05203d_100%)]"
             />
             <div
-              class="absolute inset-0 opacity-20"
-              style="
-                background-image: radial-gradient(#ffffff 1px, transparent 1px);
-                background-size: 32px 32px;
-              "
+              class="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] bg-[length:32px_32px] opacity-20"
             />
 
             <div class="relative">

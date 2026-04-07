@@ -89,13 +89,15 @@ const goBack = () => {
 
 <template>
   <StorefrontPageContainer size="wide" class="py-8 md:py-10">
-    <section class="sf-card rounded-[1.5rem] border border-slate-200/80 bg-white/95 p-6 md:p-8">
+    <section
+      class="rounded-lg border border-slate-200/80 bg-white/95 p-6 shadow-[0_20px_40px_rgba(15,23,42,0.05)] md:p-8"
+    >
       <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
             Shop Account
           </p>
-          <h1 class="sf-display mt-2 text-3xl font-bold tracking-[-0.05em] text-brand-950">
+          <h1 class="mt-2 text-3xl font-bold text-brand-950">
             Security settings
           </h1>
           <p class="mt-2 max-w-3xl text-sm leading-7 text-slate-600 md:text-base">

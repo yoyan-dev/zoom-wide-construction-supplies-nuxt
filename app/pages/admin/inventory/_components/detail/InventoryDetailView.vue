@@ -147,7 +147,7 @@ const isPageLoading = computed(
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <section class="bg-white p-2">
+      <section class="rounded-sm bg-white p-2 dark:bg-gray-900">
         <div
           class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >

@@ -78,13 +78,13 @@ const summaryItems = computed(() => [
     </div>
 
     <div class="mt-6 grid gap-4 md:grid-cols-2">
-      <div class="rounded-2xl border border-slate-200/70 p-4">
+      <div class="rounded-lg border border-slate-200/70 p-4">
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Email</p>
         <p class="mt-2 text-sm font-medium text-slate-800">
           {{ props.customer.email }}
         </p>
       </div>
-      <div class="rounded-2xl border border-slate-200/70 p-4">
+      <div class="rounded-lg border border-slate-200/70 p-4">
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Phone</p>
         <p class="mt-2 text-sm font-medium text-slate-800">
           {{ props.customer.phone || "No phone number on file" }}

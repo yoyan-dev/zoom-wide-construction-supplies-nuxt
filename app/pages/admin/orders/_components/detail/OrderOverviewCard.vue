@@ -102,7 +102,7 @@ const statusBadge = computed<{ color: BadgeColor; label: string }>(() => {
           {{ props.order.approved_by ?? "Pending review" }}
         </span>
       </div>
-      <div v-if="props.order.rejection_reason" class="rounded-2xl bg-rose-50 p-4">
+      <div v-if="props.order.rejection_reason" class="rounded-lg bg-rose-50 p-4">
         <p class="text-xs uppercase tracking-[0.18em] text-rose-700">
           Rejection Reason
         </p>
@@ -110,7 +110,10 @@ const statusBadge = computed<{ color: BadgeColor; label: string }>(() => {
           {{ props.order.rejection_reason }}
         </p>
       </div>
-      <div v-if="props.order.notes" class="rounded-2xl bg-slate-50 p-4">
+      <div
+        v-if="props.order.notes"
+        class="rounded-sm bg-white p-4 dark:bg-gray-900"
+      >
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
           Order Notes
         </p>

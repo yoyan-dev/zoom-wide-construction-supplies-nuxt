@@ -19,7 +19,7 @@ const markerClasses = (state: string) => {
     case "neutral":
       return "border-slate-200 bg-slate-100 text-slate-700";
     default:
-      return "border-slate-200 bg-slate-50 text-slate-500";
+      return "border-slate-200 bg-white text-slate-500";
   }
 };
 </script>

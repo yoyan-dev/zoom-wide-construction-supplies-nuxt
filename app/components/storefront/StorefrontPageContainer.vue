@@ -13,17 +13,20 @@ const props = withDefaults(
 const sizeClass = computed(() => {
   switch (props.size) {
     case "narrow":
-      return "sf-page--narrow";
+      return "max-w-5xl";
     case "wide":
-      return "sf-page--wide";
+      return "max-w-[88rem]";
     default:
-      return "sf-page--default";
+      return "max-w-7xl";
   }
 });
 </script>
 
 <template>
-  <component :is="props.as" :class="['sf-page', sizeClass]">
+  <component
+    :is="props.as"
+    :class="['mx-auto w-full px-4 sm:px-6 lg:px-8', sizeClass]"
+  >
     <slot />
   </component>
 </template>

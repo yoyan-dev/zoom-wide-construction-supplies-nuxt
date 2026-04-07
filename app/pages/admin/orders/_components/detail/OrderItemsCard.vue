@@ -37,7 +37,7 @@ const itemsTotal = computed(() =>
       <div
         v-for="item in props.items"
         :key="item.id"
-        class="flex items-start justify-between gap-4 rounded-2xl border border-slate-200/70 p-4"
+        class="flex items-start justify-between gap-4 rounded-lg border border-slate-200/70 p-4"
       >
         <div>
           <p class="font-medium text-slate-900">
@@ -60,7 +60,7 @@ const itemsTotal = computed(() =>
 
     <div
       v-else
-      class="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 py-10 text-center"
+      class="mt-6 rounded-sm border border-dashed border-slate-200 bg-white px-6 py-10 text-center dark:bg-gray-900"
     >
       <p class="text-sm font-medium text-slate-900">
         Order items unavailable

@@ -125,7 +125,7 @@ const getCustomerSupportText = (customerId: string) => {
 </script>
 
 <template>
-  <UCard class="rounded-[24px] border border-slate-200/70 bg-white/95 shadow-sm">
+  <UCard>
     <UTable
       v-if="props.isLoading || hasRows"
       ref="table"

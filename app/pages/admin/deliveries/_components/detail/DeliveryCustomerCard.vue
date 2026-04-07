@@ -56,7 +56,7 @@ const props = defineProps<{
 
     <div
       v-else
-      class="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 py-8"
+      class="mt-6 rounded-sm border border-dashed border-slate-200 bg-white px-6 py-8 dark:bg-gray-900"
     >
       <p class="text-sm font-medium text-slate-900">
         Customer summary unavailable

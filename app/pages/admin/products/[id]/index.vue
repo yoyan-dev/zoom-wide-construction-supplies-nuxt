@@ -65,7 +65,7 @@ const retryLoad = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <section class="bg-white p-2">
+      <section class="rounded-sm bg-white p-2 dark:bg-gray-900">
         <div
           class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
@@ -292,7 +292,7 @@ const retryLoad = async () => {
                   <li
                     v-for="application in applicationList"
                     :key="application"
-                    class="rounded-xl border border-slate-200/70 px-3 py-2"
+                    class="rounded-lg border border-slate-200/70 px-3 py-2"
                   >
                     {{ application }}
                   </li>
@@ -317,7 +317,7 @@ const retryLoad = async () => {
               <div
                 v-for="specification in specificationList"
                 :key="`${specification.label}-${specification.value}`"
-                class="rounded-2xl border border-slate-200/70 p-4"
+                class="rounded-lg border border-slate-200/70 p-4"
               >
                 <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                   {{ specification.label }}

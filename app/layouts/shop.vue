@@ -103,7 +103,9 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="shop-shell min-h-screen text-slate-900">
+  <div
+    class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(0,70,135,0.08),transparent_26rem),linear-gradient(180deg,#f8fafc_0%,#f5f7fa_52%,#ecf1f7_100%)] text-slate-900"
+  >
     <div
       class="sticky top-0 z-40 border-b border-slate-200/70 bg-slate-50/88 backdrop-blur-md"
     >
@@ -298,7 +300,7 @@ const handleLogout = async () => {
       </UHeader>
     </div>
 
-    <main class="page-layout page-layout--shop">
+    <main class="min-h-[calc(100vh-13rem)] w-full">
       <slot />
     </main>
 

@@ -41,7 +41,7 @@ const handleAction = () => {
 </script>
 
 <template>
-  <section class="bg-white p-2">
+  <section class="rounded-sm bg-white p-2 dark:bg-gray-900">
     <div
       class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
     >

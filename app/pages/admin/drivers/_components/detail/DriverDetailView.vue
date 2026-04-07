@@ -71,7 +71,7 @@ const retryLoad = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <section class="bg-white p-2">
+      <section class="rounded-sm bg-white p-2 dark:bg-gray-900">
         <div
           class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
@@ -164,7 +164,7 @@ const retryLoad = async () => {
               </div>
 
               <div class="grid gap-4 md:grid-cols-2">
-                <div class="rounded-2xl border border-slate-200/70 bg-slate-50 p-4">
+                <div class="rounded-sm border border-slate-200/70 bg-white p-4 dark:bg-gray-900">
                   <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                     Phone
                   </p>
@@ -173,7 +173,7 @@ const retryLoad = async () => {
                   </p>
                 </div>
 
-                <div class="rounded-2xl border border-slate-200/70 bg-slate-50 p-4">
+                <div class="rounded-sm border border-slate-200/70 bg-white p-4 dark:bg-gray-900">
                   <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                     Driver ID
                   </p>
@@ -182,7 +182,7 @@ const retryLoad = async () => {
                   </p>
                 </div>
 
-                <div class="rounded-2xl border border-slate-200/70 bg-slate-50 p-4">
+                <div class="rounded-sm border border-slate-200/70 bg-white p-4 dark:bg-gray-900">
                   <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                     License Number
                   </p>
@@ -191,7 +191,7 @@ const retryLoad = async () => {
                   </p>
                 </div>
 
-                <div class="rounded-2xl border border-slate-200/70 bg-slate-50 p-4">
+                <div class="rounded-sm border border-slate-200/70 bg-white p-4 dark:bg-gray-900">
                   <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                     Vehicle Number
                   </p>
@@ -215,7 +215,7 @@ const retryLoad = async () => {
                   </p>
                 </div>
 
-                <div class="rounded-2xl border border-slate-200/70 bg-slate-50 p-4">
+                <div class="rounded-sm border border-slate-200/70 bg-white p-4 dark:bg-gray-900">
                   <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                     Created
                   </p>
@@ -224,7 +224,7 @@ const retryLoad = async () => {
                   </p>
                 </div>
 
-                <div class="rounded-2xl border border-slate-200/70 bg-slate-50 p-4">
+                <div class="rounded-sm border border-slate-200/70 bg-white p-4 dark:bg-gray-900">
                   <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                     Updated
                   </p>

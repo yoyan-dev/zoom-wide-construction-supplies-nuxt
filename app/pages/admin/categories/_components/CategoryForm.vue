@@ -119,7 +119,7 @@ const handleSubmit = () => {
         />
       </UFormField>
 
-      <div class="rounded-2xl border border-slate-200/70 p-5">
+      <div class="rounded-lg border border-slate-200/70 p-5">
         <div class="mb-4">
           <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
             Handbook Content

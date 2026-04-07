@@ -12,7 +12,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UCard class="rounded-[24px] border border-slate-200/70 bg-white/95 shadow-sm">
+  <UCard>
     <div class="space-y-4">
       <div class="grid gap-4 md:grid-cols-2">
         <UInput

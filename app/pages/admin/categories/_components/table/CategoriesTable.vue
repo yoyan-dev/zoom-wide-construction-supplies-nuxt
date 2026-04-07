@@ -107,7 +107,7 @@ const pagination = ref({
 </script>
 
 <template>
-  <UCard>
+  <UCard class="bg-white dark:bg-gray-900 rounded-sm">
     <AdminTableSelectionBar
       v-if="selectedCount"
       :count="selectedCount"

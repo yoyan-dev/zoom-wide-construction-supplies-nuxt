@@ -116,7 +116,7 @@ const goToSecurity = () => {
 
 <template>
   <div class="min-h-screen space-y-6">
-    <section class="rounded-3xl border border-slate-200/70 bg-white p-6 shadow-sm md:p-8">
+    <section class="rounded-sm border border-slate-200/70 bg-white p-6 shadow-sm md:p-8 dark:bg-gray-900">
       <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
@@ -173,7 +173,7 @@ const goToSecurity = () => {
 
             <UForm v-else class="space-y-5" @submit.prevent="handleSave">
               <div class="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)] md:items-start">
-                <div class="rounded-2xl border border-slate-200/70 bg-slate-50 p-5">
+                <div class="rounded-sm border border-slate-200/70 bg-white p-5 dark:bg-gray-900">
                   <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                     Profile Image
                   </p>
@@ -263,7 +263,7 @@ const goToSecurity = () => {
               </p>
             </div>
 
-            <div class="rounded-2xl border border-slate-200/70 bg-slate-50 p-4">
+            <div class="rounded-sm border border-slate-200/70 bg-white p-4 dark:bg-gray-900">
               <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                 Role
               </p>
@@ -272,7 +272,7 @@ const goToSecurity = () => {
               </p>
             </div>
 
-            <div class="rounded-2xl border border-slate-200/70 bg-slate-50 p-4">
+            <div class="rounded-sm border border-slate-200/70 bg-white p-4 dark:bg-gray-900">
               <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                 Account ID
               </p>
