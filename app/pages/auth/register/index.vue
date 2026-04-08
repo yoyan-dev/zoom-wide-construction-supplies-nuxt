@@ -159,7 +159,7 @@ const loginLink = computed(() =>
       class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(0,70,135,0.12),transparent_28rem),radial-gradient(circle_at_bottom_right,rgba(254,117,11,0.08),transparent_24rem)]"
     />
     <div
-      class="pointer-events-none absolute inset-0 bg-[radial-gradient(#001e40_1px,transparent_1px)] bg-[length:40px_40px] opacity-[0.08]"
+      class="pointer-events-none absolute inset-0 bg-[radial-gradient(#001e40_1px,transparent_1px)] bg-size-[40px_40px] opacity-[0.08]"
     />
     <div
       class="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-[#003366]/10 blur-3xl"
@@ -175,9 +175,9 @@ const loginLink = computed(() =>
         <div class="mb-10 flex flex-col items-center text-center">
           <NuxtLink
             to="/shop"
-            class="flex h-16 w-16 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-lg font-black tracking-[-0.08em] text-[#001e40] shadow-sm"
+            class="flex items-center justify-center text-lg font-black"
           >
-            ZW
+            <NuxtImg src="/logo-full.png" width="150" />
           </NuxtLink>
           <h1
             class="mt-6 text-3xl font-bold tracking-tight text-[#001e40] uppercase"
@@ -187,7 +187,7 @@ const loginLink = computed(() =>
           <p
             class="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-slate-500"
           >
-            Precision Systems Access
+            Sign up for your account
           </p>
         </div>
 
@@ -203,12 +203,10 @@ const loginLink = computed(() =>
               >
                 Customer registration
               </p>
-              <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                Register your customer profile
-              </h2>
-              <p class="mt-3 text-sm leading-7 text-slate-600">
-                This signup is limited to customer accounts and signs you in
-                after the API responds successfully.
+              <p class="text-sm text-gray-500">
+                Please fill in the form below to register your account.
+                <br />
+                You will be able to login with your email and password.
               </p>
             </div>
 

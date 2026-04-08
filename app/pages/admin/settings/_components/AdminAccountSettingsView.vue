@@ -19,6 +19,7 @@ const pageError = ref<string | null>(null);
 const formError = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
 const isRetrying = ref(false);
+const imageFile = ref<File | null>(null);
 
 const previewImage = computed(
   () => form.imageUrl.trim() || account.value?.user.image_url || undefined,
@@ -29,6 +30,7 @@ const applyAccountToForm = () => {
   form.email = account.value?.user.email ?? "";
   form.phone = account.value?.user.phone ?? "";
   form.imageUrl = account.value?.user.image_url ?? "";
+  imageFile.value = null;
 };
 
 const loadPage = async () => {
@@ -60,6 +62,41 @@ const toOptionalText = (value: string) => {
   return normalized.length ? normalized : null;
 };
 
+const appendOptionalText = (
+  formData: FormData,
+  key: keyof UpdateAccountPayload,
+  value: string | null,
+) => {
+  formData.append(key, value ?? "");
+};
+
+const buildAccountPayload = () => {
+  const payload: UpdateAccountPayload = {
+    full_name: form.fullName.trim(),
+    email: form.email.trim(),
+    phone: toOptionalText(form.phone),
+    image_url: toOptionalText(form.imageUrl),
+  };
+
+  if (!imageFile.value) {
+    return payload;
+  }
+
+  const formData = new FormData();
+
+  appendOptionalText(formData, "full_name", payload.full_name ?? null);
+  appendOptionalText(formData, "email", payload.email ?? null);
+  appendOptionalText(formData, "phone", payload.phone ?? null);
+  appendOptionalText(formData, "image_url", payload.image_url ?? null);
+  formData.append("imageFile", imageFile.value);
+
+  return formData;
+};
+
+const handleImageChange = (file: File | null) => {
+  imageFile.value = file;
+};
+
 const handleSave = async () => {
   formError.value = null;
   successMessage.value = null;
@@ -74,14 +111,7 @@ const handleSave = async () => {
     return;
   }
 
-  const payload: UpdateAccountPayload = {
-    full_name: form.fullName.trim(),
-    email: form.email.trim(),
-    phone: toOptionalText(form.phone),
-    image_url: toOptionalText(form.imageUrl),
-  };
-
-  const response = await accountStore.updateAccount(payload);
+  const response = await accountStore.updateAccount(buildAccountPayload());
 
   if (response.status === "error") {
     formError.value = response.message;
@@ -124,7 +154,7 @@ const goToSecurity = () => {
           </p>
           <h1 class="mt-2 text-2xl font-semibold md:text-3xl">Account settings</h1>
           <p class="mt-2 max-w-3xl text-sm text-slate-600 md:text-base">
-            Update your admin profile details, contact information, and profile image URL.
+            Update your admin profile details, contact information, and profile image.
           </p>
         </div>
 
@@ -179,13 +209,15 @@ const goToSecurity = () => {
                   </p>
 
                   <div class="mt-4 flex flex-col items-center gap-3">
-                    <UAvatar
-                      :src="previewImage"
+                    <AccountImageInput
+                      :key="`admin-image:${account?.user.id ?? 'user'}:${account?.user.image_url ?? ''}`"
+                      :initial-image="previewImage"
                       :alt="form.fullName || authStore.displayName"
-                      size="3xl"
+                      @change="handleImageChange"
                     />
                     <p class="text-center text-xs text-slate-500">
-                      Paste a hosted image URL to update your admin avatar.
+                      Upload an admin profile image, or keep using a hosted
+                      image URL below.
                     </p>
                   </div>
                 </div>

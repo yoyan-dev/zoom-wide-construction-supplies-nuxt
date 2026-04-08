@@ -26,7 +26,7 @@ const emit = defineEmits<{
         v-for="page in props.pages"
         :key="page"
         type="button"
-        class="flex h-10 min-w-10 items-center justify-center rounded-xl border px-3 text-sm font-semibold transition"
+        class="flex h-10 min-w-10 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition"
         :class="
           page === props.currentPage
             ? 'border-slate-900 bg-slate-900 text-white'

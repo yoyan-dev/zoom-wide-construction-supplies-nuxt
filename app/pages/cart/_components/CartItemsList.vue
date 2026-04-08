@@ -33,7 +33,7 @@ const handleRemove = async (productId: string) => {
       <div class="flex flex-col gap-5 md:flex-row md:items-center">
         <NuxtLink
           :to="`/shop/${item.product_id}`"
-          class="h-32 w-full overflow-hidden rounded-xl bg-slate-100 md:w-32 md:min-w-32"
+          class="h-32 w-full overflow-hidden rounded-lg bg-slate-100 md:w-32 md:min-w-32"
         >
           <NuxtImg
             :src="
@@ -82,31 +82,13 @@ const handleRemove = async (productId: string) => {
           <div
             class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
           >
-            <div
-              class="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1"
-            >
-              <button
-                type="button"
-                class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-700 transition hover:bg-white"
-                :disabled="props.isBusy || item.quantity <= 1"
-                @click="handleDecrease(item.product_id)"
-              >
-                <UIcon name="i-lucide-minus" class="text-sm" />
-              </button>
-              <span
-                class="min-w-12 text-center text-sm font-semibold text-slate-950"
-              >
-                {{ item.quantity }}
-              </span>
-              <button
-                type="button"
-                class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-700 transition hover:bg-white"
-                :disabled="props.isBusy"
-                @click="handleIncrease(item.product_id)"
-              >
-                <UIcon name="i-lucide-plus" class="text-sm" />
-              </button>
-            </div>
+            <StorefrontQuantityInput
+              :quantity="item.quantity"
+              :disabled="props.isBusy"
+              :label="`${item.name} quantity`"
+              @decrease="handleDecrease(item.product_id)"
+              @increase="handleIncrease(item.product_id)"
+            />
 
             <div class="text-right">
               <p
@@ -114,9 +96,10 @@ const handleRemove = async (productId: string) => {
               >
                 Unit {{ formatCurrency(item.price) }}
               </p>
-              <p class="mt-1 text-2xl font-bold tracking-tight text-slate-950">
-                {{ formatCurrency(item.price * item.quantity) }}
-              </p>
+              <StorefrontPriceDisplay
+                :amount="item.price * item.quantity"
+                size="sm"
+              />
             </div>
           </div>
         </div>

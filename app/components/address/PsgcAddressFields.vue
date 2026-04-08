@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import type {
-  PsgcBarangay,
-  PsgcCityMunicipality,
-} from "~/stores/use-psgc";
+import type { PsgcBarangay, PsgcCityMunicipality } from "~/stores/use-psgc";
 import {
   getPsgcCityMunicipalityLabel,
   getPsgcRegionLabel,
@@ -17,7 +14,8 @@ const props = withDefaults(
   }>(),
   {
     title: "Delivery Address",
-    description: "Use PSGC-backed selections for Philippine delivery locations.",
+    description:
+      "Use PSGC-backed selections for Philippine delivery locations.",
   },
 );
 
@@ -44,7 +42,9 @@ const hasInitialized = ref(false);
 const isSyncing = ref(false);
 
 const selectedRegion = computed(
-  () => regions.value.find((item) => item.code === selectedRegionCode.value) ?? null,
+  () =>
+    regions.value.find((item) => item.code === selectedRegionCode.value) ??
+    null,
 );
 const provinceItems = computed(() =>
   provinces.value
@@ -58,10 +58,14 @@ const regionHasProvinceOptions = computed(() => provinceItems.value.length > 0);
 const cityOptions = ref<PsgcCityMunicipality[]>([]);
 const barangayOptions = ref<PsgcBarangay[]>([]);
 const selectedProvince = computed(
-  () => provinces.value.find((item) => item.code === selectedProvinceCode.value) ?? null,
+  () =>
+    provinces.value.find((item) => item.code === selectedProvinceCode.value) ??
+    null,
 );
 const selectedCity = computed(
-  () => cityOptions.value.find((item) => item.code === selectedCityCode.value) ?? null,
+  () =>
+    cityOptions.value.find((item) => item.code === selectedCityCode.value) ??
+    null,
 );
 
 const regionItems = computed(() =>
@@ -115,7 +119,10 @@ const ensureBaseCollections = async () => {
   }
 };
 
-const loadCities = async (options?: { preserveCity?: boolean; preserveBarangay?: boolean }) => {
+const loadCities = async (options?: {
+  preserveCity?: boolean;
+  preserveBarangay?: boolean;
+}) => {
   if (!selectedRegionCode.value) {
     cityOptions.value = [];
     selectedCityCode.value = "";
@@ -140,9 +147,10 @@ const loadCities = async (options?: { preserveCity?: boolean; preserveBarangay?:
   const preserveBarangay = options?.preserveBarangay ?? false;
 
   try {
-    cityOptions.value = regionHasProvinceOptions.value && selectedProvinceCode.value
-      ? await psgcStore.fetchCitiesForProvince(selectedProvinceCode.value)
-      : await psgcStore.fetchCitiesForRegion(selectedRegionCode.value);
+    cityOptions.value =
+      regionHasProvinceOptions.value && selectedProvinceCode.value
+        ? await psgcStore.fetchCitiesForProvince(selectedProvinceCode.value)
+        : await psgcStore.fetchCitiesForRegion(selectedRegionCode.value);
     psgcError.value = null;
   } catch (error) {
     console.error("Failed to load PSGC cities:", error);
@@ -191,7 +199,11 @@ const loadBarangays = async (options?: { preserveBarangay?: boolean }) => {
 
 const applyRegionSelection = async (
   regionCode: string,
-  options?: { preserveProvince?: boolean; preserveCity?: boolean; preserveBarangay?: boolean },
+  options?: {
+    preserveProvince?: boolean;
+    preserveCity?: boolean;
+    preserveBarangay?: boolean;
+  },
 ) => {
   selectedRegionCode.value = regionCode;
   const region = selectedRegion.value;
@@ -341,8 +353,9 @@ const syncFromDraft = async () => {
     }
 
     const barangayMatch =
-      barangayOptions.value.find((item) => item.name === draft.value.address_line) ??
-      null;
+      barangayOptions.value.find(
+        (item) => item.name === draft.value.address_line,
+      ) ?? null;
 
     if (barangayMatch) {
       selectedBarangayCode.value = barangayMatch.code;
@@ -420,7 +433,7 @@ onMounted(async () => {
       </UFormField>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="grid gap-4 md:grid-cols-2 items-end">
       <UFormField
         label="Province"
         required
@@ -439,7 +452,9 @@ onMounted(async () => {
           class="w-full"
           :items="provinceItems"
           :placeholder="
-            regionHasProvinceOptions ? 'Select province' : 'No province selection needed'
+            regionHasProvinceOptions
+              ? 'Select province'
+              : 'No province selection needed'
           "
           :disabled="!selectedRegionCode || !regionHasProvinceOptions"
           @update:model-value="applyProvinceSelection(String($event || ''))"
@@ -449,7 +464,11 @@ onMounted(async () => {
       <UFormField
         label="City / Municipality"
         required
-        :description="isLoadingCities ? 'Loading PSGC cities and municipalities...' : undefined"
+        :description="
+          isLoadingCities
+            ? 'Loading PSGC cities and municipalities...'
+            : undefined
+        "
       >
         <USelect
           :model-value="selectedCityCode"
@@ -457,7 +476,8 @@ onMounted(async () => {
           :items="cityItems"
           placeholder="Select city or municipality"
           :disabled="
-            !selectedRegionCode || (regionHasProvinceOptions && !selectedProvinceCode)
+            !selectedRegionCode ||
+            (regionHasProvinceOptions && !selectedProvinceCode)
           "
           @update:model-value="applyCitySelection(String($event || ''))"
         />
@@ -468,7 +488,9 @@ onMounted(async () => {
       <UFormField
         label="Barangay"
         required
-        :description="isLoadingBarangays ? 'Loading PSGC barangays...' : undefined"
+        :description="
+          isLoadingBarangays ? 'Loading PSGC barangays...' : undefined
+        "
       >
         <USelect
           :model-value="selectedBarangayCode"
@@ -481,11 +503,7 @@ onMounted(async () => {
       </UFormField>
 
       <UFormField label="Postal code">
-        <UInput
-          v-model="draft.postal_code"
-          class="w-full"
-          placeholder="1100"
-        />
+        <UInput v-model="draft.postal_code" class="w-full" placeholder="1100" />
       </UFormField>
 
       <UFormField label="Country">

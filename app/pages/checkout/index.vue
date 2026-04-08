@@ -37,6 +37,21 @@ const freightZoneOptions = [
   { value: "coastal-industrial", label: "Coastal Industrial (Zone 1)" },
 ] as const;
 
+const checkoutSteps = [
+  {
+    label: "Cart review",
+    description: "Products and quantities are confirmed.",
+  },
+  {
+    label: "Delivery details",
+    description: "Address, freight zone, and notes are set.",
+  },
+  {
+    label: "Submit order",
+    description: "Totals are checked before placing the order.",
+  },
+] as const;
+
 const freightZone = ref<(typeof freightZoneOptions)[number]["value"]>(
   "northeast-regional",
 );
@@ -298,6 +313,12 @@ const handleRetry = async () => {
         </div>
       </template>
     </StorefrontPageHeader>
+
+    <StorefrontCheckoutSteps
+      class="mt-6"
+      :steps="checkoutSteps"
+      :active-index="1"
+    />
 
     <StorefrontStateCard
       v-if="pageError"

@@ -106,6 +106,12 @@ const filteredProducts = computed(() =>
 
 const featuredProducts = computed(() => filteredProducts.value.slice(0, 4));
 
+const categoryNames = computed(() =>
+  Object.fromEntries(
+    categories.value.map((category) => [category.id, category.name]),
+  ),
+);
+
 const featuredCategories = computed(() => {
   const selected = activeCategory.value
     ? categories.value.filter((category) => category.id === activeCategory.value?.id)
@@ -211,6 +217,7 @@ const handleAddToCart = async (productId?: string) => {
       :products="featuredProducts"
       :is-loading="isProductsLoading"
       :active-category-name="activeCategory?.name"
+      :category-names="categoryNames"
       :search-query="searchQuery"
       :cart-quantities="cartQuantities"
       :is-cart-busy="isSyncing"

@@ -80,7 +80,7 @@ const handlePriceInput = (event: Event) => {
             Filters
           </p>
           <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-            Narrow the catalog
+            Filter site supplies
           </h2>
           <p class="mt-2 text-sm text-slate-500 lg:hidden">
             {{
@@ -121,12 +121,12 @@ const handlePriceInput = (event: Event) => {
           <p
             class="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-slate-500"
           >
-            Category
+            Material category
           </p>
           <div class="mt-4 flex flex-col gap-2">
             <button
               type="button"
-              class="rounded-xl border px-4 py-3 text-left text-sm font-medium transition"
+              class="rounded-lg border px-4 py-3 text-left text-sm font-medium transition"
               :class="
                 !props.activeCategoryId
                   ? 'border-amber-300 bg-amber-50 text-amber-700'
@@ -140,7 +140,7 @@ const handlePriceInput = (event: Event) => {
               v-for="category in props.categories"
               :key="category.id"
               type="button"
-              class="rounded-xl border px-4 py-3 text-left text-sm font-medium transition"
+              class="rounded-lg border px-4 py-3 text-left text-sm font-medium transition"
               :class="
                 category.id === props.activeCategoryId
                   ? 'border-amber-300 bg-amber-50 text-amber-700'
@@ -182,7 +182,7 @@ const handlePriceInput = (event: Event) => {
             <p
               class="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-slate-500"
             >
-              Price cap
+              Budget cap
             </p>
             <span class="text-sm font-semibold text-slate-900">
               {{

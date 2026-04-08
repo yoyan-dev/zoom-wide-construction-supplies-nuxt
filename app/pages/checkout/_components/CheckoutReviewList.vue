@@ -18,7 +18,7 @@ defineProps<{
       <div class="flex flex-col gap-5 md:flex-row md:items-center">
         <NuxtLink
           :to="`/shop/${item.product_id}`"
-          class="h-28 w-full overflow-hidden rounded-xl bg-slate-100 md:w-28 md:min-w-28"
+          class="h-28 w-full overflow-hidden rounded-lg bg-slate-100 md:w-28 md:min-w-28"
         >
           <NuxtImg
             :src="
@@ -54,9 +54,7 @@ defineProps<{
               </p>
             </div>
 
-            <div
-              class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-right"
-            >
+            <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-right">
               <p
                 class="text-[0.64rem] font-semibold uppercase tracking-[0.16em] text-slate-500"
               >
@@ -82,9 +80,10 @@ defineProps<{
               >
                 Unit {{ formatCurrency(item.price) }}
               </p>
-              <p class="mt-1 text-2xl font-bold tracking-tight text-slate-950">
-                {{ formatCurrency(item.price * item.quantity) }}
-              </p>
+              <StorefrontPriceDisplay
+                :amount="item.price * item.quantity"
+                size="sm"
+              />
             </div>
           </div>
         </div>

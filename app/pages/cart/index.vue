@@ -26,6 +26,21 @@ const productStore = useProductStore();
 const pageError = ref<string | null>(null);
 const isRetrying = ref(false);
 
+const checkoutSteps = [
+  {
+    label: "Cart review",
+    description: "Adjust quantities and remove items.",
+  },
+  {
+    label: "Delivery details",
+    description: "Choose address and freight notes.",
+  },
+  {
+    label: "Submit order",
+    description: "Review totals and place the order.",
+  },
+] as const;
+
 const { items, subtotal, itemCount, distinctItemCount, isLoading, isSyncing } =
   storeToRefs(cartStore);
 const { isAuthenticated } = storeToRefs(authStore);
@@ -112,7 +127,7 @@ const handleAddRecommended = async (productId?: string) => {
       :description="`${itemCount} items in cart with ${formatCurrency(subtotal)} in live merchandise subtotal.`"
     >
       <template #actions>
-        <div class="rounded-xl border border-slate-200/80 bg-white px-4 py-3 text-left shadow-sm">
+        <div class="rounded-lg border border-slate-200/80 bg-white px-4 py-3 text-left shadow-sm">
           <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
             Cart status
           </p>
@@ -122,6 +137,13 @@ const handleAddRecommended = async (productId?: string) => {
         </div>
       </template>
     </StorefrontPageHeader>
+
+    <StorefrontCheckoutSteps
+      v-if="!pageError && items.length"
+      class="mt-6"
+      :steps="checkoutSteps"
+      :active-index="0"
+    />
 
     <StorefrontStateCard
       v-if="pageError"
@@ -147,6 +169,23 @@ const handleAddRecommended = async (productId?: string) => {
       class="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_400px]"
     >
       <div class="space-y-6">
+        <div
+          v-if="!isLoading && items.length"
+          class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
+        >
+          <div>
+            <p class="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-amber-700">
+              Cart items
+            </p>
+            <h2 class="mt-3 text-3xl font-semibold leading-tight text-slate-950">
+              Adjust quantities before checkout.
+            </h2>
+          </div>
+          <StorefrontButton tone="secondary" to="/shop/catalog">
+            Continue shopping
+          </StorefrontButton>
+        </div>
+
         <StorefrontSkeletonList
           v-if="isLoading"
           :count="3"

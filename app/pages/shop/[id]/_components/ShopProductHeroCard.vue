@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Product } from "~/types/product";
-import { formatCurrency, formatNumber } from "~/utils/format";
+import { formatNumber } from "~/utils/format";
 import { progressWidthClass } from "~/utils/tailwind";
 
 const props = defineProps<{
@@ -15,6 +15,7 @@ const emit = defineEmits<{
   (e: "increase"): void;
   (e: "decrease"): void;
   (e: "addToCart"): void;
+  (e: "buyNow"): void;
 }>();
 
 const imageSrc = computed(
@@ -114,7 +115,7 @@ const summaryTiles = computed(() => {
         </StorefrontSectionCard>
 
         <StorefrontSectionCard
-          class="col-span-2 overflow-hidden border-slate-900"
+          class="col-span-2 overflow-hidden border-slate-300"
           padding="none"
         >
           <NuxtImg
@@ -125,7 +126,7 @@ const summaryTiles = computed(() => {
         </StorefrontSectionCard>
 
         <StorefrontSectionCard
-          class="col-span-2 flex aspect-square items-end bg-slate-950 text-white"
+          class="col-span-2 flex aspect-square items-end bg-brand-950 text-white"
           padding="lg"
         >
           <div>
@@ -168,7 +169,7 @@ const summaryTiles = computed(() => {
           {{ props.categoryName || "Catalog item" }}
         </span>
         <h1
-          class="mt-4 text-4xl font-black tracking-[-0.06em] text-slate-950 md:text-5xl"
+          class="mt-4 text-4xl font-semibold leading-tight text-slate-950 md:text-5xl"
         >
           {{ props.product.name || "Unnamed product" }}
         </h1>
@@ -187,16 +188,11 @@ const summaryTiles = computed(() => {
 
       <StorefrontSectionCard class="bg-slate-50" padding="lg">
         <div class="flex items-start justify-between gap-4">
-          <div>
-            <p class="text-4xl font-bold tracking-[-0.05em] text-slate-950">
-              {{ formatCurrency(props.product.price ?? 0) }}
-            </p>
-            <p
-              class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500"
-            >
-              per {{ props.product.unit || "unit" }}
-            </p>
-          </div>
+          <StorefrontPriceDisplay
+            :amount="props.product.price ?? 0"
+            :unit="props.product.unit || 'unit'"
+            size="lg"
+          />
 
           <div class="min-w-[148px] text-right">
             <div class="h-2 rounded-full bg-slate-200">
@@ -212,32 +208,14 @@ const summaryTiles = computed(() => {
           </div>
         </div>
 
-        <div class="mt-6 flex items-center gap-3">
-          <div
-            class="flex items-center rounded-xl border border-slate-200 bg-white"
-          >
-            <button
-              type="button"
-              class="px-4 py-3 text-lg font-bold text-slate-700 transition hover:text-slate-950"
-              :disabled="props.quantity <= 1 || props.isCartBusy"
-              @click="emit('decrease')"
-            >
-              -
-            </button>
-            <span
-              class="min-w-12 text-center text-sm font-semibold text-slate-950"
-            >
-              {{ props.quantity }}
-            </span>
-            <button
-              type="button"
-              class="px-4 py-3 text-lg font-bold text-slate-700 transition hover:text-slate-950"
-              :disabled="stockQuantity <= 0 || props.isCartBusy"
-              @click="emit('increase')"
-            >
-              +
-            </button>
-          </div>
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <StorefrontQuantityInput
+            :quantity="props.quantity"
+            :max="stockQuantity > 0 ? stockQuantity : 1"
+            :disabled="props.isCartBusy || stockQuantity <= 0"
+            @decrease="emit('decrease')"
+            @increase="emit('increase')"
+          />
 
           <StorefrontButton
             tone="primary"
@@ -251,15 +229,22 @@ const summaryTiles = computed(() => {
           </StorefrontButton>
         </div>
 
-        <StorefrontButton
-          tone="secondary"
-          size="lg"
-          class="mt-3 w-full"
-          to="#technical-specs"
-        >
-          View technical specs
-        </StorefrontButton>
+        <div class="mt-3 grid gap-3 sm:grid-cols-2">
+          <StorefrontButton
+            tone="secondary"
+            size="lg"
+            :disabled="stockQuantity <= 0 || props.isCartBusy"
+            @click="emit('buyNow')"
+          >
+            Buy now
+          </StorefrontButton>
+          <StorefrontButton tone="ghost" size="lg" to="#technical-specs">
+            View technical specs
+          </StorefrontButton>
+        </div>
       </StorefrontSectionCard>
+
+      <StorefrontTrustBadges compact />
 
       <div class="grid grid-cols-2 gap-4">
         <StorefrontSectionCard
