@@ -242,37 +242,30 @@ const handleLogout = async () => {
             <div
               class="flex flex-col items-center gap-4 text-center md:flex-row md:text-left"
             >
-              <div class="relative">
-                <div
-                  class="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg_at_50%_50%,rgba(254,117,11,0.15),rgba(0,70,135,0.3),rgba(254,117,11,0.15))] blur-sm"
-                />
-                <UAvatar
-                  :src="profileImage"
-                  :alt="profileName"
-                  size="3xl"
-                  class="relative ring-4 ring-accent-300/40"
-                />
-              </div>
-
               <div>
                 <p
                   class="text-xs font-semibold uppercase tracking-[0.24em] text-accent-700"
                 >
                   Account Hub
                 </p>
-                <h1
-                  class="mt-2 text-3xl font-bold text-brand-950 md:text-4xl"
-                >
-                  {{ profileName }}
-                </h1>
+                <UUser
+                  :name="profileName"
+                  :description="profileEmail"
+                  :avatar="{
+                    src: profileImage,
+                  }"
+                  :chip="{
+                    color: 'primary',
+                    position: 'top-right',
+                  }"
+                  size="xl"
+                />
+
                 <p
                   class="mt-2 flex items-center justify-center gap-2 text-sm text-slate-500 md:justify-start"
                 >
                   <UIcon name="i-lucide-badge-check" class="text-accent-500" />
                   {{ profileContact }}
-                </p>
-                <p class="mt-1 text-sm text-slate-500">
-                  {{ profileEmail }}
                 </p>
                 <p class="mt-1 text-sm text-slate-500">
                   {{ profilePhone }}

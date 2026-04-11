@@ -15,13 +15,13 @@ const props = withDefaults(
 const toneClass = computed(() => {
   switch (props.tone) {
     case "muted":
-      return "bg-slate-50/90";
+      return "bg-slate-50";
     case "dashed":
-      return "border-dashed bg-white/70";
+      return "border-dashed bg-white";
     case "error":
-      return "border-red-200 bg-red-50/95";
+      return "border-red-200 bg-red-50";
     default:
-      return "bg-white/90";
+      return "bg-white";
   }
 });
 
@@ -43,7 +43,7 @@ const paddingClass = computed(() => {
   <component
     :is="props.as"
     :class="[
-      'rounded-lg border border-slate-300/75 shadow-[0_20px_40px_rgba(15,23,42,0.05)]',
+      'rounded-lg border border-slate-200/90 shadow-[0_14px_30px_rgba(15,23,42,0.04)]',
       toneClass,
       paddingClass,
     ]"

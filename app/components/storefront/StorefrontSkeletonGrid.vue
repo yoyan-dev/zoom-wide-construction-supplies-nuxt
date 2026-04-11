@@ -18,7 +18,7 @@ const props = withDefaults(
     <div
       v-for="index in props.count"
       :key="index"
-      class="overflow-hidden rounded-lg border border-slate-300/75 bg-white/90 shadow-[0_20px_40px_rgba(15,23,42,0.05)]"
+      class="overflow-hidden rounded-lg border border-slate-200/90 bg-white shadow-[0_14px_30px_rgba(15,23,42,0.04)]"
     >
       <USkeleton :class="['w-full rounded-[inherit]', props.itemClass]" />
     </div>

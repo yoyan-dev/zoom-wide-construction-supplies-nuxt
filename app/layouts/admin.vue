@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
 
-const route = useRoute();
-const router = useRouter();
-const authStore = useAuthStore();
 const open = ref(false);
 
 const links = [
@@ -132,12 +129,6 @@ const groups = computed(() => [
   },
 ]);
 
-const avatarSrc = computed(() => authStore.user?.image_url || undefined);
-
-const handleLogout = async () => {
-  await authStore.logout();
-  await router.push("/auth/login");
-};
 </script>
 <template>
   <UDashboardGroup unit="rem">
@@ -183,7 +174,11 @@ const handleLogout = async () => {
       </template>
 
       <template #footer="{ collapsed }">
-        <UserMenu :collapsed="collapsed" />
+        <AppUserDropdown
+          :collapsed="collapsed"
+          button-class="w-full"
+          :show-chevron="!collapsed"
+        />
       </template>
     </UDashboardSidebar>
 
@@ -199,12 +194,7 @@ const handleLogout = async () => {
           </template>
 
           <template #right>
-            <div class="flex items-center gap-3">
-              <UButton color="neutral" variant="ghost" @click="handleLogout">
-                Logout
-              </UButton>
-              <UAvatar :src="avatarSrc" :alt="authStore.displayName" />
-            </div>
+            <AppUserDropdown />
           </template>
         </UDashboardNavbar>
       </template>

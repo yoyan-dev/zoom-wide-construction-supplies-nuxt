@@ -238,10 +238,10 @@ const catalogTitle = computed(() =>
 
 const catalogDescription = computed(() => {
   if (activeCategory.value) {
-    return `Showing live products for ${activeCategory.value.name}. Use the filters to narrow pricing and stock visibility without leaving the catalog.`;
+    return `Showing live products for ${activeCategory.value.name}. Filter by stock, price, and category to build a practical material shortlist.`;
   }
 
-  return "Professional-grade construction materials, tools, and site-ready supplies with cleaner search, filter, and cart actions.";
+  return "Construction materials, tools, and site-ready supplies organized around search, stock status, unit pricing, and fast cart actions.";
 });
 
 const catalogSummary = computed(() => {
@@ -360,7 +360,7 @@ const handleResetFilters = async () => {
       :description="catalogDescription"
     >
       <template #actions>
-        <div class="rounded-xl border border-slate-200/80 bg-white px-4 py-3 text-left shadow-sm">
+        <div class="rounded-lg border border-slate-200/80 bg-white px-4 py-3 text-left shadow-sm">
           <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
             Catalog status
           </p>
@@ -391,21 +391,24 @@ const handleResetFilters = async () => {
       />
 
       <div class="space-y-6">
-        <StorefrontSectionCard padding="lg">
+        <StorefrontSectionCard class="lg:sticky lg:top-28 lg:z-20" padding="lg">
           <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <form class="flex flex-1 items-center gap-3" @submit.prevent="handleSearchSubmit">
+              <form
+                class="flex flex-col gap-3 sm:flex-row sm:items-center xl:flex-1"
+                @submit.prevent="handleSearchSubmit"
+              >
                 <StorefrontInput
                   v-model="searchDraft"
                   icon="i-lucide-search"
                   placeholder="Search products, SKUs, and specification notes"
                 />
-                <StorefrontButton type="submit" tone="primary">
+                <StorefrontButton type="submit" tone="primary" class="justify-center">
                   Search
                 </StorefrontButton>
               </form>
 
-              <div class="flex items-center gap-3">
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                 <span class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
                   Sort by
                 </span>
@@ -414,7 +417,7 @@ const handleResetFilters = async () => {
                   value-key="value"
                   label-key="label"
                   :model-value="currentSort"
-                  class="w-52"
+                  class="w-full sm:w-52"
                   @update:model-value="
                     updateCatalogQuery({
                       sort: $event === 'newest' ? null : String($event),

@@ -4,11 +4,10 @@ import { storeToRefs } from "pinia";
 import { formatCurrency } from "~/utils/format";
 
 const route = useRoute();
-const router = useRouter();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
 const { items, itemCount, subtotal } = storeToRefs(cartStore);
-const { customer, isAuthenticated, user } = storeToRefs(authStore);
+const { isAuthenticated } = storeToRefs(authStore);
 
 const mobileNavOpen = ref(false);
 const search = ref(typeof route.query.q === "string" ? route.query.q : "");
@@ -44,13 +43,6 @@ const accountTarget = computed(() =>
     : authStore.getRoleLandingPath(),
 );
 
-const accountName = computed(
-  () =>
-    customer.value?.contact_name ??
-    user.value?.full_name ??
-    user.value?.email ??
-    "Signed in",
-);
 const cartPreviewItems = computed(() => items.value.slice(0, 3));
 const isProductDetailPage = computed(
   () =>
@@ -96,18 +88,14 @@ const footerItems = computed<NavigationMenuItem[]>(() => [
   },
 ]);
 
-const handleLogout = async () => {
-  await authStore.logout();
-  await router.push("/auth/login");
-};
 </script>
 
 <template>
   <div
-    class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(0,70,135,0.08),transparent_26rem),linear-gradient(180deg,#f8fafc_0%,#f5f7fa_52%,#ecf1f7_100%)] text-slate-900"
+    class="min-h-screen bg-[#f7f9fc] text-slate-900"
   >
     <div
-      class="sticky top-0 z-40 border-b border-slate-200/70 bg-slate-50/88 backdrop-blur-md"
+      class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-[0_10px_24px_rgba(15,23,42,0.03)] backdrop-blur-md"
     >
       <UHeader
         class="mx-auto max-w-352 px-4 py-4 sm:px-6 lg:px-8"
@@ -122,7 +110,7 @@ const handleLogout = async () => {
             <NuxtImg
               src="/logo-full.png"
               alt="Zoom Wide"
-              class="h-8 w-auto rounded-2xl"
+              class="h-8 w-auto rounded-lg"
             />
           </NuxtLink>
         </template>
@@ -131,34 +119,7 @@ const handleLogout = async () => {
 
         <template #right>
           <template v-if="isAuthenticated">
-            <div class="hidden text-right xl:block">
-              <p class="text-sm font-semibold text-slate-900">
-                {{ accountName }}
-              </p>
-              <p
-                class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500"
-              >
-                {{ user?.role ?? "account" }}
-              </p>
-            </div>
-            <UButton
-              color="warning"
-              variant="soft"
-              :to="accountTarget"
-              :aria-label="accountLabel"
-            >
-              <UIcon name="i-lucide-user-round" class="text-base sm:mr-2" />
-              <span class="hidden sm:inline">{{ accountLabel }}</span>
-            </UButton>
-            <UButton
-              color="neutral"
-              variant="ghost"
-              aria-label="Logout"
-              @click="handleLogout"
-            >
-              <UIcon name="i-lucide-log-out" class="text-base sm:mr-2" />
-              <span class="hidden sm:inline">Logout</span>
-            </UButton>
+            <AppUserDropdown color="warning" variant="soft" />
           </template>
 
           <template v-else>
@@ -225,11 +186,11 @@ const handleLogout = async () => {
                   <div
                     v-for="item in cartPreviewItems"
                     :key="item.product_id"
-                    class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-3"
+                    class="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-3"
                   >
                     <div class="flex items-center gap-3">
                       <div
-                        class="h-12 w-12 overflow-hidden rounded-xl bg-slate-100"
+                        class="h-12 w-12 overflow-hidden rounded-lg bg-slate-100"
                       >
                         <NuxtImg
                           :src="
@@ -270,7 +231,7 @@ const handleLogout = async () => {
 
                 <p
                   v-else
-                  class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm leading-7 text-slate-500"
+                  class="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm leading-7 text-slate-500"
                 >
                   Your cart is empty. Add products from the featured section to
                   start building a material shortlist.
@@ -304,7 +265,7 @@ const handleLogout = async () => {
       <slot />
     </main>
 
-    <div class="border-t-4 border-amber-500 bg-slate-100">
+    <div class="border-t border-slate-200 bg-white">
       <UFooter
         class="mx-auto max-w-352 px-4 py-6 sm:px-6 lg:px-8"
         :ui="{
@@ -318,7 +279,7 @@ const handleLogout = async () => {
         <template #left>
           <div class="flex flex-col gap-1">
             <p class="text-sm text-slate-500">
-              Copyright © {{ new Date().getFullYear() }} Zoom Wide Construction
+              Copyright (c) {{ new Date().getFullYear() }} Zoom Wide Construction
               Supplies
             </p>
             <p

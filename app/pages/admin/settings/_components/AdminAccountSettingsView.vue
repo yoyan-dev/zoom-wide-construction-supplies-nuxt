@@ -19,6 +19,7 @@ const pageError = ref<string | null>(null);
 const formError = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
 const isRetrying = ref(false);
+const imageFile = ref<File | null>(null);
 
 const previewImage = computed(
   () => form.imageUrl.trim() || account.value?.user.image_url || undefined,
@@ -29,6 +30,7 @@ const applyAccountToForm = () => {
   form.email = account.value?.user.email ?? "";
   form.phone = account.value?.user.phone ?? "";
   form.imageUrl = account.value?.user.image_url ?? "";
+  imageFile.value = null;
 };
 
 const loadPage = async () => {
@@ -60,6 +62,41 @@ const toOptionalText = (value: string) => {
   return normalized.length ? normalized : null;
 };
 
+const appendOptionalText = (
+  formData: FormData,
+  key: keyof UpdateAccountPayload,
+  value: string | null,
+) => {
+  formData.append(key, value ?? "");
+};
+
+const buildAccountPayload = () => {
+  const payload: UpdateAccountPayload = {
+    full_name: form.fullName.trim(),
+    email: form.email.trim(),
+    phone: toOptionalText(form.phone),
+    image_url: toOptionalText(form.imageUrl),
+  };
+
+  if (!imageFile.value) {
+    return payload;
+  }
+
+  const formData = new FormData();
+
+  appendOptionalText(formData, "full_name", payload.full_name ?? null);
+  appendOptionalText(formData, "email", payload.email ?? null);
+  appendOptionalText(formData, "phone", payload.phone ?? null);
+  appendOptionalText(formData, "image_url", payload.image_url ?? null);
+  formData.append("imageFile", imageFile.value);
+
+  return formData;
+};
+
+const handleImageChange = (file: File | null) => {
+  imageFile.value = file;
+};
+
 const handleSave = async () => {
   formError.value = null;
   successMessage.value = null;
@@ -74,14 +111,7 @@ const handleSave = async () => {
     return;
   }
 
-  const payload: UpdateAccountPayload = {
-    full_name: form.fullName.trim(),
-    email: form.email.trim(),
-    phone: toOptionalText(form.phone),
-    image_url: toOptionalText(form.imageUrl),
-  };
-
-  const response = await accountStore.updateAccount(payload);
+  const response = await accountStore.updateAccount(buildAccountPayload());
 
   if (response.status === "error") {
     formError.value = response.message;
@@ -94,7 +124,8 @@ const handleSave = async () => {
     return;
   }
 
-  successMessage.value = response.message || "Your account settings were updated.";
+  successMessage.value =
+    response.message || "Your account settings were updated.";
   toast.add({
     title: "Profile updated",
     description: successMessage.value,
@@ -116,15 +147,22 @@ const goToSecurity = () => {
 
 <template>
   <div class="min-h-screen space-y-6">
-    <section class="rounded-sm border border-slate-200/70 bg-white p-6 shadow-sm md:p-8 dark:bg-gray-900">
-      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <section
+      class="rounded-sm border border-slate-200/70 bg-white p-6 shadow-sm md:p-8 dark:bg-gray-900"
+    >
+      <div
+        class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
+      >
         <div>
           <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
             Admin Settings
           </p>
-          <h1 class="mt-2 text-2xl font-semibold md:text-3xl">Account settings</h1>
+          <h1 class="mt-2 text-2xl font-semibold md:text-3xl">
+            Account settings
+          </h1>
           <p class="mt-2 max-w-3xl text-sm text-slate-600 md:text-base">
-            Update your admin profile details, contact information, and profile image URL.
+            Update your admin profile details, contact information, and profile
+            image.
           </p>
         </div>
 
@@ -134,7 +172,9 @@ const goToSecurity = () => {
       </div>
     </section>
 
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)] xl:items-start">
+    <div
+      class="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)] xl:items-start"
+    >
       <UCard>
         <div class="space-y-6">
           <UAlert
@@ -172,20 +212,25 @@ const goToSecurity = () => {
             </div>
 
             <UForm v-else class="space-y-5" @submit.prevent="handleSave">
-              <div class="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)] md:items-start">
-                <div class="rounded-sm border border-slate-200/70 bg-white p-5 dark:bg-gray-900">
+              <div
+                class="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)] md:items-start"
+              >
+                <div
+                  class="rounded-sm border border-slate-200/70 bg-white p-5 dark:bg-gray-900"
+                >
                   <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                     Profile Image
                   </p>
 
                   <div class="mt-4 flex flex-col items-center gap-3">
-                    <UAvatar
-                      :src="previewImage"
+                    <AccountImageInput
+                      :key="`admin-image:${account?.user.id ?? 'user'}:${account?.user.image_url ?? ''}`"
+                      :initial-image="previewImage"
                       :alt="form.fullName || authStore.displayName"
-                      size="3xl"
+                      @change="handleImageChange"
                     />
                     <p class="text-center text-xs text-slate-500">
-                      Paste a hosted image URL to update your admin avatar.
+                      Upload image
                     </p>
                   </div>
                 </div>
@@ -218,23 +263,11 @@ const goToSecurity = () => {
                       autocomplete="tel"
                     />
                   </UFormField>
-
-                  <UFormField label="Profile image URL">
-                    <UInput
-                      v-model="form.imageUrl"
-                      class="w-full"
-                      placeholder="https://example.com/admin-avatar.jpg"
-                    />
-                  </UFormField>
                 </div>
               </div>
 
               <div class="flex flex-wrap items-center gap-3">
-                <UButton
-                  type="submit"
-                  color="primary"
-                  :loading="isSaving"
-                >
+                <UButton type="submit" color="primary" :loading="isSaving">
                   Save changes
                 </UButton>
                 <UButton
@@ -259,11 +292,17 @@ const goToSecurity = () => {
                 Signed-In Account
               </p>
               <p class="mt-1 text-lg font-semibold text-slate-900">
-                {{ account?.user.email ?? authStore.user?.email ?? "Admin account" }}
+                {{
+                  account?.user.email ??
+                  authStore.user?.email ??
+                  "Admin account"
+                }}
               </p>
             </div>
 
-            <div class="rounded-sm border border-slate-200/70 bg-white p-4 dark:bg-gray-900">
+            <div
+              class="rounded-sm border border-slate-200/70 bg-white p-4 dark:bg-gray-900"
+            >
               <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                 Role
               </p>
@@ -272,7 +311,9 @@ const goToSecurity = () => {
               </p>
             </div>
 
-            <div class="rounded-sm border border-slate-200/70 bg-white p-4 dark:bg-gray-900">
+            <div
+              class="rounded-sm border border-slate-200/70 bg-white p-4 dark:bg-gray-900"
+            >
               <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                 Account ID
               </p>
@@ -295,7 +336,8 @@ const goToSecurity = () => {
             </div>
 
             <p class="text-sm leading-6 text-slate-600">
-              Password changes are handled on the security page so credential updates stay separate from profile edits.
+              Password changes are handled on the security page so credential
+              updates stay separate from profile edits.
             </p>
 
             <UButton color="primary" variant="soft" block @click="goToSecurity">

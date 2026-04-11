@@ -58,19 +58,18 @@ defineEmits<{
         </div>
       </div>
 
-      <div class="rounded-xl border border-slate-200 bg-white p-5">
-        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Project total
-        </p>
-        <p class="mt-2 text-4xl font-black tracking-[-0.05em] text-slate-950">
-          {{ formatCurrency(props.totalAmount) }}
-        </p>
+      <div class="rounded-lg border border-slate-200 bg-white p-5">
+        <StorefrontPriceDisplay
+          eyebrow="Project total"
+          :amount="props.totalAmount"
+          size="lg"
+        />
         <p class="mt-2 text-sm leading-7 text-slate-500">
           {{ props.itemCount }} units will be included in the submitted order.
         </p>
       </div>
 
-      <div class="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
+      <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
         <div>
           <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
             Freight zone
@@ -119,17 +118,19 @@ defineEmits<{
         </StorefrontButton>
       </div>
 
-      <div class="rounded-xl border border-slate-200 bg-white p-4">
+      <div class="rounded-lg border border-slate-200 bg-white p-4">
         <div class="flex items-start gap-3">
           <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
             <UIcon name="i-lucide-shield-check" class="text-lg" />
           </div>
           <p class="text-sm leading-7 text-slate-600">
-            Orders placed here use the live cart checkout flow already present in
-            the project, so this page stays compatible with your existing API.
+            Orders are submitted with the selected delivery address, freight
+            zone, and item review details for a clear handoff.
           </p>
         </div>
       </div>
+
+      <StorefrontTrustBadges compact />
     </div>
   </StorefrontSectionCard>
 </template>

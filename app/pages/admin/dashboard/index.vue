@@ -28,7 +28,8 @@ const paymentStore = usePaymentStore();
 const { orders, isLoading: isOrdersLoading } = storeToRefs(orderStore);
 const { products, isLoading: isProductsLoading } = storeToRefs(productStore);
 const { customers, isLoading: isCustomersLoading } = storeToRefs(customerStore);
-const { deliveries, isLoading: isDeliveriesLoading } = storeToRefs(deliveryStore);
+const { deliveries, isLoading: isDeliveriesLoading } =
+  storeToRefs(deliveryStore);
 const { payments, isLoading: isPaymentsLoading } = storeToRefs(paymentStore);
 
 const pageError = ref<string | null>(null);
@@ -43,7 +44,9 @@ const loadDashboard = async () => {
     paymentStore.fetchPayments({ q: "", status: "", page: 1 }),
   ]);
 
-  const errorResponse = responses.find((response) => response.status === "error");
+  const errorResponse = responses.find(
+    (response) => response.status === "error",
+  );
   pageError.value = errorResponse?.message ?? null;
 };
 
@@ -116,31 +119,40 @@ const getCountByStatus = <T extends string>(
   }));
 
 const orderStatusSummary = computed(() =>
-  getCountByStatus<OrderStatus>(
-    orders.value,
-    ["pending", "approved", "rejected", "cancelled", "completed"],
-  ),
+  getCountByStatus<OrderStatus>(orders.value, [
+    "pending",
+    "approved",
+    "rejected",
+    "cancelled",
+    "completed",
+  ]),
 );
 
 const deliveryStatusSummary = computed(() =>
-  getCountByStatus<DeliveryStatus>(
-    deliveries.value,
-    ["scheduled", "in_transit", "delivered", "failed", "cancelled"],
-  ),
+  getCountByStatus<DeliveryStatus>(deliveries.value, [
+    "scheduled",
+    "in_transit",
+    "delivered",
+    "failed",
+    "cancelled",
+  ]),
 );
 
 const paymentStatusSummary = computed(() =>
-  getCountByStatus<PaymentStatus>(
-    payments.value,
-    ["pending", "paid", "failed", "refunded"],
-  ),
+  getCountByStatus<PaymentStatus>(payments.value, [
+    "pending",
+    "paid",
+    "failed",
+    "refunded",
+  ]),
 );
 
 const orderTrendBars = computed(() => {
   const groupedByDate = orders.value.reduce<Record<string, number>>(
     (grouped, order) => {
       const dateKey = formatShortDateOrFallback(order.created_at, "Unknown");
-      grouped[dateKey] = (grouped[dateKey] ?? 0) + Number(order.total_amount ?? 0);
+      grouped[dateKey] =
+        (grouped[dateKey] ?? 0) + Number(order.total_amount ?? 0);
       return grouped;
     },
     {},
@@ -162,13 +174,15 @@ const orderTrendBars = computed(() => {
 });
 
 const dashboardActivity = computed<DashboardActivity[]>(() => {
-  const orderEvents: DashboardActivity[] = orders.value.slice(0, 6).map((order) => ({
-    id: `order-${order.id}`,
-    label: `Order ${order.id}`,
-    detail: `Status: ${order.status}`,
-    date: order.created_at,
-    icon: "i-lucide-shopping-bag",
-  }));
+  const orderEvents: DashboardActivity[] = orders.value
+    .slice(0, 6)
+    .map((order) => ({
+      id: `order-${order.id}`,
+      label: `Order ${order.id}`,
+      detail: `Status: ${order.status}`,
+      date: order.created_at,
+      icon: "i-lucide-shopping-bag",
+    }));
 
   const paymentEvents: DashboardActivity[] = payments.value
     .slice(0, 6)
@@ -193,7 +207,8 @@ const dashboardActivity = computed<DashboardActivity[]>(() => {
   return [...orderEvents, ...paymentEvents, ...customerEvents]
     .sort(
       (left, right) =>
-        new Date(right.date ?? 0).getTime() - new Date(left.date ?? 0).getTime(),
+        new Date(right.date ?? 0).getTime() -
+        new Date(left.date ?? 0).getTime(),
     )
     .slice(0, 10);
 });
@@ -208,21 +223,39 @@ const handleRetry = async () => {
 <template>
   <div class="min-h-screen space-y-6">
     <section class="rounded-sm bg-white p-6 shadow-sm dark:bg-gray-900 md:p-8">
-      <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div
+        class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+      >
         <div>
-          <p class="text-xs font-medium uppercase tracking-[0.2em] text-amber-700">Operations Dashboard</p>
-          <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
-            Construction commerce performance overview
+          <p
+            class="text-xs font-medium uppercase tracking-[0.2em] text-amber-700"
+          >
+            Operations Dashboard
+          </p>
+          <h1
+            class="mt-3 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl"
+          >
+            Zoom @ Wide performance overview
           </h1>
           <p class="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-            Track active catalog items, incoming orders, delivery progress, and payment outcomes from one operational view.
+            Track active catalog items, incoming orders, delivery progress, and
+            payment outcomes from one operational view.
           </p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <UButton color="neutral" variant="outline" class="rounded-lg font-semibold" to="/admin/orders">
+          <UButton
+            color="neutral"
+            variant="outline"
+            class="rounded-lg font-semibold"
+            to="/admin/orders"
+          >
             View Orders
           </UButton>
-          <UButton color="warning" class="rounded-lg font-semibold shadow-sm" to="/admin/products">
+          <UButton
+            color="warning"
+            class="rounded-lg font-semibold shadow-sm"
+            to="/admin/products"
+          >
             Manage Products
           </UButton>
         </div>
@@ -241,30 +274,43 @@ const handleRetry = async () => {
     />
 
     <template v-else>
-      <section v-if="isLoading && !orders.length && !products.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section
+        v-if="isLoading && !orders.length && !products.length"
+        class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
         <USkeleton v-for="idx in 4" :key="idx" class="h-32 rounded-lg" />
       </section>
 
       <section v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article v-for="card in kpiCards" :key="card.title" class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
+        <article
+          v-for="card in kpiCards"
+          :key="card.title"
+          class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900"
+        >
           <div class="flex items-start justify-between gap-3">
             <div>
-              <p class="text-xs uppercase tracking-[0.16em] text-slate-500">{{ card.title }}</p>
-              <p class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+              <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
+                {{ card.title }}
+              </p>
+              <p
+                class="mt-2 text-2xl font-semibold tracking-tight text-slate-900"
+              >
                 {{ card.value }}
               </p>
               <p class="mt-2 text-sm text-slate-600">
                 {{ card.description }}
               </p>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white"
+            >
               <UIcon :name="card.icon" />
             </div>
           </div>
         </article>
       </section>
 
-      <section class="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
+      <section class="">
         <div class="space-y-4">
           <article class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
             <div class="flex items-center justify-between gap-3">
@@ -277,69 +323,99 @@ const handleRetry = async () => {
             </div>
 
             <div v-if="orderTrendBars.length" class="mt-5 space-y-3">
-              <div v-for="row in orderTrendBars" :key="row.label" class="space-y-2">
-                <div class="flex items-center justify-between text-sm text-slate-600">
+              <div
+                v-for="row in orderTrendBars"
+                :key="row.label"
+                class="space-y-2"
+              >
+                <div
+                  class="flex items-center justify-between text-sm text-slate-600"
+                >
                   <span>{{ row.label }}</span>
-                  <span class="font-semibold text-slate-900">{{ formatCurrency(row.total) }}</span>
+                  <span class="font-semibold text-slate-900">{{
+                    formatCurrency(row.total)
+                  }}</span>
                 </div>
                 <div class="h-2 rounded-full bg-slate-100">
                   <div
-                    :class="['h-full rounded-full bg-amber-500', row.widthClass]"
+                    :class="[
+                      'h-full rounded-full bg-amber-500',
+                      row.widthClass,
+                    ]"
                   />
                 </div>
               </div>
             </div>
             <p v-else class="mt-5 text-sm text-slate-600">
-              Order totals will appear here once transaction records are available.
+              Order totals will appear here once transaction records are
+              available.
             </p>
           </article>
 
           <div class="grid gap-4 md:grid-cols-3">
             <article class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
-              <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Order Status</p>
+              <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Order Status
+              </p>
               <div class="mt-3 space-y-2">
                 <div
                   v-for="row in orderStatusSummary"
                   :key="`order-${row.status}`"
                   class="flex items-center justify-between text-sm"
                 >
-                  <span class="capitalize text-slate-600">{{ row.status.replace("_", " ") }}</span>
-                  <span class="font-semibold text-slate-900">{{ row.count }}</span>
+                  <span class="capitalize text-slate-600">{{
+                    row.status.replace("_", " ")
+                  }}</span>
+                  <span class="font-semibold text-slate-900">{{
+                    row.count
+                  }}</span>
                 </div>
               </div>
             </article>
 
             <article class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
-              <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Delivery Status</p>
+              <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Delivery Status
+              </p>
               <div class="mt-3 space-y-2">
                 <div
                   v-for="row in deliveryStatusSummary"
                   :key="`delivery-${row.status}`"
                   class="flex items-center justify-between text-sm"
                 >
-                  <span class="capitalize text-slate-600">{{ row.status.replace("_", " ") }}</span>
-                  <span class="font-semibold text-slate-900">{{ row.count }}</span>
+                  <span class="capitalize text-slate-600">{{
+                    row.status.replace("_", " ")
+                  }}</span>
+                  <span class="font-semibold text-slate-900">{{
+                    row.count
+                  }}</span>
                 </div>
               </div>
             </article>
 
             <article class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
-              <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Payment Status</p>
+              <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Payment Status
+              </p>
               <div class="mt-3 space-y-2">
                 <div
                   v-for="row in paymentStatusSummary"
                   :key="`payment-${row.status}`"
                   class="flex items-center justify-between text-sm"
                 >
-                  <span class="capitalize text-slate-600">{{ row.status.replace("_", " ") }}</span>
-                  <span class="font-semibold text-slate-900">{{ row.count }}</span>
+                  <span class="capitalize text-slate-600">{{
+                    row.status.replace("_", " ")
+                  }}</span>
+                  <span class="font-semibold text-slate-900">{{
+                    row.count
+                  }}</span>
                 </div>
               </div>
             </article>
           </div>
         </div>
 
-        <aside class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
+        <!-- <aside class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
           <div class="flex items-center justify-between gap-3">
             <h2 class="text-xl font-semibold tracking-tight text-slate-900">
               Activity Feed
@@ -374,7 +450,7 @@ const handleRetry = async () => {
           <p v-else class="mt-5 text-sm text-slate-600">
             Recent activity will appear here as orders, payments, and customers are updated.
           </p>
-        </aside>
+        </aside> -->
       </section>
     </template>
   </div>

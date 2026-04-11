@@ -1,5 +1,4 @@
-import type { AuthSession } from "~/types/auth";
-import { AUTH_SESSION_COOKIE_KEY } from "~/utils/api";
+import { useAuthSessionCookie } from "~/utils/api";
 
 const isSectionPath = (path: string, prefix: string) =>
   path === prefix || path.startsWith(`${prefix}/`);
@@ -9,11 +8,7 @@ const resolveRedirectQuery = (value: unknown) =>
 
 export default defineNuxtRouteMiddleware(async (to) => {
   const authStore = useAuthStore();
-  const sessionCookie = useCookie<AuthSession | null>(AUTH_SESSION_COOKIE_KEY, {
-    default: () => null,
-    sameSite: "lax",
-    watch: true,
-  });
+  const sessionCookie = useAuthSessionCookie();
   const redirectToRoleHome = () =>
     navigateTo(authStore.getRoleLandingPath(), { replace: true });
 
@@ -25,7 +20,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const isCustomerPath =
     isSectionPath(to.path, "/orders") ||
     isSectionPath(to.path, "/checkout") ||
-    isSectionPath(to.path, "/shop/account");
+    isSectionPath(to.path, "/shop");
   const isStaffPath = isSectionPath(to.path, "/staff");
   const isDriverPath = isSectionPath(to.path, "/driver");
   const isAdminPath = isSectionPath(to.path, "/admin");

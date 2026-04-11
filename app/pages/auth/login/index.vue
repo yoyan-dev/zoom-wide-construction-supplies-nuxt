@@ -81,7 +81,7 @@ const forgotPasswordLink = computed(() =>
       class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(0,70,135,0.12),transparent_28rem),radial-gradient(circle_at_bottom_right,rgba(254,117,11,0.08),transparent_24rem)]"
     />
     <div
-      class="pointer-events-none absolute inset-0 bg-[radial-gradient(#001e40_1px,transparent_1px)] bg-[length:40px_40px] opacity-[0.08]"
+      class="pointer-events-none absolute inset-0 bg-[radial-gradient(#001e40_1px,transparent_1px)] bg-size-[40px_40px] opacity-[0.08]"
     />
     <div
       class="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-[#003366]/10 blur-3xl"
@@ -97,19 +97,19 @@ const forgotPasswordLink = computed(() =>
         <div class="mb-10 flex flex-col items-center text-center">
           <NuxtLink
             to="/shop"
-            class="flex h-16 w-16 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-lg font-black tracking-[-0.08em] text-[#001e40] shadow-sm"
+            class="flex items-center justify-center text-lg font-black"
           >
-            ZW
+            <NuxtImg src="/logo-full.png" width="150" />
           </NuxtLink>
           <h1
             class="mt-6 text-3xl font-bold tracking-tight text-[#001e40] uppercase"
           >
-            Portal Login
+            Login
           </h1>
           <p
             class="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-slate-500"
           >
-            Precision Systems Access
+            Sign in to your account
           </p>
         </div>
 
@@ -206,46 +206,6 @@ const forgotPasswordLink = computed(() =>
               </StorefrontButton>
             </form>
 
-            <div class="relative my-8">
-              <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-slate-200" />
-              </div>
-              <div class="relative flex justify-center text-xs">
-                <span
-                  class="bg-white px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400"
-                >
-                  Verification Protocol
-                </span>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                disabled
-                class="flex items-center justify-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 opacity-70"
-              >
-                <span
-                  class="flex h-4 w-4 items-center justify-center rounded-sm bg-white text-[9px] font-bold text-slate-700"
-                >
-                  G
-                </span>
-                Google
-              </button>
-              <button
-                type="button"
-                disabled
-                class="flex items-center justify-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 opacity-70"
-              >
-                <span class="grid h-4 w-4 grid-cols-2 gap-px">
-                  <span class="bg-[#f25022]" />
-                  <span class="bg-[#7fba00]" />
-                  <span class="bg-[#00a4ef]" />
-                  <span class="bg-[#ffb900]" />
-                </span>
-                Microsoft
-              </button>
-            </div>
           </div>
 
           <div
@@ -268,7 +228,7 @@ const forgotPasswordLink = computed(() =>
             class="text-[10px] font-semibold uppercase tracking-[0.22em] leading-6 text-slate-400"
           >
             (C) 2024 Zoom Wide Construction Supplies.<br />
-            Built for Precision. Enterprise-Grade Security Active.
+            Built for Precision. Enterprise-Grade Security Active.<br />
           </p>
         </footer>
       </section>

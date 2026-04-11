@@ -2,7 +2,6 @@
 import type { NavigationMenuItem } from "@nuxt/ui";
 
 const route = useRoute();
-const router = useRouter();
 const authStore = useAuthStore();
 const accountStore = useAccountStore();
 
@@ -53,10 +52,6 @@ const currentSectionLabel = computed(
   () => links.find((link) => isActiveLink(link.to))?.label ?? "Driver Deliveries",
 );
 
-const handleLogout = async () => {
-  await authStore.logout();
-  await router.push("/auth/login");
-};
 </script>
 
 <template>
@@ -108,14 +103,11 @@ const handleLogout = async () => {
               Vehicle {{ vehicleNumber }}
             </p>
 
-            <UButton
+            <AppUserDropdown
               color="neutral"
               variant="soft"
-              class="mt-4 w-full justify-center"
-              @click="handleLogout"
-            >
-              Logout
-            </UButton>
+              button-class="mt-4 w-full"
+            />
           </div>
         </div>
       </aside>
@@ -146,9 +138,7 @@ const handleLogout = async () => {
                 </p>
               </div>
 
-              <UButton color="neutral" variant="ghost" @click="handleLogout">
-                Logout
-              </UButton>
+              <AppUserDropdown />
             </div>
           </div>
         </header>

@@ -48,7 +48,7 @@ const sizeClass = computed(() => {
     :variant="resolvedVariant.variant"
     :size="props.size"
     :class="[
-      'rounded-lg font-bold uppercase tracking-[0.08em]',
+      'rounded-lg font-semibold',
       sizeClass,
       props.block && 'w-full justify-center',
     ]"

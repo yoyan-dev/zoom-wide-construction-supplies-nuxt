@@ -22,17 +22,17 @@ const props = withDefaults(
   >
     <p
       v-if="props.eyebrow"
-      class="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-amber-700"
+      class="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-amber-700"
     >
       {{ props.eyebrow }}
     </p>
     <component
       :is="props.titleTag"
-      class="text-3xl font-bold leading-none text-slate-900 md:text-5xl"
+      class="max-w-3xl text-3xl font-semibold leading-tight text-slate-950 md:text-4xl"
     >
       {{ props.title }}
     </component>
-    <p v-if="props.description" class="max-w-2xl leading-7 text-slate-600">
+    <p v-if="props.description" class="max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
       {{ props.description }}
     </p>
   </div>

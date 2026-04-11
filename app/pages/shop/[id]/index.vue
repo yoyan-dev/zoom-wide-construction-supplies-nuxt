@@ -209,6 +209,11 @@ const handleAddToCart = async () => {
   await cartStore.addToCart(currentProduct.value, quantity.value);
 };
 
+const handleBuyNow = async () => {
+  await handleAddToCart();
+  await navigateTo("/checkout");
+};
+
 const handleAddRelatedToCart = async (relatedProductId?: string) => {
   if (!relatedProductId) {
     return;
@@ -278,15 +283,16 @@ const handleAddRelatedToCart = async (relatedProductId?: string) => {
         @increase="incrementQuantity"
         @decrease="decrementQuantity"
         @add-to-cart="handleAddToCart"
+        @buy-now="handleBuyNow"
       />
 
       <section id="technical-specs" class="mt-16">
         <div class="mb-8">
           <p class="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-amber-700">
-            Technical architecture
+            Product details
           </p>
-          <h2 class="mt-3 text-3xl font-bold tracking-[-0.04em] text-slate-950">
-            Product description and specification detail.
+          <h2 class="mt-3 text-3xl font-semibold leading-tight text-slate-950">
+            Description, highlights, and specification detail.
           </h2>
         </div>
 
@@ -301,7 +307,7 @@ const handleAddRelatedToCart = async (relatedProductId?: string) => {
                   {{
                     currentProduct.handbook?.summary ||
                     currentProduct.description ||
-                    "Detailed product guidance can be expanded here as the catalog content grows."
+                    "Review this item against the stock, unit, category, and specification details before adding it to the project cart."
                   }}
                 </p>
               </div>
@@ -333,7 +339,7 @@ const handleAddRelatedToCart = async (relatedProductId?: string) => {
                   <span
                     v-for="application in currentProduct.handbook.applications"
                     :key="application"
-                    class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-600"
+                    class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600"
                   >
                     {{ application }}
                   </span>
@@ -369,7 +375,7 @@ const handleAddRelatedToCart = async (relatedProductId?: string) => {
             <p class="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-amber-700">
               Essential pairings
             </p>
-            <h2 class="mt-3 text-3xl font-bold tracking-[-0.04em] text-slate-950">
+            <h2 class="mt-3 text-3xl font-semibold leading-tight text-slate-950">
               Related products from the same catalog path.
             </h2>
           </div>

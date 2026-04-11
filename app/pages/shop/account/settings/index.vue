@@ -32,6 +32,7 @@ const pageError = ref<string | null>(null);
 const formError = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
 const isRetrying = ref(false);
+const imageFile = ref<File | null>(null);
 
 const previewImage = computed(
   () => form.imageUrl.trim() || account.value?.user.image_url || undefined,
@@ -40,12 +41,16 @@ const previewImage = computed(
 const applyAccountToForm = () => {
   form.companyName = account.value?.customer?.company_name ?? "";
   form.contactName =
-    account.value?.customer?.contact_name ?? account.value?.user.full_name ?? "";
+    account.value?.customer?.contact_name ??
+    account.value?.user.full_name ??
+    "";
   form.email = account.value?.user.email ?? "";
-  form.phone = account.value?.customer?.phone ?? account.value?.user.phone ?? "";
+  form.phone =
+    account.value?.customer?.phone ?? account.value?.user.phone ?? "";
   form.imageUrl = account.value?.user.image_url ?? "";
   form.billingAddress = account.value?.customer?.billing_address ?? "";
   form.shippingAddress = account.value?.customer?.shipping_address ?? "";
+  imageFile.value = null;
 };
 
 const loadPage = async () => {
@@ -77,6 +82,57 @@ const toOptionalText = (value: string) => {
   return normalized.length ? normalized : null;
 };
 
+const appendOptionalText = (
+  formData: FormData,
+  key: keyof UpdateAccountPayload,
+  value: string | null,
+) => {
+  formData.append(key, value ?? "");
+};
+
+const buildAccountPayload = () => {
+  const payload: UpdateAccountPayload = {
+    full_name: form.contactName.trim(),
+    contact_name: form.contactName.trim(),
+    company_name: toOptionalText(form.companyName),
+    email: form.email.trim(),
+    phone: toOptionalText(form.phone),
+    image_url: toOptionalText(form.imageUrl),
+    billing_address: toOptionalText(form.billingAddress),
+    shipping_address: toOptionalText(form.shippingAddress),
+  };
+
+  if (!imageFile.value) {
+    return payload;
+  }
+
+  const formData = new FormData();
+
+  appendOptionalText(formData, "full_name", payload.full_name ?? null);
+  appendOptionalText(formData, "contact_name", payload.contact_name ?? null);
+  appendOptionalText(formData, "company_name", payload.company_name ?? null);
+  appendOptionalText(formData, "email", payload.email ?? null);
+  appendOptionalText(formData, "phone", payload.phone ?? null);
+  appendOptionalText(formData, "image_url", payload.image_url ?? null);
+  appendOptionalText(
+    formData,
+    "billing_address",
+    payload.billing_address ?? null,
+  );
+  appendOptionalText(
+    formData,
+    "shipping_address",
+    payload.shipping_address ?? null,
+  );
+  formData.append("imageFile", imageFile.value);
+
+  return formData;
+};
+
+const handleImageChange = (file: File | null) => {
+  imageFile.value = file;
+};
+
 const handleSave = async () => {
   formError.value = null;
   successMessage.value = null;
@@ -91,18 +147,7 @@ const handleSave = async () => {
     return;
   }
 
-  const payload: UpdateAccountPayload = {
-    full_name: form.contactName.trim(),
-    contact_name: form.contactName.trim(),
-    company_name: toOptionalText(form.companyName),
-    email: form.email.trim(),
-    phone: toOptionalText(form.phone),
-    image_url: toOptionalText(form.imageUrl),
-    billing_address: toOptionalText(form.billingAddress),
-    shipping_address: toOptionalText(form.shippingAddress),
-  };
-
-  const response = await accountStore.updateAccount(payload);
+  const response = await accountStore.updateAccount(buildAccountPayload());
 
   if (response.status === "error") {
     formError.value = response.message;
@@ -144,7 +189,9 @@ const goBack = () => {
     <section
       class="rounded-lg border border-slate-200/80 bg-white/95 p-6 shadow-[0_20px_40px_rgba(15,23,42,0.05)] md:p-8"
     >
-      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div
+        class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
+      >
         <div>
           <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
             Shop Account
@@ -152,8 +199,11 @@ const goBack = () => {
           <h1 class="mt-2 text-3xl font-bold text-brand-950">
             Profile settings
           </h1>
-          <p class="mt-2 max-w-3xl text-sm leading-7 text-slate-600 md:text-base">
-            Update your customer profile, company details, and the contact data used across the storefront and checkout flow.
+          <p
+            class="mt-2 max-w-3xl text-sm leading-7 text-slate-600 md:text-base"
+          >
+            Update your profile and the contact data used across the storefront
+            and checkout flow.
           </p>
         </div>
 
@@ -168,7 +218,9 @@ const goBack = () => {
       </div>
     </section>
 
-    <div class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)] xl:items-start">
+    <div
+      class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)] xl:items-start"
+    >
       <UCard class="rounded-[1.5rem]">
         <div class="space-y-6">
           <UAlert
@@ -206,20 +258,25 @@ const goBack = () => {
             </div>
 
             <UForm v-else class="space-y-5" @submit.prevent="handleSave">
-              <div class="grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
-                <div class="rounded-[1.25rem] border border-slate-200/70 bg-slate-50 p-5">
+              <div
+                class="grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start"
+              >
+                <div
+                  class="rounded-[1.25rem] border border-slate-200/70 bg-slate-50 p-5"
+                >
                   <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
                     Profile image
                   </p>
 
                   <div class="mt-4 flex flex-col items-center gap-3">
-                    <UAvatar
-                      :src="previewImage"
+                    <AccountImageInput
+                      :key="`account-image:${account?.user.id ?? 'user'}:${account?.user.image_url ?? ''}`"
+                      :initial-image="previewImage"
                       :alt="form.contactName || authStore.displayName"
-                      size="3xl"
+                      @change="handleImageChange"
                     />
                     <p class="text-center text-xs text-slate-500">
-                      Paste a hosted image URL to personalize your customer account avatar.
+                      Upload an account image.
                     </p>
                   </div>
                 </div>
@@ -264,34 +321,6 @@ const goBack = () => {
                       />
                     </UFormField>
                   </div>
-
-                  <UFormField label="Profile image URL">
-                    <UInput
-                      v-model="form.imageUrl"
-                      class="w-full"
-                      placeholder="https://example.com/customer-avatar.jpg"
-                    />
-                  </UFormField>
-
-                  <div class="grid gap-5 md:grid-cols-2">
-                    <UFormField label="Billing address">
-                      <UTextarea
-                        v-model="form.billingAddress"
-                        class="w-full"
-                        :rows="4"
-                        placeholder="Billing address details"
-                      />
-                    </UFormField>
-
-                    <UFormField label="Shipping address">
-                      <UTextarea
-                        v-model="form.shippingAddress"
-                        class="w-full"
-                        :rows="4"
-                        placeholder="Shipping address details"
-                      />
-                    </UFormField>
-                  </div>
                 </div>
               </div>
 
@@ -321,25 +350,26 @@ const goBack = () => {
                 Signed-in account
               </p>
               <p class="mt-1 text-lg font-semibold text-slate-900">
-                {{ account?.user.email ?? authStore.user?.email ?? "Customer account" }}
+                {{
+                  account?.user.email ??
+                  authStore.user?.email ??
+                  "Customer account"
+                }}
               </p>
             </div>
 
-            <div class="rounded-[1.25rem] border border-slate-200/70 bg-slate-50 p-4">
+            <div
+              class="rounded-[1.25rem] border border-slate-200/70 bg-slate-50 p-4"
+            >
               <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-                Role
+                Full name
               </p>
               <p class="mt-2 font-medium capitalize text-slate-900">
-                {{ account?.user.role ?? authStore.role ?? "customer" }}
-              </p>
-            </div>
-
-            <div class="rounded-[1.25rem] border border-slate-200/70 bg-slate-50 p-4">
-              <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-                Account ID
-              </p>
-              <p class="mt-2 break-all font-medium text-slate-900">
-                {{ account?.user.id ?? authStore.user?.id ?? "_" }}
+                {{
+                  account?.user.full_name ??
+                  authStore.user?.full_name ??
+                  "Customer account"
+                }}
               </p>
             </div>
           </div>
@@ -357,7 +387,8 @@ const goBack = () => {
             </div>
 
             <p class="text-sm leading-6 text-slate-600">
-              Password changes stay on the dedicated security page so profile edits and credential updates remain clearly separated.
+              Password changes stay on the dedicated security page so profile
+              edits and credential updates remain clearly separated.
             </p>
 
             <UButton color="warning" variant="soft" block @click="goToSecurity">

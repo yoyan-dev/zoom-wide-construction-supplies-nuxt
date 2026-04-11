@@ -176,7 +176,7 @@ export const useAccountStore = defineStore("account", () => {
   };
 
   const updateAccount = async (
-    payload: UpdateAccountPayload,
+    payload: UpdateAccountPayload | FormData,
   ): Promise<StoreResponse<AccountProfile>> => {
     isSaving.value = true;
 

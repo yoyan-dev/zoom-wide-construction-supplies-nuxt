@@ -9,21 +9,16 @@ const props = defineProps<{
   isLoading?: boolean;
   activeCategoryId?: string;
 }>();
-
-const getCardClass = (index: number) =>
-  index === 0 || index === 3
-    ? "md:col-span-2 md:min-h-[340px]"
-    : "md:min-h-[280px]";
 </script>
 
 <template>
-  <section id="categories" class="py-14 md:py-18">
+  <section id="categories" class="py-12 md:py-16">
     <StorefrontPageContainer size="wide">
-      <div class="mb-8 flex flex-col gap-4 md:mb-10 md:flex-row md:items-end md:justify-between">
+      <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <StorefrontSectionHeading
-          eyebrow="Structural Essentials"
-          title="Featured categories built around real procurement needs."
-          description="Zoom Wide organizes core supply types into cleaner category paths so buyers can move from discovery to shortlist faster."
+          eyebrow="Material Categories"
+          title="Browse by trade, material, and job-site need."
+          description="Move quickly through cement, steel, tools, electrical, plumbing, paint, aggregates, safety materials, and the active categories in your catalog."
         />
 
         <div
@@ -38,25 +33,23 @@ const getCardClass = (index: number) =>
       <StorefrontSkeletonGrid
         v-if="props.isLoading"
         :count="4"
-        columns-class="grid gap-4 md:grid-cols-4"
-        item-class="h-[280px]"
+        columns-class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        item-class="h-[260px]"
       />
 
       <StorefrontStateCard
         v-else-if="!props.categories.length"
         eyebrow="Categories"
         title="Categories will appear here once inventory is available."
-        description="As product categories are published, this section can scale into a richer procurement entry point."
+        description="Published categories will help buyers browse by material type, use case, and supply path."
       />
 
-      <div v-else class="grid gap-4 md:grid-cols-4">
+      <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <ShopHomeCategoryCard
-          v-for="(category, index) in props.categories"
+          v-for="category in props.categories"
           :key="category.id"
           :category="category"
-          :is-large="index === 0 || index === 3"
           :is-active="category.id === props.activeCategoryId"
-          :class="getCardClass(index)"
         />
       </div>
     </StorefrontPageContainer>

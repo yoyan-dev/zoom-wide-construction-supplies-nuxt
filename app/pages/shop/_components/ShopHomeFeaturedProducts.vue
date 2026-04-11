@@ -10,6 +10,7 @@ const props = defineProps<{
   activeCategoryName?: string;
   searchQuery?: string;
   cartQuantities?: Record<string, number>;
+  categoryNames?: Record<string, string>;
   isCartBusy?: boolean;
   hasFilters?: boolean;
 }>();
@@ -21,11 +22,11 @@ const emit = defineEmits<{
 
 const sectionDescription = computed(() => {
   if (props.searchQuery) {
-    return `Showing the first live products matching "${props.searchQuery}". This keeps the homepage search useful now and still leaves room for a fuller catalog later.`;
+    return `Showing the first live products matching "${props.searchQuery}" so buyers can move quickly from search intent to shortlist.`;
   }
 
   if (props.activeCategoryName) {
-    return `Showing featured items for ${props.activeCategoryName}. Buyers can drill down by category without leaving the home flow.`;
+    return `Showing featured items for ${props.activeCategoryName} with pricing, stock, and fast cart actions close at hand.`;
   }
 
   return "Specification-ready products with clear pricing, stock visibility, and fast add-to-cart actions for repeat supply orders.";
@@ -33,12 +34,12 @@ const sectionDescription = computed(() => {
 </script>
 
 <template>
-  <section id="featured" class="py-14 md:py-18">
+  <section id="featured" class="py-12 md:py-16">
     <StorefrontPageContainer size="wide">
-      <div class="mb-8 flex flex-col gap-4 md:mb-10 md:flex-row md:items-end md:justify-between">
+      <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <StorefrontSectionHeading
-          eyebrow="Industrial Specifications"
-          title="Popular products with cleaner pricing and stock visibility."
+          eyebrow="Site-Ready Products"
+          title="Materials with price, unit, stock, and specs up front."
           :description="sectionDescription"
         />
 
@@ -76,7 +77,10 @@ const sectionDescription = computed(() => {
           v-for="product in props.products"
           :key="product.id || product.sku || product.name"
           :product="product"
-          :category-name="props.activeCategoryName"
+          :category-name="
+            props.categoryNames?.[product.category_id || ''] ||
+            props.activeCategoryName
+          "
           :quantity-in-cart="props.cartQuantities?.[product.id || ''] ?? 0"
           :disabled="props.isCartBusy"
           @add="emit('addToCart', $event)"

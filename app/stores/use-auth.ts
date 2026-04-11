@@ -11,9 +11,11 @@ import type { Customer } from "~/types/customer";
 import type { UserRole } from "~/types/user";
 import {
   apiRequest,
-  AUTH_SESSION_COOKIE_KEY,
   refreshAuthSession,
   toErrorMessage,
+  useAuthSessionCookie,
+  useAuthSessionState,
+  writeAuthSession,
 } from "~/utils/api";
 
 const DEFAULT_AUTH_REDIRECT = "/shop";
@@ -144,15 +146,18 @@ const getRoleLandingPath = (role?: UserRole | null) => {
 };
 
 export const useAuthStore = defineStore("auth", () => {
-  const sessionCookie = useCookie<AuthSession | null>(AUTH_SESSION_COOKIE_KEY, {
-    default: () => null,
-    sameSite: "lax",
-    watch: true,
-  });
+  const sessionCookie = useAuthSessionCookie();
+  const sessionState = useAuthSessionState();
+
+  if (!sessionState.value && sessionCookie.value) {
+    sessionState.value = sessionCookie.value;
+  }
 
   const isLoading = ref(false);
   const refreshInFlight = ref<Promise<StoreResponse<AuthSession>> | null>(null);
-  const session = computed(() => normalizeSession(sessionCookie.value));
+  const session = computed(() =>
+    normalizeSession(sessionState.value ?? sessionCookie.value),
+  );
   const user = computed(() => session.value?.user ?? null);
   const customer = computed(() => session.value?.customer ?? null);
   const token = computed(
@@ -181,11 +186,11 @@ export const useAuthStore = defineStore("auth", () => {
   );
 
   const setSession = (value: AuthSession | null) => {
-    sessionCookie.value = value ? normalizeSession(value) : null;
+    writeAuthSession(value ? normalizeSession(value) : null);
   };
 
   const clearSession = () => {
-    sessionCookie.value = null;
+    writeAuthSession(null);
   };
 
   const hasAnyRole = (roles: UserRole[]) =>
