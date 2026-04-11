@@ -7,6 +7,7 @@ const props = withDefaults(
     color?: "primary" | "secondary" | "success" | "info" | "warning" | "error" | "neutral";
     buttonClass?: string;
     showChevron?: boolean;
+    responsive?: boolean;
   }>(),
   {
     collapsed: false,
@@ -15,6 +16,7 @@ const props = withDefaults(
     color: "neutral",
     buttonClass: "",
     showChevron: true,
+    responsive: true,
   },
 );
 
@@ -96,6 +98,16 @@ const items = computed(() => {
     ],
   ].filter((group) => group.length);
 });
+
+const labelClass = computed(() => [
+  "min-w-0 text-left",
+  props.responsive ? "hidden sm:block" : "block",
+]);
+
+const chevronClass = computed(() => [
+  "ml-auto size-4 shrink-0 opacity-60",
+  props.responsive ? "hidden sm:block" : "block",
+]);
 </script>
 
 <template>
@@ -108,7 +120,7 @@ const items = computed(() => {
       :color="props.color"
       :variant="props.variant"
       :class="[
-        'max-w-full justify-start gap-2',
+        'min-w-0 max-w-full justify-start gap-2',
         props.collapsed ? 'size-10 justify-center p-0' : '',
         props.buttonClass,
       ]"
@@ -121,7 +133,7 @@ const items = computed(() => {
         class="shrink-0"
       />
 
-      <span v-if="!props.collapsed" class="min-w-0 text-left">
+      <span v-if="!props.collapsed" :class="labelClass">
         <span class="block truncate text-sm font-semibold">
           {{ props.label || displayName }}
         </span>
@@ -136,7 +148,7 @@ const items = computed(() => {
       <UIcon
         v-if="props.showChevron && !props.collapsed"
         name="i-lucide-chevron-down"
-        class="ml-auto size-4 shrink-0 opacity-60"
+        :class="chevronClass"
       />
     </UButton>
 

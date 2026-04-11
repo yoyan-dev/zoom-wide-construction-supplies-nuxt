@@ -206,46 +206,6 @@ const forgotPasswordLink = computed(() =>
               </StorefrontButton>
             </form>
 
-            <div class="relative my-8">
-              <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-slate-200" />
-              </div>
-              <div class="relative flex justify-center text-xs">
-                <span
-                  class="bg-white px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400"
-                >
-                  Verification Protocol
-                </span>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                disabled
-                class="flex items-center justify-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 opacity-70"
-              >
-                <span
-                  class="flex h-4 w-4 items-center justify-center rounded-sm bg-white text-[9px] font-bold text-slate-700"
-                >
-                  G
-                </span>
-                Google
-              </button>
-              <button
-                type="button"
-                disabled
-                class="flex items-center justify-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 opacity-70"
-              >
-                <span class="grid h-4 w-4 grid-cols-2 gap-px">
-                  <span class="bg-[#f25022]" />
-                  <span class="bg-[#7fba00]" />
-                  <span class="bg-[#00a4ef]" />
-                  <span class="bg-[#ffb900]" />
-                </span>
-                Microsoft
-              </button>
-            </div>
           </div>
 
           <div

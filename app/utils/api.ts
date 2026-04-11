@@ -237,7 +237,8 @@ const resolveRequestHeaders = (
   const resolvedHeaders = new Headers(headers ?? {});
   const authSession = readAuthSessionCookie();
   const token = accessToken ?? resolveAccessToken(authSession.value);
-
+  console.log(token);
+  console.log(authSession.value);
   if (token && !resolvedHeaders.has("Authorization")) {
     resolvedHeaders.set("Authorization", `Bearer ${token}`);
   }

@@ -78,3 +78,29 @@ Day 6: Wednesday, April 1
 
 Started by planning the storefront redesign direction, including layout flow, customer journey, and conversion goals. Then I completed a full redesign of the Zoom Wide e-commerce storefront, upgraded the customer shopping experience, and polished the website with better session/auth flow stability and product-page refinements so browsing and ordering feel smoother and more engaging.
 
+Week 8 (April 2 - 8)
+
+Day 1: Thursday, April 2
+
+Day off.
+
+Day 2: Friday, April 3
+
+Day off.
+
+Day 3: Saturday, April 4
+
+Focused on improving role-specific operations and visual consistency. I built the driver delivery dashboard so drivers can view assigned deliveries, track completed orders, and handle their workflow more clearly. I also updated the Nuxt UI theme base for the logo so the application branding feels more aligned with the rest of the system.
+
+Day 4: Monday, April 6
+
+Continued strengthening the customer shopping experience by building the account hub and improving storefront navigation. I converted the shop navigation into a cleaner Nuxt UI header and footer structure, then connected account-related pages so customers have a more organized place to manage their profile, security, and settings.
+
+Day 5: Tuesday, April 7
+
+Polished the admin interface by aligning card radius, spacing, and background styling across the admin pages. This helped make the admin screens feel more consistent, cleaner, and easier to scan while keeping the interface closer to the updated visual direction of the project.
+
+Day 6: Wednesday, April 8
+
+Improved account personalization and user access flows by adding image upload support and refining the user dropdown experience. I updated account-related components and shared storefront UI pieces so users can manage their profile more smoothly while keeping the navigation and account actions easier to access across roles.
+
