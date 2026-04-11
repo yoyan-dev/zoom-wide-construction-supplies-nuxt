@@ -1,13 +1,8 @@
-import type { AuthSession } from "~/types/auth";
-import { AUTH_SESSION_COOKIE_KEY } from "~/utils/api";
+import { useAuthSessionCookie } from "~/utils/api";
 
 export default defineNuxtPlugin(async () => {
   const authStore = useAuthStore();
-  const sessionCookie = useCookie<AuthSession | null>(AUTH_SESSION_COOKIE_KEY, {
-    default: () => null,
-    sameSite: "lax",
-    watch: true,
-  });
+  const sessionCookie = useAuthSessionCookie();
 
   if (sessionCookie.value && !authStore.session) {
     authStore.clearSession();

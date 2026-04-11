@@ -38,6 +38,7 @@ export class ApiRequestError extends Error {
 
 export const DEFAULT_API_PAGE_LIMIT = 10;
 export const AUTH_SESSION_COOKIE_KEY = "zoom_auth_session";
+export const AUTH_SESSION_STATE_KEY = "zoom_auth_session_state";
 
 const API_BASE_URL = (
   (
@@ -185,12 +186,34 @@ const normalizeApiError = <T>(
   details: response?.error?.details,
 });
 
-const readAuthSessionCookie = () =>
+export const useAuthSessionCookie = () =>
   useCookie<AuthSession | null>(AUTH_SESSION_COOKIE_KEY, {
     default: () => null,
     sameSite: "lax",
     watch: true,
   });
+
+export const useAuthSessionState = () =>
+  useState<AuthSession | null>(AUTH_SESSION_STATE_KEY, () => null);
+
+export const readAuthSession = () => {
+  const sessionCookie = useAuthSessionCookie();
+  const sessionState = useAuthSessionState();
+
+  if (!sessionState.value && sessionCookie.value) {
+    sessionState.value = sessionCookie.value;
+  }
+
+  return sessionState.value ?? sessionCookie.value;
+};
+
+export const writeAuthSession = (value: AuthSession | null) => {
+  const sessionCookie = useAuthSessionCookie();
+  const sessionState = useAuthSessionState();
+
+  sessionState.value = value;
+  sessionCookie.value = value;
+};
 
 const mergeAuthSession = (
   currentSession: AuthSession,
@@ -235,10 +258,8 @@ const resolveRequestHeaders = (
   accessToken?: string | null,
 ) => {
   const resolvedHeaders = new Headers(headers ?? {});
-  const authSession = readAuthSessionCookie();
-  const token = accessToken ?? resolveAccessToken(authSession.value);
-  console.log(token);
-  console.log(authSession.value);
+  const token = accessToken ?? resolveAccessToken(readAuthSession());
+
   if (token && !resolvedHeaders.has("Authorization")) {
     resolvedHeaders.set("Authorization", `Bearer ${token}`);
   }
@@ -260,8 +281,7 @@ const executeRawRequest = <T>(
   });
 
 export async function refreshAuthSession() {
-  const sessionCookie = readAuthSessionCookie();
-  const currentSession = sessionCookie.value;
+  const currentSession = readAuthSession();
   const refreshToken = resolveRefreshToken(currentSession);
 
   if (!currentSession) {
@@ -289,21 +309,21 @@ export async function refreshAuthSession() {
       payload.status === "error" ||
       !payload.data
     ) {
-      sessionCookie.value = null;
+      writeAuthSession(null);
       return null;
     }
 
     const nextSession = mergeAuthSession(currentSession, payload?.data ?? null);
 
     if (!resolveAccessToken(nextSession)) {
-      sessionCookie.value = null;
+      writeAuthSession(null);
       return null;
     }
 
-    sessionCookie.value = nextSession;
+    writeAuthSession(nextSession);
     return nextSession;
   } catch {
-    sessionCookie.value = null;
+    writeAuthSession(null);
     return null;
   }
 }
@@ -325,7 +345,7 @@ export async function apiRequestRaw<T>(
     });
   }
 
-  const hasRefreshToken = Boolean(resolveRefreshToken(readAuthSessionCookie().value));
+  const hasRefreshToken = Boolean(resolveRefreshToken(readAuthSession()));
 
   const canAttemptRefresh =
     response.status === 401 &&

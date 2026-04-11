@@ -114,7 +114,11 @@ const buildAccountPayload = () => {
   appendOptionalText(formData, "email", payload.email ?? null);
   appendOptionalText(formData, "phone", payload.phone ?? null);
   appendOptionalText(formData, "image_url", payload.image_url ?? null);
-  appendOptionalText(formData, "billing_address", payload.billing_address ?? null);
+  appendOptionalText(
+    formData,
+    "billing_address",
+    payload.billing_address ?? null,
+  );
   appendOptionalText(
     formData,
     "shipping_address",
@@ -198,8 +202,8 @@ const goBack = () => {
           <p
             class="mt-2 max-w-3xl text-sm leading-7 text-slate-600 md:text-base"
           >
-            Update your customer profile, company details, and the contact data
-            used across the storefront and checkout flow.
+            Update your profile and the contact data used across the storefront
+            and checkout flow.
           </p>
         </div>
 
@@ -272,8 +276,7 @@ const goBack = () => {
                       @change="handleImageChange"
                     />
                     <p class="text-center text-xs text-slate-500">
-                      Upload an account image just like a product photo, or keep
-                      using a hosted image URL below.
+                      Upload an account image.
                     </p>
                   </div>
                 </div>
@@ -318,14 +321,6 @@ const goBack = () => {
                       />
                     </UFormField>
                   </div>
-
-                  <UFormField label="Profile image URL">
-                    <UInput
-                      v-model="form.imageUrl"
-                      class="w-full"
-                      placeholder="https://example.com/customer-avatar.jpg"
-                    />
-                  </UFormField>
                 </div>
               </div>
 
