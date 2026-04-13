@@ -12,6 +12,7 @@ const props = defineProps<{
 }>();
 
 const { openModal } = useModal();
+const { canManageUsers } = useAdminPermissions();
 
 const sections = computed<AdminActionSection[]>(() => [
   {
@@ -26,33 +27,40 @@ const sections = computed<AdminActionSection[]>(() => [
   },
   {
     label: "Manage",
-    actions: [
-      {
-        label: "Edit driver",
-        icon: "i-lucide-pencil-line",
-        onClick: () => openModal(DriverEditModal, props.driver),
-      },
-      {
-        label: props.driver.is_active === false ? "Activate driver" : "Deactivate driver",
-        icon:
-          props.driver.is_active === false
-            ? "i-lucide-user-check"
-            : "i-lucide-user-x",
-        color: props.driver.is_active === false ? "success" : "warning",
-        onClick: () => openModal(DriverStatusModal, props.driver),
-      },
-    ],
+    actions: canManageUsers.value
+      ? [
+          {
+            label: "Edit driver",
+            icon: "i-lucide-pencil-line",
+            onClick: () => openModal(DriverEditModal, props.driver),
+          },
+          {
+            label:
+              props.driver.is_active === false
+                ? "Activate driver"
+                : "Deactivate driver",
+            icon:
+              props.driver.is_active === false
+                ? "i-lucide-user-check"
+                : "i-lucide-user-x",
+            color: props.driver.is_active === false ? "success" : "warning",
+            onClick: () => openModal(DriverStatusModal, props.driver),
+          },
+        ]
+      : [],
   },
   {
     label: "Danger zone",
-    actions: [
-      {
-        label: "Delete driver",
-        icon: "i-lucide-trash-2",
-        color: "error",
-        onClick: () => openModal(DriverDeleteModal, props.driver),
-      },
-    ],
+    actions: canManageUsers.value
+      ? [
+          {
+            label: "Delete driver",
+            icon: "i-lucide-trash-2",
+            color: "error",
+            onClick: () => openModal(DriverDeleteModal, props.driver),
+          },
+        ]
+      : [],
   },
 ]);
 </script>

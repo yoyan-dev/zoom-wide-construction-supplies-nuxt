@@ -14,6 +14,7 @@ export interface Customer {
 export interface FetchCustomerParams {
   q?: string;
   page?: number;
+  limit?: number;
 }
 
 export interface CustomerPagination {

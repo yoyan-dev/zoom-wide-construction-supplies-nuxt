@@ -45,7 +45,8 @@ const loadPage = async () => {
 
 await loadPage();
 
-const { orders, query, isLoading } = storeToRefs(orderStore);
+const { orders, totalOrders, query, pagination, isLoading } =
+  storeToRefs(orderStore);
 const { customers } = storeToRefs(customerStore);
 const search = computed(() => query.value.q ?? "");
 const status = ref("all");
@@ -77,6 +78,14 @@ const handleStatus = async (value: string) => {
   });
 };
 
+const handlePageChange = async (page: number) => {
+  await orderStore.fetchOrders({
+    q: search.value,
+    status: status.value === "all" ? "" : (status.value as OrderStatus),
+    page,
+  });
+};
+
 const handleRetry = async () => {
   isRetrying.value = true;
   await loadPage();
@@ -87,7 +96,7 @@ const handleRetry = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <OrderHeader :total="orders.length" />
+      <OrderHeader :total="totalOrders" />
 
       <template v-if="pageError">
         <AdminPageStateCard
@@ -116,6 +125,8 @@ const handleRetry = async () => {
           :status="status"
           :detail-base-path="props.detailBasePath"
           :is-loading="isLoading"
+          :pagination="pagination"
+          @page-change="handlePageChange"
         />
       </template>
     </div>

@@ -24,12 +24,11 @@ export const buildInventoryBalanceMap = (
 
   for (const product of products ?? []) {
     if (!product.id) continue;
-    balances[product.id] = product.stock_quantity ?? 0;
-  }
-
-  for (const entry of logs) {
-    if (!entry.product_id) continue;
-    balances[entry.product_id] = (balances[entry.product_id] ?? 0) + entry.quantity_change;
+    balances[product.id] = getInventoryBalance(
+      logs,
+      product.id,
+      product.stock_quantity ?? 0,
+    );
   }
 
   return balances;

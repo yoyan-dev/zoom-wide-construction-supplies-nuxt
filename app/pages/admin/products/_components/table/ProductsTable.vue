@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
-import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { Category } from "~/types/category";
 import type { InventoryLog } from "~/types/inventory";
+import type { PaginationMeta } from "~/types/pagination";
 import type { Product } from "~/types/product";
 import type { Warehouse } from "~/types/warehouse";
 import {
@@ -15,6 +15,7 @@ import ProductRowActions from "./ProductRowActions.vue";
 import ProductBulkDeleteModal from "../modals/ProductBulkDeleteModal.vue";
 import { useModal } from "~/composables/admin/useModal";
 import AdminTableEmptyState from "../../../_components/AdminTableEmptyState.vue";
+import AdminServerPagination from "../../../_components/AdminServerPagination.vue";
 import AdminTableSelectionBar from "../../../_components/AdminTableSelectionBar.vue";
 
 type BadgeColor =
@@ -36,9 +37,13 @@ const props = defineProps<{
   stockStatus: string;
   status: string;
   isLoading: boolean;
+  pagination: PaginationMeta;
 }>();
 
-const table = useTemplateRef("table");
+const emit = defineEmits<{
+  (event: "page-change", page: number): void;
+}>();
+
 const { openModal } = useModal();
 const selectedIds = ref<Set<string>>(new Set());
 
@@ -189,11 +194,6 @@ const statusBadge = (product: Product): { color: BadgeColor; label: string } =>
     ? { color: "success", label: "Active" }
     : { color: "neutral", label: "Inactive" };
 
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 5,
-});
-
 const productInitials = (name?: string) => {
   if (!name) return "NA";
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -214,14 +214,9 @@ const productInitials = (name?: string) => {
 
     <UTable
       v-if="props.isLoading || hasRows"
-      ref="table"
-      v-model:pagination="pagination"
       :data="filteredProducts"
       :columns="columns"
       class="text-sm"
-      :pagination-options="{
-        getPaginationRowModel: getPaginationRowModel(),
-      }"
       :loading="props.isLoading"
     >
       <template #select-header>
@@ -330,17 +325,11 @@ const productInitials = (name?: string) => {
       description="Adjust the search or filters, or add a new product to expand the catalog."
     />
 
-    <div
+    <AdminServerPagination
       v-if="hasRows"
-      class="flex justify-end border-t border-default pt-4 px-4"
-    >
-      <UPagination
-        :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-        :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-        :total="table?.tableApi?.getFilteredRowModel().rows.length"
-        @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)"
-      />
-    </div>
+      :pagination="props.pagination"
+      @page-change="emit('page-change', $event)"
+    />
   </UCard>
 
   <!-- <ProductQuickEditModal

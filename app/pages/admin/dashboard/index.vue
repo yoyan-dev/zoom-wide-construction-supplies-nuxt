@@ -11,156 +11,105 @@ definePageMeta({
   layout: "admin",
 });
 
-type DashboardActivity = {
-  id: string;
-  label: string;
-  detail: string;
-  date: string | null;
-  icon: string;
-};
-
-const orderStore = useOrderStore();
-const productStore = useProductStore();
-const customerStore = useCustomerStore();
-const deliveryStore = useDeliveryStore();
-const paymentStore = usePaymentStore();
-
-const { orders, isLoading: isOrdersLoading } = storeToRefs(orderStore);
-const { products, isLoading: isProductsLoading } = storeToRefs(productStore);
-const { customers, isLoading: isCustomersLoading } = storeToRefs(customerStore);
-const { deliveries, isLoading: isDeliveriesLoading } =
-  storeToRefs(deliveryStore);
-const { payments, isLoading: isPaymentsLoading } = storeToRefs(paymentStore);
-
+const dashboardStore = useDashboardStore();
 const pageError = ref<string | null>(null);
 const isRetrying = ref(false);
 
 const loadDashboard = async () => {
-  const responses = await Promise.all([
-    orderStore.fetchOrders({ q: "", status: "", page: 1 }),
-    productStore.fetchProducts({ q: "", page: 1 }),
-    customerStore.fetchCustomers({ q: "", page: 1 }),
-    deliveryStore.fetchDeliveries({ q: "", status: "", page: 1 }),
-    paymentStore.fetchPayments({ q: "", status: "", page: 1 }),
-  ]);
-
-  const errorResponse = responses.find(
-    (response) => response.status === "error",
-  );
-  pageError.value = errorResponse?.message ?? null;
+  const response = await dashboardStore.fetchDashboardData();
+  pageError.value = response.status === "error" ? response.message : null;
 };
 
 await loadDashboard();
 
-const isLoading = computed(
-  () =>
-    isOrdersLoading.value ||
-    isProductsLoading.value ||
-    isCustomersLoading.value ||
-    isDeliveriesLoading.value ||
-    isPaymentsLoading.value,
-);
+const {
+  summary,
+  recentActivity,
+  orderSummary,
+  deliverySummary,
+  paymentSummary,
+  inventorySummary,
+  productInsights,
+  isLoading,
+} = storeToRefs(dashboardStore);
 
-const activeProductCount = computed(
-  () => products.value.filter((product) => product.is_active !== false).length,
-);
-const lowStockCount = computed(
-  () =>
-    products.value.filter(
-      (product) =>
-        Number(product.stock_quantity ?? 0) <=
-          Number(product.minimum_stock_quantity ?? 0) &&
-        Number(product.minimum_stock_quantity ?? 0) > 0,
-    ).length,
-);
-const pendingOrders = computed(
-  () => orders.value.filter((order) => order.status === "pending").length,
-);
-const paidPaymentsTotal = computed(() =>
-  payments.value
-    .filter((payment) => payment.status === "paid")
-    .reduce((total, payment) => total + Number(payment.amount ?? 0), 0),
-);
+const getKpi = (id: string) =>
+  summary.value?.kpis.find((kpi) => kpi.id === id);
+
+const getStatusCount = <T extends string>(
+  rows: Array<{ status: T | string; count: number }>,
+  status: T,
+) => rows.find((row) => row.status === status)?.count ?? 0;
+
+const formatKpiValue = (id: string, fallback: number, currency = false) => {
+  const kpi = getKpi(id);
+  const value = Number(kpi?.value ?? fallback);
+  return currency || kpi?.unit === "currency"
+    ? formatCurrency(value)
+    : String(value);
+};
 
 const kpiCards = computed(() => [
   {
-    title: "Active Products",
-    value: String(activeProductCount.value),
-    description: `${lowStockCount.value} low-stock alerts`,
-    icon: "i-lucide-package",
+    title: getKpi("revenue")?.label ?? "Paid Revenue",
+    value: formatKpiValue("revenue", paymentSummary.value.paid_total, true),
+    description: `${paymentSummary.value.total} payments summarized`,
+    icon: "i-lucide-wallet",
   },
   {
-    title: "Pending Orders",
-    value: String(pendingOrders.value),
-    description: `${orders.value.length} total orders`,
+    title: getKpi("orders_today")?.label ?? "Orders Today",
+    value: formatKpiValue("orders_today", orderSummary.value.total),
+    description: `${getStatusCount(orderSummary.value.by_status, "pending")} pending orders`,
     icon: "i-lucide-shopping-cart",
   },
   {
-    title: "Customers",
-    value: String(customers.value.length),
-    description: "Registered buyer accounts",
-    icon: "i-lucide-users",
+    title: getKpi("pending_deliveries")?.label ?? "Pending Deliveries",
+    value: formatKpiValue(
+      "pending_deliveries",
+      getStatusCount(deliverySummary.value.by_status, "scheduled") +
+        getStatusCount(deliverySummary.value.by_status, "in_transit"),
+    ),
+    description: `${deliverySummary.value.total} delivery records`,
+    icon: "i-lucide-truck",
   },
   {
-    title: "Paid Revenue",
-    value: formatCurrency(paidPaymentsTotal.value),
-    description: `${payments.value.length} payments tracked`,
-    icon: "i-lucide-wallet",
+    title: getKpi("low_stock")?.label ?? "Low Stock",
+    value: formatKpiValue("low_stock", inventorySummary.value.low_stock_count),
+    description: `${inventorySummary.value.total} inventory records`,
+    icon: "i-lucide-package-open",
   },
 ]);
 
-const getCountByStatus = <T extends string>(
-  items: Array<{ status: T }>,
-  statuses: readonly T[],
-) =>
-  statuses.map((status) => ({
-    status,
-    count: items.filter((item) => item.status === status).length,
-  }));
-
 const orderStatusSummary = computed(() =>
-  getCountByStatus<OrderStatus>(orders.value, [
-    "pending",
-    "approved",
-    "rejected",
-    "cancelled",
-    "completed",
-  ]),
+  orderSummary.value.by_status as Array<{ status: OrderStatus; count: number }>,
 );
 
 const deliveryStatusSummary = computed(() =>
-  getCountByStatus<DeliveryStatus>(deliveries.value, [
-    "scheduled",
-    "in_transit",
-    "delivered",
-    "failed",
-    "cancelled",
-  ]),
+  deliverySummary.value.by_status as Array<{
+    status: DeliveryStatus;
+    count: number;
+  }>,
 );
 
 const paymentStatusSummary = computed(() =>
-  getCountByStatus<PaymentStatus>(payments.value, [
-    "pending",
-    "paid",
-    "failed",
-    "refunded",
-  ]),
+  paymentSummary.value.by_status as Array<{
+    status: PaymentStatus;
+    count: number;
+  }>,
 );
 
-const orderTrendBars = computed(() => {
-  const groupedByDate = orders.value.reduce<Record<string, number>>(
-    (grouped, order) => {
-      const dateKey = formatShortDateOrFallback(order.created_at, "Unknown");
-      grouped[dateKey] =
-        (grouped[dateKey] ?? 0) + Number(order.total_amount ?? 0);
-      return grouped;
-    },
-    {},
-  );
-
-  const rows = Object.entries(groupedByDate)
-    .map(([label, total]) => ({ label, total }))
-    .sort((a, b) => b.total - a.total)
+const revenueTrendBars = computed(() => {
+  const rows = (
+    summary.value?.revenue_series?.length
+      ? summary.value.revenue_series
+      : paymentSummary.value.revenue_series.length
+        ? paymentSummary.value.revenue_series
+        : orderSummary.value.revenue_series
+  )
+    .map((point) => ({
+      label: formatShortDateOrFallback(point.date, point.date),
+      total: Number(point.revenue ?? 0),
+    }))
     .slice(0, 6);
 
   const maxTotal = rows.reduce((max, row) => Math.max(max, row.total), 0);
@@ -173,45 +122,11 @@ const orderTrendBars = computed(() => {
   }));
 });
 
-const dashboardActivity = computed<DashboardActivity[]>(() => {
-  const orderEvents: DashboardActivity[] = orders.value
-    .slice(0, 6)
-    .map((order) => ({
-      id: `order-${order.id}`,
-      label: `Order ${order.id}`,
-      detail: `Status: ${order.status}`,
-      date: order.created_at,
-      icon: "i-lucide-shopping-bag",
-    }));
-
-  const paymentEvents: DashboardActivity[] = payments.value
-    .slice(0, 6)
-    .map((payment) => ({
-      id: `payment-${payment.id}`,
-      label: `Payment ${payment.id}`,
-      detail: `${payment.status} / ${formatCurrency(payment.amount ?? 0)}`,
-      date: payment.created_at,
-      icon: "i-lucide-credit-card",
-    }));
-
-  const customerEvents: DashboardActivity[] = customers.value
-    .slice(0, 6)
-    .map((customer) => ({
-      id: `customer-${customer.id}`,
-      label: customer.company_name,
-      detail: `New customer profile`,
-      date: customer.created_at,
-      icon: "i-lucide-building-2",
-    }));
-
-  return [...orderEvents, ...paymentEvents, ...customerEvents]
-    .sort(
-      (left, right) =>
-        new Date(right.date ?? 0).getTime() -
-        new Date(left.date ?? 0).getTime(),
-    )
-    .slice(0, 10);
-});
+const topProductRows = computed(() =>
+  productInsights.value.top_products.length
+    ? productInsights.value.top_products
+    : (summary.value?.top_products ?? []),
+);
 
 const handleRetry = async () => {
   isRetrying.value = true;
@@ -275,7 +190,7 @@ const handleRetry = async () => {
 
     <template v-else>
       <section
-        v-if="isLoading && !orders.length && !products.length"
+        v-if="isLoading && !summary"
         class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
       >
         <USkeleton v-for="idx in 4" :key="idx" class="h-32 rounded-lg" />
@@ -310,21 +225,21 @@ const handleRetry = async () => {
         </article>
       </section>
 
-      <section class="">
+      <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div class="space-y-4">
           <article class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
             <div class="flex items-center justify-between gap-3">
               <h2 class="text-xl font-semibold tracking-tight text-slate-900">
-                Top Order Value Days
+                Revenue Snapshots
               </h2>
               <UBadge color="neutral" variant="subtle">
-                Last {{ orderTrendBars.length }} snapshots
+                {{ summary?.range_label ?? "Current range" }}
               </UBadge>
             </div>
 
-            <div v-if="orderTrendBars.length" class="mt-5 space-y-3">
+            <div v-if="revenueTrendBars.length" class="mt-5 space-y-3">
               <div
-                v-for="row in orderTrendBars"
+                v-for="row in revenueTrendBars"
                 :key="row.label"
                 class="space-y-2"
               >
@@ -347,8 +262,42 @@ const handleRetry = async () => {
               </div>
             </div>
             <p v-else class="mt-5 text-sm text-slate-600">
-              Order totals will appear here once transaction records are
+              Revenue totals will appear here once summary records are
               available.
+            </p>
+          </article>
+
+          <article class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-xl font-semibold tracking-tight text-slate-900">
+                Top Products
+              </h2>
+              <UBadge color="neutral" variant="subtle">
+                {{ topProductRows.length }} signals
+              </UBadge>
+            </div>
+
+            <div v-if="topProductRows.length" class="mt-5 space-y-3">
+              <div
+                v-for="row in topProductRows"
+                :key="row.product.id ?? row.product.name"
+                class="flex items-center justify-between gap-4 rounded-sm border border-slate-200/70 bg-white p-3 dark:bg-gray-900"
+              >
+                <div class="min-w-0">
+                  <p class="truncate font-medium text-slate-900">
+                    {{ row.product.name ?? "Unnamed product" }}
+                  </p>
+                  <p class="text-xs text-slate-500">
+                    {{ row.units_sold }} units sold
+                  </p>
+                </div>
+                <span class="shrink-0 text-sm font-semibold text-slate-900">
+                  {{ formatCurrency(row.revenue) }}
+                </span>
+              </div>
+            </div>
+            <p v-else class="mt-5 text-sm text-slate-600">
+              Product insights will appear once sales activity is available.
             </p>
           </article>
 
@@ -415,7 +364,7 @@ const handleRetry = async () => {
           </div>
         </div>
 
-        <!-- <aside class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
+        <aside class="rounded-sm bg-white p-5 shadow-sm dark:bg-gray-900">
           <div class="flex items-center justify-between gap-3">
             <h2 class="text-xl font-semibold tracking-tight text-slate-900">
               Activity Feed
@@ -425,9 +374,9 @@ const handleRetry = async () => {
             </UBadge>
           </div>
 
-          <div v-if="dashboardActivity.length" class="mt-5 space-y-3">
+          <div v-if="recentActivity.length" class="mt-5 space-y-3">
             <article
-              v-for="entry in dashboardActivity"
+              v-for="entry in recentActivity"
               :key="entry.id"
               class="flex items-start gap-3 rounded-sm bg-white p-3 dark:bg-gray-900"
             >
@@ -450,7 +399,7 @@ const handleRetry = async () => {
           <p v-else class="mt-5 text-sm text-slate-600">
             Recent activity will appear here as orders, payments, and customers are updated.
           </p>
-        </aside> -->
+        </aside>
       </section>
     </template>
   </div>

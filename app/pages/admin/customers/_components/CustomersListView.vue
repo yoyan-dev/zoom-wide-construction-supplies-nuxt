@@ -32,7 +32,8 @@ const loadPage = async () => {
 
 await loadPage();
 
-const { customers, query, isLoading } = storeToRefs(customerStore);
+const { customers, totalCustomers, query, pagination, isLoading } =
+  storeToRefs(customerStore);
 const search = computed(() => query.value.q ?? "");
 const accountStatus = ref("all");
 const accountOptions = [
@@ -50,6 +51,17 @@ const handleSearch = async (value: string) => {
 
 const handleAccountStatus = (value: string) => {
   accountStatus.value = value;
+  void customerStore.fetchCustomers({
+    q: search.value,
+    page: 1,
+  });
+};
+
+const handlePageChange = async (page: number) => {
+  await customerStore.fetchCustomers({
+    q: search.value,
+    page,
+  });
 };
 
 const handleCreate = () => {
@@ -66,7 +78,7 @@ const handleRetry = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <CustomerHeader :total="customers.length" @create="handleCreate" />
+      <CustomerHeader :total="totalCustomers" @create="handleCreate" />
       <template v-if="pageError">
         <AdminPageStateCard
           eyebrow="Customers"
@@ -92,6 +104,8 @@ const handleRetry = async () => {
           :account-status="accountStatus"
           :is-loading="isLoading"
           :detail-base-path="props.detailBasePath"
+          :pagination="pagination"
+          @page-change="handlePageChange"
         />
       </template>
     </div>

@@ -12,6 +12,7 @@ const props = defineProps<{
   product: Product;
   detailBasePath: string;
   productBasePath?: string;
+  onMovementSaved?: () => Promise<void> | void;
 }>();
 
 const { openModal } = useModal();
@@ -36,7 +37,11 @@ const editActions = computed<AdminActionItem[]>(() => [
   {
     label: "Record Movement",
     icon: "i-lucide-clipboard-plus",
-    onClick: () => openModal(InventoryMovementModal, { product: props.product }),
+    onClick: () =>
+      openModal(InventoryMovementModal, {
+        product: props.product,
+        onSaved: props.onMovementSaved,
+      }),
   },
 ]);
 

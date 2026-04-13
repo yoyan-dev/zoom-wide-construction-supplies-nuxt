@@ -19,6 +19,7 @@ export interface Category {
 export interface FetchCategoryParams {
   q?: string;
   page?: number;
+  limit?: number;
 }
 
 export interface CategoryListResponse {

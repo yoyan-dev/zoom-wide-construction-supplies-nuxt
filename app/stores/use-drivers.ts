@@ -19,6 +19,7 @@ export const useDriverStore = defineStore("drivers", () => {
   const query = ref<FetchDriverParams>({
     q: "",
     page: 1,
+    limit: 10,
   });
 
   const pagination = ref<PaginationMeta>({

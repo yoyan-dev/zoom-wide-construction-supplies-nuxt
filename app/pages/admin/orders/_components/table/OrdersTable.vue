@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
 import type { Customer } from "~/types/customer";
 import type { Order } from "~/types/order";
+import type { PaginationMeta } from "~/types/pagination";
 import { formatCurrency, formatShortDateOrFallback } from "~/utils/format";
 import AdminTableEmptyState from "../../../_components/AdminTableEmptyState.vue";
+import AdminServerPagination from "../../../_components/AdminServerPagination.vue";
 import OrderRowActions from "./OrderRowActions.vue";
 
 type BadgeColor =
@@ -16,8 +17,6 @@ type BadgeColor =
   | "error"
   | "neutral";
 
-const table = useTemplateRef("table");
-
 const props = defineProps<{
   orders: Order[];
   customers: Customer[];
@@ -25,6 +24,11 @@ const props = defineProps<{
   status: string;
   detailBasePath: string;
   isLoading: boolean;
+  pagination: PaginationMeta;
+}>();
+
+const emit = defineEmits<{
+  (event: "page-change", page: number): void;
 }>();
 
 const customerById = computed(() =>
@@ -79,11 +83,6 @@ const columns: TableColumn<Order>[] = [
   },
 ];
 
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10,
-});
-
 const statusBadge = (
   order: Order,
 ): { color: BadgeColor; label: string } => {
@@ -128,14 +127,9 @@ const getCustomerSupportText = (customerId: string) => {
   <UCard>
     <UTable
       v-if="props.isLoading || hasRows"
-      ref="table"
-      v-model:pagination="pagination"
       :data="props.orders"
       :columns="columns"
       class="text-sm"
-      :pagination-options="{
-        getPaginationRowModel: getPaginationRowModel(),
-      }"
       :loading="props.isLoading"
     >
       <template #reference-cell="{ row }">
@@ -205,6 +199,11 @@ const getCustomerSupportText = (customerId: string) => {
       v-else
       :title="emptyTitle"
       :description="emptyDescription"
+    />
+    <AdminServerPagination
+      v-if="hasRows"
+      :pagination="props.pagination"
+      @page-change="emit('page-change', $event)"
     />
   </UCard>
 </template>

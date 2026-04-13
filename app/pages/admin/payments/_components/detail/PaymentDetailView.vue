@@ -2,6 +2,7 @@
 import { storeToRefs } from "pinia";
 import type { Customer } from "~/types/customer";
 import type { Order } from "~/types/order";
+import AdminPermissionNotice from "../../../_components/AdminPermissionNotice.vue";
 import AdminPageStateCard from "../../../_components/AdminPageStateCard.vue";
 import PaymentEditModal from "../modals/PaymentEditModal.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
@@ -23,6 +24,7 @@ const paymentId = computed(() => String(route.params.id));
 const paymentStore = usePaymentStore();
 const orderStore = useOrderStore();
 const customerStore = useCustomerStore();
+const { canManageFinance } = useAdminPermissions();
 const { getLoadErrorMessage, isMissingResourceResponse } =
   useAdminPageLoadState();
 const { openModal } = useModal();
@@ -96,7 +98,7 @@ const goBack = () => {
 };
 
 const editPayment = () => {
-  if (!payment.value) return;
+  if (!payment.value || !canManageFinance.value) return;
   void openModal(PaymentEditModal, payment.value);
 };
 
@@ -126,12 +128,18 @@ const retryLoad = async () => {
             </p>
           </div>
 
-          <UButton color="neutral" variant="outline" @click="goBack">
-            Back to Payments
-          </UButton>
-          <UButton v-if="payment?.id" color="primary" @click="editPayment">
-            Update Payment
-          </UButton>
+          <div class="flex flex-wrap items-center gap-2">
+            <UButton color="neutral" variant="outline" @click="goBack">
+              Back to Payments
+            </UButton>
+            <UButton
+              v-if="payment?.id && canManageFinance"
+              color="primary"
+              @click="editPayment"
+            >
+              Update Payment
+            </UButton>
+          </div>
         </div>
       </section>
 
@@ -158,6 +166,11 @@ const retryLoad = async () => {
       />
 
       <div v-else class="space-y-6">
+        <AdminPermissionNotice
+          v-if="!canManageFinance"
+          description="Your role can review payment details, but changing payment status is restricted to finance-authorized accounts."
+        />
+
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.9fr)]">
           <PaymentOverviewCard :payment="payment" />
           <PaymentStatusCard :payment="payment" />

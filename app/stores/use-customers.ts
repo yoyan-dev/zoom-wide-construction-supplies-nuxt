@@ -14,6 +14,7 @@ export const useCustomerStore = defineStore("customers", () => {
   const query = ref<FetchCustomerParams>({
     q: "",
     page: 1,
+    limit: 10,
   });
 
   const pagination = ref<PaginationMeta>({
@@ -43,7 +44,7 @@ export const useCustomerStore = defineStore("customers", () => {
 
       pagination.value = {
         page: result.meta?.page || 1,
-        limit: result.meta?.limit || 10,
+        limit: result.meta?.limit || query.value.limit || 10,
         total: result.meta?.total || result.total || 0,
         totalPages: result.meta?.totalPages || 0,
       };

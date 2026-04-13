@@ -23,14 +23,17 @@ export const useDeliveryStore = defineStore("deliveries", () => {
   const query = ref<FetchDeliveryParams>({
     q: "",
     page: 1,
+    limit: 10,
   });
   const driverQuery = ref<FetchDeliveryParams>({
     q: "",
     page: 1,
+    limit: 10,
   });
   const availableQuery = ref<FetchDeliveryParams>({
     q: "",
     page: 1,
+    limit: 10,
   });
 
   const pagination = ref<PaginationMeta>({
@@ -61,7 +64,7 @@ export const useDeliveryStore = defineStore("deliveries", () => {
     },
   ) => {
     target.page = result.meta?.page || 1;
-    target.limit = result.meta?.limit || 10;
+    target.limit = result.meta?.limit || target.limit || 10;
     target.total = result.meta?.total || result.total || result.data?.length || 0;
     target.totalPages = result.meta?.totalPages || 0;
   };

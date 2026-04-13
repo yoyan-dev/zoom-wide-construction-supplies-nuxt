@@ -132,12 +132,17 @@ const getRoleLandingPath = (role?: UserRole | null) => {
   switch (role) {
     case "admin":
       return "/admin/dashboard";
+    case "manager":
+      return "/admin/dashboard";
     case "staff":
       return "/staff";
     case "driver":
       return "/driver";
     case "warehouse_manager":
       return "/warehouse";
+    case "finance":
+    case "auditor":
+      return "/finance/payments";
     case "customer":
       return "/shop";
     default:

@@ -18,6 +18,7 @@ const props = defineProps<{
 }>();
 
 const userStore = useUserStore();
+const { canManageUsers } = useAdminPermissions();
 const { getLoadErrorMessage, isMissingResourceResponse } =
   useAdminPageLoadState();
 const { openModal } = useModal();
@@ -48,16 +49,19 @@ const goBack = () => {
 };
 
 const editUser = () => {
+  if (!canManageUsers.value) return;
   if (!user.value) return;
   void openModal(UserEditModal, user.value);
 };
 
 const toggleStatus = () => {
+  if (!canManageUsers.value) return;
   if (!user.value) return;
   void openModal(UserStatusModal, user.value);
 };
 
 const deleteUser = () => {
+  if (!canManageUsers.value) return;
   if (!user.value) return;
   void openModal(UserDeleteModal, user.value);
 };
@@ -92,11 +96,15 @@ const retryLoad = async () => {
             <UButton color="neutral" variant="outline" @click="goBack">
               Back to Users
             </UButton>
-            <UButton v-if="user?.id" color="primary" @click="editUser">
+            <UButton
+              v-if="user?.id && canManageUsers"
+              color="primary"
+              @click="editUser"
+            >
               Edit User
             </UButton>
             <UButton
-              v-if="user?.id"
+              v-if="user?.id && canManageUsers"
               :color="user?.is_active ? 'warning' : 'success'"
               variant="soft"
               @click="toggleStatus"
@@ -104,7 +112,7 @@ const retryLoad = async () => {
               {{ user?.is_active ? "Deactivate" : "Activate" }}
             </UButton>
             <UButton
-              v-if="user?.id"
+              v-if="user?.id && canManageUsers"
               color="error"
               variant="soft"
               @click="deleteUser"

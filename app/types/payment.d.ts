@@ -19,6 +19,7 @@ export interface FetchPaymentParams {
   method?: PaymentMethod | "";
   order_id?: string;
   page?: number;
+  limit?: number;
 }
 
 export interface CreatePaymentPayload {

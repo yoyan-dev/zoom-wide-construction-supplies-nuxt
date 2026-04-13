@@ -14,8 +14,9 @@ definePageMeta({
 });
 
 const authStore = useAuthStore();
+const { canManageUsers } = useAdminPermissions();
 
-if (!authStore.hasAnyRole(["admin"])) {
+if (!canManageUsers.value) {
   await navigateTo(authStore.getRoleLandingPath());
 }
 
@@ -39,11 +40,13 @@ const loadPage = async () => {
 
 await loadPage();
 
-const { drivers, query, isLoading } = storeToRefs(driverStore);
+const { drivers, totalDrivers, query, pagination, isLoading } =
+  storeToRefs(driverStore);
 const search = computed(() => query.value.q ?? "");
 const status = ref("all");
 
 const handleCreate = () => {
+  if (!canManageUsers.value) return;
   void openModal(AddDriverModal);
 };
 
@@ -54,8 +57,19 @@ const handleSearch = async (value: string) => {
   });
 };
 
-const handleStatus = (value: string) => {
+const handleStatus = async (value: string) => {
   status.value = value;
+  await driverStore.fetchDrivers({
+    q: search.value,
+    page: 1,
+  });
+};
+
+const handlePageChange = async (page: number) => {
+  await driverStore.fetchDrivers({
+    q: search.value,
+    page,
+  });
 };
 
 const handleRetry = async () => {
@@ -68,7 +82,7 @@ const handleRetry = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <DriverHeader :total="drivers.length" @create="handleCreate" />
+      <DriverHeader :total="totalDrivers" @create="handleCreate" />
 
       <template v-if="pageError">
         <AdminPageStateCard
@@ -96,6 +110,8 @@ const handleRetry = async () => {
           :search="search"
           :status="status"
           :is-loading="isLoading"
+          :pagination="pagination"
+          @page-change="handlePageChange"
         />
       </template>
     </div>

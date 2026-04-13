@@ -14,6 +14,7 @@ export const useCategoryStore = defineStore("categories", () => {
   const query = ref<FetchCategoryParams>({
     q: "",
     page: 1,
+    limit: 10,
   });
 
   const pagination = ref<PaginationMeta>({
@@ -43,7 +44,7 @@ export const useCategoryStore = defineStore("categories", () => {
 
       pagination.value = {
         page: result.meta?.page || 1,
-        limit: result.meta?.limit || 10,
+        limit: result.meta?.limit || query.value.limit || 10,
         total: result.meta?.total || result.total || 0,
         totalPages: result.meta?.totalPages || 0,
       };

@@ -6,8 +6,9 @@ definePageMeta({
 });
 
 const authStore = useAuthStore();
+const { canManageUsers } = useAdminPermissions();
 
-if (!authStore.hasAnyRole(["admin"])) {
+if (!canManageUsers.value) {
   await navigateTo(authStore.getRoleLandingPath());
 }
 

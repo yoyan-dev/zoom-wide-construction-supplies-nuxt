@@ -8,11 +8,24 @@ const normalizeMessage = (value?: string | null) => {
 };
 
 export function useAdminPageLoadState() {
+  const isAccessDeniedResponse = (response?: LoadResponse) => {
+    if (!response || response.status !== "error") {
+      return false;
+    }
+
+    const text = `${response.message ?? ""} ${response.statusMessage ?? ""}`.trim();
+    return /unauthorized|forbidden|access denied|permission|not allowed/i.test(text);
+  };
+
   const getLoadErrorMessage = (
     responses: LoadResponse[],
     fallback: string,
   ) => {
     const failedResponse = responses.find((response) => response?.status === "error");
+    if (isAccessDeniedResponse(failedResponse)) {
+      return "You do not have permission to access this admin area.";
+    }
+
     return normalizeMessage(failedResponse?.message) ?? fallback;
   };
 
@@ -28,5 +41,6 @@ export function useAdminPageLoadState() {
   return {
     getLoadErrorMessage,
     isMissingResourceResponse,
+    isAccessDeniedResponse,
   };
 }

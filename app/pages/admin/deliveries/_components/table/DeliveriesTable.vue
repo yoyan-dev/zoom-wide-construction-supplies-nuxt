@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
 import type { Customer } from "~/types/customer";
 import type { Delivery } from "~/types/delivery";
 import type { Driver } from "~/types/driver";
 import type { Order } from "~/types/order";
+import type { PaginationMeta } from "~/types/pagination";
 import { formatCurrency, formatShortDateOrFallback } from "~/utils/format";
 import { getDeliveryStatusBadge } from "~/pages/orders/_components/shared/delivery-status-badge";
 import AdminTableEmptyState from "../../../_components/AdminTableEmptyState.vue";
+import AdminServerPagination from "../../../_components/AdminServerPagination.vue";
 import DeliveryRowActions from "./DeliveryRowActions.vue";
-
-const table = useTemplateRef("table");
 
 const props = defineProps<{
   deliveries: Delivery[];
@@ -21,6 +20,11 @@ const props = defineProps<{
   status: string;
   isLoading: boolean;
   detailBasePath: string;
+  pagination: PaginationMeta;
+}>();
+
+const emit = defineEmits<{
+  (event: "page-change", page: number): void;
 }>();
 
 const orderById = computed(() =>
@@ -128,24 +132,15 @@ const columns: TableColumn<Delivery>[] = [
   },
 ];
 
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10,
-});
 </script>
 
 <template>
   <UCard>
     <UTable
       v-if="props.isLoading || hasRows"
-      ref="table"
-      v-model:pagination="pagination"
       :data="props.deliveries"
       :columns="columns"
       class="text-sm"
-      :pagination-options="{
-        getPaginationRowModel: getPaginationRowModel(),
-      }"
       :loading="props.isLoading"
     >
       <template #reference-cell="{ row }">
@@ -226,6 +221,11 @@ const pagination = ref({
       v-else
       :title="emptyTitle"
       :description="emptyDescription"
+    />
+    <AdminServerPagination
+      v-if="hasRows"
+      :pagination="props.pagination"
+      @page-change="emit('page-change', $event)"
     />
   </UCard>
 </template>

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
+import { useAdminPermissions } from "~/composables/admin/useAdminPermissions";
 
 const open = ref(false);
+const { canManageUsers } = useAdminPermissions();
 
-const links = [
+const links = computed<NavigationMenuItem[][]>(() => [
   [
     {
       label: "Dashboard",
@@ -32,15 +34,14 @@ const links = [
           to: "/admin/inventory",
           onSelect: () => (open.value = false),
         },
+        {
+          label: "Warehouses",
+          to: "/admin/warehouses",
+          onSelect: () => (open.value = false),
+        },
       ],
     },
 
-    {
-      label: "Warehouse",
-      icon: "i-lucide-package",
-      to: "/admin/warehouse",
-      onSelect: () => (open.value = false),
-    },
     {
       label: "Orders",
       icon: "i-lucide-shopping-cart",
@@ -66,6 +67,12 @@ const links = [
       to: "/admin/payments",
       onSelect: () => (open.value = false),
     },
+    {
+      label: "Reports",
+      icon: "i-lucide-chart-column",
+      to: "/admin/reports",
+      onSelect: () => (open.value = false),
+    },
 
     {
       label: "Drivers",
@@ -77,13 +84,6 @@ const links = [
       label: "Users",
       icon: "i-lucide-users",
       to: "/admin/users",
-      onSelect: () => (open.value = false),
-    },
-
-    {
-      label: "Reports",
-      icon: "i-lucide-bar-chart",
-      to: "/admin/reports",
       onSelect: () => (open.value = false),
     },
 
@@ -109,26 +109,27 @@ const links = [
         },
       ],
     },
-  ],
+  ].filter((item) => {
+    if (
+      "to" in item &&
+      (item.to === "/admin/users" || item.to === "/admin/drivers")
+    ) {
+      return canManageUsers.value;
+    }
 
-  [
-    {
-      label: "Help & Support",
-      icon: "i-lucide-life-buoy",
-      to: "/admin/help",
-      onSelect: () => (open.value = false),
-    },
-  ],
-] satisfies NavigationMenuItem[][];
+    return true;
+  }),
+
+  [],
+]);
 
 const groups = computed(() => [
   {
     id: "links",
     label: "Navigation",
-    items: links.flat(),
+    items: links.value.flat(),
   },
 ]);
-
 </script>
 <template>
   <UDashboardGroup unit="rem">
@@ -165,6 +166,7 @@ const groups = computed(() => [
         />
 
         <UNavigationMenu
+          v-if="links[1].length"
           :collapsed="collapsed"
           :items="links[1]"
           orientation="vertical"

@@ -1,20 +1,24 @@
 <script setup lang="ts">
-import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
 import type { Category } from "~/types/category";
+import type { PaginationMeta } from "~/types/pagination";
 import type { Product } from "~/types/product";
 import { formatShortDateOrFallback } from "~/utils/format";
 import { useModal } from "~/composables/admin/useModal";
 import AdminTableEmptyState from "../../../_components/AdminTableEmptyState.vue";
+import AdminServerPagination from "../../../_components/AdminServerPagination.vue";
 import AdminTableSelectionBar from "../../../_components/AdminTableSelectionBar.vue";
 import CategoryBulkDeleteModal from "../modals/CategoryBulkDeleteModal.vue";
 import CategoryRowActions from "./CategoryRowActions.vue";
 
-const table = useTemplateRef("table");
 const props = defineProps<{
   categories: Category[];
   products: Product[];
   isLoading: boolean;
+  pagination: PaginationMeta;
+}>();
+const emit = defineEmits<{
+  (event: "page-change", page: number): void;
 }>();
 const { openModal } = useModal();
 const selectedIds = ref<Set<string>>(new Set());
@@ -100,10 +104,6 @@ const columns: TableColumn<Category>[] = [
   { id: "actions", header: "" },
 ];
 
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 5,
-});
 </script>
 
 <template>
@@ -117,14 +117,9 @@ const pagination = ref({
 
     <UTable
       v-if="props.isLoading || hasRows"
-      ref="table"
-      v-model:pagination="pagination"
       :data="props.categories"
       :columns="columns"
       class="text-sm"
-      :pagination-options="{
-        getPaginationRowModel: getPaginationRowModel(),
-      }"
       :loading="props.isLoading"
     >
       <template #select-header>
@@ -191,16 +186,10 @@ const pagination = ref({
       title="No categories yet"
       description="Create a category to start organizing the product catalog."
     />
-    <div
+    <AdminServerPagination
       v-if="hasRows"
-      class="flex justify-end border-t border-default px-4 pt-4"
-    >
-      <UPagination
-        :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-        :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-        :total="table?.tableApi?.getFilteredRowModel().rows.length"
-        @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)"
-      />
-    </div>
+      :pagination="props.pagination"
+      @page-change="emit('page-change', $event)"
+    />
   </UCard>
 </template>

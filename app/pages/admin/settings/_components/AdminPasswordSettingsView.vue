@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import AdminPageHeader from "../../_components/AdminPageHeader.vue";
 
 const accountStore = useAccountStore();
 const toast = useToast();
@@ -79,23 +80,15 @@ const goBack = () => {
 
 <template>
   <div class="min-h-screen space-y-6">
-    <section class="rounded-sm border border-slate-200/70 bg-white p-6 shadow-sm md:p-8 dark:bg-gray-900">
-      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-            Admin Settings
-          </p>
-          <h1 class="mt-2 text-2xl font-semibold md:text-3xl">Security settings</h1>
-          <p class="mt-2 max-w-3xl text-sm text-slate-600 md:text-base">
-            Change your admin password without mixing credential updates into profile edits.
-          </p>
-        </div>
-
-        <UButton color="neutral" variant="outline" @click="goBack">
-          Back to account settings
-        </UButton>
-      </div>
-    </section>
+    <AdminPageHeader
+      eyebrow="Admin Settings"
+      title="Security settings"
+      description="Change your admin password without mixing credential updates into profile edits."
+      action-label="Back to account settings"
+      action-icon="i-lucide-arrow-left"
+      action-color="neutral"
+      @action="goBack"
+    />
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.85fr)] xl:items-start">
       <UCard>

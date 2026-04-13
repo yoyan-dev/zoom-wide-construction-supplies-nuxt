@@ -61,7 +61,13 @@ const loadPage = async () => {
 
 await loadPage();
 
-const { products, query, isLoading: isProductsLoading } = storeToRefs(productStore);
+const {
+  products,
+  totalProducts,
+  query,
+  pagination,
+  isLoading: isProductsLoading,
+} = storeToRefs(productStore);
 const { logs, isLoading: isInventoryLoading } = storeToRefs(inventoryStore);
 const { warehouses, isLoading: isWarehousesLoading } = storeToRefs(warehouseStore);
 
@@ -114,13 +120,25 @@ const handleSearch = async (value: string) => {
   });
 };
 
-const handleStockStatus = (value: string) => {
+const handleStockStatus = async (value: string) => {
   stockStatus.value = value;
+  await productStore.fetchProducts({
+    q: search.value,
+    page: 1,
+  });
+};
+
+const handlePageChange = async (page: number) => {
+  await productStore.fetchProducts({
+    q: search.value,
+    page,
+  });
 };
 
 const handleCreate = () => {
   void openModal(InventoryMovementModal, {
     products: products.value,
+    onSaved: loadPage,
   });
 };
 
@@ -134,7 +152,7 @@ const handleRetry = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <InventoryHeader :total="filteredProducts.length" @create="handleCreate" />
+      <InventoryHeader :total="totalProducts" @create="handleCreate" />
 
       <template v-if="pageError">
         <AdminPageStateCard
@@ -169,6 +187,9 @@ const handleRetry = async () => {
           :detail-base-path="props.detailBasePath"
           :product-base-path="props.productBasePath"
           :is-loading="isPageLoading"
+          :pagination="pagination"
+          @page-change="handlePageChange"
+          @movement-saved="loadPage"
         />
       </template>
     </div>

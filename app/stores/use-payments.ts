@@ -19,6 +19,7 @@ export const usePaymentStore = defineStore("payments", () => {
   const query = ref<FetchPaymentParams>({
     q: "",
     page: 1,
+    limit: 10,
   });
 
   const pagination = ref<PaginationMeta>({
@@ -66,7 +67,7 @@ export const usePaymentStore = defineStore("payments", () => {
 
       pagination.value = {
         page: result.meta?.page || 1,
-        limit: result.meta?.limit || 10,
+        limit: result.meta?.limit || query.value.limit || 10,
         total: result.meta?.total || result.total || result.data?.length || 0,
         totalPages: result.meta?.totalPages || 0,
       };

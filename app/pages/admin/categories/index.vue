@@ -37,7 +37,8 @@ const loadPage = async () => {
 
 await loadPage();
 
-const { categories, query, isLoading } = storeToRefs(categoryStore);
+const { categories, totalCategories, query, pagination, isLoading } =
+  storeToRefs(categoryStore);
 const { products } = storeToRefs(productStore);
 
 const search = computed(() => query.value.q ?? "");
@@ -53,6 +54,13 @@ const handleSearch = async (value: string) => {
   });
 };
 
+const handlePageChange = async (page: number) => {
+  await categoryStore.fetchCategories({
+    q: search.value,
+    page,
+  });
+};
+
 const handleRetry = async () => {
   isRetrying.value = true;
   await loadPage();
@@ -63,7 +71,7 @@ const handleRetry = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <CategoriesHeader :total="categories.length" @create="handleCreate" />
+      <CategoriesHeader :total="totalCategories" @create="handleCreate" />
       <template v-if="pageError">
         <AdminPageStateCard
           eyebrow="Categories"
@@ -81,6 +89,8 @@ const handleRetry = async () => {
           :categories="categories"
           :products="products"
           :is-loading="isLoading"
+          :pagination="pagination"
+          @page-change="handlePageChange"
         />
       </template>
     </div>

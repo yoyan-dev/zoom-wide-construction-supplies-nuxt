@@ -42,6 +42,7 @@ export interface FetchProductParams {
   q?: string;
   category_id?: string;
   page?: number;
+  limit?: number;
 }
 
 export interface ProductPaginaton {

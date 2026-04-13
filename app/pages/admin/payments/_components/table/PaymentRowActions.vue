@@ -15,6 +15,7 @@ const props = defineProps<{
 }>();
 
 const { openModal } = useModal();
+const { canManageFinance } = useAdminPermissions();
 const viewActions = computed<AdminActionItem[]>(() => [
   {
     label: "View Payment Details",
@@ -33,11 +34,15 @@ const viewActions = computed<AdminActionItem[]>(() => [
 ]);
 
 const editActions = computed<AdminActionItem[]>(() => [
-  {
-    label: "Update Payment",
-    icon: "i-lucide-pencil",
-    onClick: () => openModal(PaymentEditModal, props.payment),
-  },
+  ...(canManageFinance.value
+    ? [
+        {
+          label: "Update Payment",
+          icon: "i-lucide-pencil",
+          onClick: () => openModal(PaymentEditModal, props.payment),
+        } satisfies AdminActionItem,
+      ]
+    : []),
 ]);
 
 const sections = computed<AdminActionSection[]>(() => [

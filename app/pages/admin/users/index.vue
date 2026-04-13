@@ -17,8 +17,9 @@ definePageMeta({
 });
 
 const authStore = useAuthStore();
+const { canManageUsers } = useAdminPermissions();
 
-if (!authStore.hasAnyRole(["admin"])) {
+if (!canManageUsers.value) {
   await navigateTo(authStore.getRoleLandingPath());
 }
 
@@ -42,7 +43,8 @@ const loadPage = async () => {
 
 await loadPage();
 
-const { users, query, isLoading } = storeToRefs(userStore);
+const { users, totalUsers, query, pagination, isLoading } =
+  storeToRefs(userStore);
 const search = computed(() => query.value.q ?? "");
 const role = ref("all");
 const status = ref("all");
@@ -53,6 +55,7 @@ const roleOptions = [
 ];
 
 const handleCreate = () => {
+  if (!canManageUsers.value) return;
   openModal(AddUserModal);
 };
 
@@ -63,12 +66,27 @@ const handleSearch = async (value: string) => {
   });
 };
 
-const handleRole = (value: string) => {
+const handleRole = async (value: string) => {
   role.value = value;
+  await userStore.fetchUsers({
+    q: search.value,
+    page: 1,
+  });
 };
 
-const handleStatus = (value: string) => {
+const handleStatus = async (value: string) => {
   status.value = value;
+  await userStore.fetchUsers({
+    q: search.value,
+    page: 1,
+  });
+};
+
+const handlePageChange = async (page: number) => {
+  await userStore.fetchUsers({
+    q: search.value,
+    page,
+  });
 };
 
 const handleRetry = async () => {
@@ -81,7 +99,7 @@ const handleRetry = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <UserHeader :total="users.length" @create="handleCreate" />
+      <UserHeader :total="totalUsers" @create="handleCreate" />
 
       <template v-if="pageError">
         <AdminPageStateCard
@@ -113,6 +131,8 @@ const handleRetry = async () => {
           :role="role"
           :status="status"
           :is-loading="isLoading"
+          :pagination="pagination"
+          @page-change="handlePageChange"
         />
       </template>
     </div>

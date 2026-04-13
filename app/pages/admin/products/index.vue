@@ -51,12 +51,13 @@ const loadPage = async () => {
 
 await loadPage();
 
-const { products, isLoading } = storeToRefs(productStore);
+const { products, totalProducts, query, pagination, isLoading } =
+  storeToRefs(productStore);
 const { categories } = storeToRefs(categoryStore);
 const { warehouses } = storeToRefs(warehouseStore);
 const { logs } = storeToRefs(inventoryStore);
 
-const search = ref("");
+const search = computed(() => query.value.q ?? "");
 const categoryId = ref("all");
 const stockStatus = ref("all");
 const status = ref("all");
@@ -69,12 +70,35 @@ const categoryOptions = computed(() => [
   })),
 ]);
 
+const fetchProductsPage = async (page = 1) => {
+  await productStore.fetchProducts({
+    q: search.value,
+    category_id: categoryId.value === "all" ? undefined : categoryId.value,
+    page,
+  });
+};
+
 const handleSearch = async (value: string) => {
-  search.value = value;
+  await productStore.fetchProducts({
+    q: value,
+    category_id: categoryId.value === "all" ? undefined : categoryId.value,
+    page: 1,
+  });
 };
 
 const handleCategoryFilter = async (value: string) => {
   categoryId.value = value;
+  await fetchProductsPage(1);
+};
+
+const handleStockStatus = async (value: string) => {
+  stockStatus.value = value;
+  await fetchProductsPage(1);
+};
+
+const handleStatus = async (value: string) => {
+  status.value = value;
+  await fetchProductsPage(1);
 };
 
 const handleRetry = async () => {
@@ -87,7 +111,7 @@ const handleRetry = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <ProductHeader :total="products.length" />
+      <ProductHeader :total="totalProducts" />
       <template v-if="pageError">
         <AdminPageStateCard
           eyebrow="Products"
@@ -109,8 +133,8 @@ const handleRetry = async () => {
           :category-options="categoryOptions"
           @update:search="handleSearch"
           @update:category-id="handleCategoryFilter"
-          @update:stock-status="stockStatus = $event"
-          @update:status="status = $event"
+          @update:stock-status="handleStockStatus"
+          @update:status="handleStatus"
         />
         <ProductsTable
           :products="products"
@@ -122,6 +146,8 @@ const handleRetry = async () => {
           :stock-status="stockStatus"
           :status="status"
           :is-loading="isLoading"
+          :pagination="pagination"
+          @page-change="fetchProductsPage"
         />
       </template>
     </div>
