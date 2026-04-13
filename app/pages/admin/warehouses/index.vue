@@ -15,8 +15,8 @@ definePageMeta({
   layout: "admin",
 });
 
+const authStore = useAuthStore();
 const warehouseStore = useWarehouseStore();
-const { canManageWarehouses } = useAdminPermissions();
 const { openModal } = useModal();
 const { getLoadErrorMessage } = useAdminPageLoadState();
 const pageError = ref<string | null>(null);
@@ -42,7 +42,7 @@ const search = computed(() => query.value.q ?? "");
 const status = ref("all");
 
 const handleCreate = () => {
-  if (!canManageWarehouses.value) return;
+  if (!authStore.hasAnyRole(["admin", "warehouse_manager"])) return;
   void openModal(AddWarehouseModal);
 };
 
@@ -76,7 +76,7 @@ const handleRetry = async () => {
     <div class="space-y-6">
       <WarehouseHeader
         :total="totalWarehouses"
-        :can-create="canManageWarehouses"
+        :can-create="authStore.hasAnyRole(['admin', 'warehouse_manager'])"
         @create="handleCreate"
       />
 
@@ -94,7 +94,7 @@ const handleRetry = async () => {
 
       <template v-else>
         <AdminPermissionNotice
-          v-if="!canManageWarehouses"
+          v-if="!authStore.hasAnyRole(['admin', 'warehouse_manager'])"
           description="Your role can review warehouse records, but creating, editing, activating, or deleting warehouses is restricted to warehouse-authorized accounts."
         />
         <WarehousesFilters

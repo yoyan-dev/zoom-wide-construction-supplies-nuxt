@@ -14,8 +14,8 @@ const props = defineProps<{
   user: User;
 }>();
 
+const authStore = useAuthStore();
 const { openModal } = useModal();
-const { canManageUsers } = useAdminPermissions();
 
 const sections = computed<AdminActionSection[]>(() => [
   {
@@ -30,7 +30,7 @@ const sections = computed<AdminActionSection[]>(() => [
   },
   {
     label: "Manage",
-    actions: canManageUsers.value
+    actions: authStore.hasAnyRole(["admin"])
       ? [
           {
             label: "Edit account",
@@ -50,7 +50,7 @@ const sections = computed<AdminActionSection[]>(() => [
   },
   {
     label: "Danger zone",
-    actions: canManageUsers.value
+    actions: authStore.hasAnyRole(["admin"])
       ? [
           {
             label: "Delete account",

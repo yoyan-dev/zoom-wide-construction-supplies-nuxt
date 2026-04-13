@@ -17,8 +17,8 @@ const props = defineProps<{
   userId: string;
 }>();
 
+const authStore = useAuthStore();
 const userStore = useUserStore();
-const { canManageUsers } = useAdminPermissions();
 const { getLoadErrorMessage, isMissingResourceResponse } =
   useAdminPageLoadState();
 const { openModal } = useModal();
@@ -49,19 +49,19 @@ const goBack = () => {
 };
 
 const editUser = () => {
-  if (!canManageUsers.value) return;
+  if (!authStore.hasAnyRole(["admin"])) return;
   if (!user.value) return;
   void openModal(UserEditModal, user.value);
 };
 
 const toggleStatus = () => {
-  if (!canManageUsers.value) return;
+  if (!authStore.hasAnyRole(["admin"])) return;
   if (!user.value) return;
   void openModal(UserStatusModal, user.value);
 };
 
 const deleteUser = () => {
-  if (!canManageUsers.value) return;
+  if (!authStore.hasAnyRole(["admin"])) return;
   if (!user.value) return;
   void openModal(UserDeleteModal, user.value);
 };
@@ -97,14 +97,14 @@ const retryLoad = async () => {
               Back to Users
             </UButton>
             <UButton
-              v-if="user?.id && canManageUsers"
+              v-if="user?.id && authStore.hasAnyRole(['admin'])"
               color="primary"
               @click="editUser"
             >
               Edit User
             </UButton>
             <UButton
-              v-if="user?.id && canManageUsers"
+              v-if="user?.id && authStore.hasAnyRole(['admin'])"
               :color="user?.is_active ? 'warning' : 'success'"
               variant="soft"
               @click="toggleStatus"
@@ -112,7 +112,7 @@ const retryLoad = async () => {
               {{ user?.is_active ? "Deactivate" : "Activate" }}
             </UButton>
             <UButton
-              v-if="user?.id && canManageUsers"
+              v-if="user?.id && authStore.hasAnyRole(['admin'])"
               color="error"
               variant="soft"
               @click="deleteUser"

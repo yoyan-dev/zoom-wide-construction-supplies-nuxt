@@ -14,8 +14,8 @@ const props = defineProps<{
   orderBasePath?: string;
 }>();
 
+const authStore = useAuthStore();
 const { openModal } = useModal();
-const { canManageFinance } = useAdminPermissions();
 const viewActions = computed<AdminActionItem[]>(() => [
   {
     label: "View Payment Details",
@@ -34,7 +34,7 @@ const viewActions = computed<AdminActionItem[]>(() => [
 ]);
 
 const editActions = computed<AdminActionItem[]>(() => [
-  ...(canManageFinance.value
+  ...(authStore.hasAnyRole(["admin", "finance"])
     ? [
         {
           label: "Update Payment",

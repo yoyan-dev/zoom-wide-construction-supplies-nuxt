@@ -19,7 +19,7 @@ const props = defineProps<{
 const paymentStore = usePaymentStore();
 const orderStore = useOrderStore();
 const customerStore = useCustomerStore();
-const { canManageFinance } = useAdminPermissions();
+const authStore = useAuthStore();
 const { openModal } = useModal();
 const { getLoadErrorMessage } = useAdminPageLoadState();
 const pageError = ref<string | null>(null);
@@ -123,7 +123,7 @@ const handlePageChange = async (page: number) => {
 };
 
 const handleCreate = () => {
-  if (!canManageFinance.value) return;
+  if (!authStore.hasAnyRole(["admin", "finance"])) return;
   void openModal(AddPaymentModal, {
     orders: orders.value,
   });
@@ -141,7 +141,7 @@ const handleRetry = async () => {
     <div class="space-y-6">
       <PaymentHeader
         :total="totalPayments"
-        :can-create="canManageFinance"
+        :can-create="authStore.hasAnyRole(['admin', 'finance'])"
         @create="handleCreate"
       />
 
@@ -159,7 +159,7 @@ const handleRetry = async () => {
 
       <template v-else>
         <AdminPermissionNotice
-          v-if="!canManageFinance"
+          v-if="!authStore.hasAnyRole(['admin', 'finance'])"
           description="Your role can review payment records, but creating or updating payments is restricted to finance-authorized accounts."
         />
         <PaymentSummaryCards :payments="payments" />

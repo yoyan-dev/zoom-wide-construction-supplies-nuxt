@@ -11,8 +11,8 @@ const props = defineProps<{
   warehouse: Warehouse;
 }>();
 
+const authStore = useAuthStore();
 const { openModal } = useModal();
-const { canManageWarehouses } = useAdminPermissions();
 
 const sections = computed<AdminActionSection[]>(() => [
   {
@@ -27,7 +27,7 @@ const sections = computed<AdminActionSection[]>(() => [
   },
   {
     label: "Manage",
-    actions: canManageWarehouses.value
+    actions: authStore.hasAnyRole(["admin", "warehouse_manager"])
       ? [
           {
             label: "Edit warehouse",
@@ -51,7 +51,7 @@ const sections = computed<AdminActionSection[]>(() => [
   },
   {
     label: "Danger zone",
-    actions: canManageWarehouses.value
+    actions: authStore.hasAnyRole(["admin", "warehouse_manager"])
       ? [
           {
             label: "Delete warehouse",

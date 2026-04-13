@@ -8,5 +8,14 @@ export default defineNuxtConfig({
     "@nuxt/image",
     "@nuxt/icon",
     "@pinia/nuxt",
+    "nuxt-auth-utils",
   ],
+  runtimeConfig: {
+    session: {
+      maxAge: 60 * 60 * 24 * 30,
+      cookie: {
+        sameSite: "lax",
+      },
+    },
+  },
 });

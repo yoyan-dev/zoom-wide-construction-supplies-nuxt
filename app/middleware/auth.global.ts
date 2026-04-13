@@ -1,5 +1,3 @@
-import { useAuthSessionCookie } from "~/utils/api";
-
 const isSectionPath = (path: string, prefix: string) =>
   path === prefix || path.startsWith(`${prefix}/`);
 
@@ -8,13 +6,8 @@ const resolveRedirectQuery = (value: unknown) =>
 
 export default defineNuxtRouteMiddleware(async (to) => {
   const authStore = useAuthStore();
-  const sessionCookie = useAuthSessionCookie();
   const redirectToRoleHome = () =>
     navigateTo(authStore.getRoleLandingPath(), { replace: true });
-
-  if (sessionCookie.value && !authStore.session) {
-    authStore.clearSession();
-  }
 
   const isAuthPath = isSectionPath(to.path, "/auth");
   const isCustomerPath =

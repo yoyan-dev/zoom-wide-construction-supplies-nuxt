@@ -14,9 +14,8 @@ definePageMeta({
 });
 
 const authStore = useAuthStore();
-const { canManageUsers } = useAdminPermissions();
 
-if (!canManageUsers.value) {
+if (!authStore.hasAnyRole(["admin"])) {
   await navigateTo(authStore.getRoleLandingPath());
 }
 
@@ -46,7 +45,7 @@ const search = computed(() => query.value.q ?? "");
 const status = ref("all");
 
 const handleCreate = () => {
-  if (!canManageUsers.value) return;
+  if (!authStore.hasAnyRole(["admin"])) return;
   void openModal(AddDriverModal);
 };
 

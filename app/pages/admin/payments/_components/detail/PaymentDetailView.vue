@@ -24,7 +24,7 @@ const paymentId = computed(() => String(route.params.id));
 const paymentStore = usePaymentStore();
 const orderStore = useOrderStore();
 const customerStore = useCustomerStore();
-const { canManageFinance } = useAdminPermissions();
+const authStore = useAuthStore();
 const { getLoadErrorMessage, isMissingResourceResponse } =
   useAdminPageLoadState();
 const { openModal } = useModal();
@@ -98,7 +98,7 @@ const goBack = () => {
 };
 
 const editPayment = () => {
-  if (!payment.value || !canManageFinance.value) return;
+  if (!payment.value || !authStore.hasAnyRole(["admin", "finance"])) return;
   void openModal(PaymentEditModal, payment.value);
 };
 
@@ -133,7 +133,7 @@ const retryLoad = async () => {
               Back to Payments
             </UButton>
             <UButton
-              v-if="payment?.id && canManageFinance"
+              v-if="payment?.id && authStore.hasAnyRole(['admin', 'finance'])"
               color="primary"
               @click="editPayment"
             >
@@ -167,7 +167,7 @@ const retryLoad = async () => {
 
       <div v-else class="space-y-6">
         <AdminPermissionNotice
-          v-if="!canManageFinance"
+          v-if="!authStore.hasAnyRole(['admin', 'finance'])"
           description="Your role can review payment details, but changing payment status is restricted to finance-authorized accounts."
         />
 

@@ -11,8 +11,8 @@ const props = defineProps<{
   driver: Driver;
 }>();
 
+const authStore = useAuthStore();
 const { openModal } = useModal();
-const { canManageUsers } = useAdminPermissions();
 
 const sections = computed<AdminActionSection[]>(() => [
   {
@@ -27,7 +27,7 @@ const sections = computed<AdminActionSection[]>(() => [
   },
   {
     label: "Manage",
-    actions: canManageUsers.value
+    actions: authStore.hasAnyRole(["admin"])
       ? [
           {
             label: "Edit driver",
@@ -51,7 +51,7 @@ const sections = computed<AdminActionSection[]>(() => [
   },
   {
     label: "Danger zone",
-    actions: canManageUsers.value
+    actions: authStore.hasAnyRole(["admin"])
       ? [
           {
             label: "Delete driver",

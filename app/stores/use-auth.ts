@@ -11,17 +11,35 @@ import type { Customer } from "~/types/customer";
 import type { UserRole } from "~/types/user";
 import {
   apiRequest,
+  clearAuthSession,
   refreshAuthSession,
   toErrorMessage,
-  useAuthSessionCookie,
-  useAuthSessionState,
   writeAuthSession,
 } from "~/utils/api";
+import type { H3Response } from "~/types/h3Response";
 
 const DEFAULT_AUTH_REDIRECT = "/shop";
 type ForgotPasswordPayload = {
   email: string;
   redirect_to?: string | null;
+};
+
+const toAuthErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === "object") {
+    const data = (error as { data?: Partial<H3Response<unknown>> }).data;
+    const message =
+      typeof data?.message === "string"
+        ? data.message
+        : typeof data?.error?.message === "string"
+          ? data.error.message
+          : null;
+
+    if (message?.trim()) {
+      return message;
+    }
+  }
+
+  return toErrorMessage(error) || fallback;
 };
 
 const normalizeText = (value: unknown) => {
@@ -151,18 +169,11 @@ const getRoleLandingPath = (role?: UserRole | null) => {
 };
 
 export const useAuthStore = defineStore("auth", () => {
-  const sessionCookie = useAuthSessionCookie();
-  const sessionState = useAuthSessionState();
-
-  if (!sessionState.value && sessionCookie.value) {
-    sessionState.value = sessionCookie.value;
-  }
+  const userSession = useUserSession();
 
   const isLoading = ref(false);
   const refreshInFlight = ref<Promise<StoreResponse<AuthSession>> | null>(null);
-  const session = computed(() =>
-    normalizeSession(sessionState.value ?? sessionCookie.value),
-  );
+  const session = computed(() => normalizeSession(userSession.session.value));
   const user = computed(() => session.value?.user ?? null);
   const customer = computed(() => session.value?.customer ?? null);
   const token = computed(
@@ -196,6 +207,9 @@ export const useAuthStore = defineStore("auth", () => {
 
   const clearSession = () => {
     writeAuthSession(null);
+    void clearAuthSession().catch(() => {
+      writeAuthSession(null);
+    });
   };
 
   const hasAnyRole = (roles: UserRole[]) =>
@@ -221,7 +235,7 @@ export const useAuthStore = defineStore("auth", () => {
     isLoading.value = true;
 
     try {
-      const response = await apiRequest<AuthSession>("/auth/login", {
+      const response = await $fetch<H3Response<AuthSession>>("/api/auth/login", {
         method: "POST",
         body: payload,
       });
@@ -246,7 +260,7 @@ export const useAuthStore = defineStore("auth", () => {
 
       return {
         status: "error",
-        message: toErrorMessage(error) || "Unable to sign in.",
+        message: toAuthErrorMessage(error, "Unable to sign in."),
         statusMessage: "unauthorized",
         data: null,
       };
@@ -323,14 +337,9 @@ export const useAuthStore = defineStore("auth", () => {
     isLoading.value = true;
 
     try {
-      if (refreshToken.value) {
-        await apiRequest<null>("/auth/logout", {
-          method: "POST",
-          body: {
-            refresh_token: refreshToken.value,
-          },
-        });
-      }
+      await $fetch<H3Response<null>>("/api/auth/logout", {
+        method: "POST",
+      });
 
       return {
         status: "success",
@@ -342,13 +351,15 @@ export const useAuthStore = defineStore("auth", () => {
       return {
         status: "error",
         message:
-          toErrorMessage(error) ||
-          "Signed out locally, but the server session could not be revoked.",
+          toAuthErrorMessage(
+            error,
+            "Signed out locally, but the server session could not be revoked.",
+          ),
         statusMessage: "unauthorized",
         data: null,
       };
     } finally {
-      clearSession();
+      writeAuthSession(null);
       isLoading.value = false;
     }
   };
@@ -360,12 +371,17 @@ export const useAuthStore = defineStore("auth", () => {
 
     refreshInFlight.value = (async () => {
       isLoading.value = true;
+      const currentSession = session.value;
 
       try {
         const nextSession = await refreshAuthSession();
 
         if (!nextSession) {
-          clearSession();
+          if (currentSession && session.value) {
+            setSession(currentSession);
+          } else {
+            clearSession();
+          }
 
           return {
             status: "error",
@@ -384,7 +400,11 @@ export const useAuthStore = defineStore("auth", () => {
           data: nextSession,
         };
       } catch (error) {
-        clearSession();
+        if (currentSession && session.value) {
+          setSession(currentSession);
+        } else {
+          clearSession();
+        }
 
         return {
           status: "error",

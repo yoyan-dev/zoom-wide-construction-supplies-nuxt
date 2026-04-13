@@ -17,9 +17,8 @@ definePageMeta({
 });
 
 const authStore = useAuthStore();
-const { canManageUsers } = useAdminPermissions();
 
-if (!canManageUsers.value) {
+if (!authStore.hasAnyRole(["admin"])) {
   await navigateTo(authStore.getRoleLandingPath());
 }
 
@@ -55,7 +54,7 @@ const roleOptions = [
 ];
 
 const handleCreate = () => {
-  if (!canManageUsers.value) return;
+  if (!authStore.hasAnyRole(["admin"])) return;
   openModal(AddUserModal);
 };
 

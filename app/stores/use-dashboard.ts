@@ -193,6 +193,33 @@ const normalizeActivity = (value: unknown): DashboardActivity[] =>
     })
     .slice(0, 10);
 
+const normalizeDashboardResponse = (
+  value: DashboardResponse | null | undefined,
+): DashboardResponse | null => {
+  if (!value || !isRecord(value)) {
+    return null;
+  }
+
+  return {
+    range_label: toText(value.range_label, "Current range"),
+    kpis: Array.isArray(value.kpis) ? value.kpis : [],
+    revenue_series: normalizeRevenueSeries(value.revenue_series),
+    recent_orders: Array.isArray(value.recent_orders)
+      ? value.recent_orders
+      : [],
+    top_products: normalizeTopProducts(value.top_products),
+    low_stock_items: Array.isArray(value.low_stock_items)
+      ? value.low_stock_items
+      : [],
+    delivery_statuses: normalizeStatusCounts<DeliveryStatus>(
+      value.delivery_statuses,
+      ["scheduled", "in_transit", "delivered", "failed", "cancelled"],
+    ),
+    deliveries: Array.isArray(value.deliveries) ? value.deliveries : [],
+    generated_at: toText(value.generated_at),
+  };
+};
+
 export const useDashboardStore = defineStore("dashboard", () => {
   const summary = ref<DashboardResponse | null>(null);
   const recentActivity = ref<DashboardActivity[]>([]);
@@ -250,7 +277,7 @@ export const useDashboardStore = defineStore("dashboard", () => {
     ] = requests;
 
     if (dashboardResult.status === "fulfilled") {
-      summary.value = dashboardResult.value.data ?? null;
+      summary.value = normalizeDashboardResponse(dashboardResult.value.data);
     }
 
     if (activityResult.status === "fulfilled") {

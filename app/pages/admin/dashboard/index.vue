@@ -34,7 +34,7 @@ const {
 } = storeToRefs(dashboardStore);
 
 const getKpi = (id: string) =>
-  summary.value?.kpis.find((kpi) => kpi.id === id);
+  summary.value?.kpis?.find((kpi) => kpi.id === id);
 
 const getStatusCount = <T extends string>(
   rows: Array<{ status: T | string; count: number }>,

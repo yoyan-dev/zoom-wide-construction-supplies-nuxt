@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
-import { useAdminPermissions } from "~/composables/admin/useAdminPermissions";
 
 const open = ref(false);
-const { canManageUsers } = useAdminPermissions();
+const authStore = useAuthStore();
 
 const links = computed<NavigationMenuItem[][]>(() => [
   [
@@ -114,7 +113,7 @@ const links = computed<NavigationMenuItem[][]>(() => [
       "to" in item &&
       (item.to === "/admin/users" || item.to === "/admin/drivers")
     ) {
-      return canManageUsers.value;
+      return authStore.hasAnyRole(["admin"]);
     }
 
     return true;

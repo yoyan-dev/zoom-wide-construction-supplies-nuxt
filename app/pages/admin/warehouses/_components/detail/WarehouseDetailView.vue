@@ -17,8 +17,8 @@ const props = defineProps<{
   warehouseId: string;
 }>();
 
+const authStore = useAuthStore();
 const warehouseStore = useWarehouseStore();
-const { canManageWarehouses } = useAdminPermissions();
 const { getLoadErrorMessage, isMissingResourceResponse } =
   useAdminPageLoadState();
 const { openModal } = useModal();
@@ -51,19 +51,19 @@ const goBack = () => {
 };
 
 const editWarehouse = () => {
-  if (!canManageWarehouses.value) return;
+  if (!authStore.hasAnyRole(["admin", "warehouse_manager"])) return;
   if (!warehouse.value) return;
   void openModal(WarehouseEditModal, warehouse.value);
 };
 
 const toggleStatus = () => {
-  if (!canManageWarehouses.value) return;
+  if (!authStore.hasAnyRole(["admin", "warehouse_manager"])) return;
   if (!warehouse.value) return;
   void openModal(WarehouseStatusModal, warehouse.value);
 };
 
 const deleteWarehouse = () => {
-  if (!canManageWarehouses.value) return;
+  if (!authStore.hasAnyRole(["admin", "warehouse_manager"])) return;
   if (!warehouse.value) return;
   void openModal(WarehouseDeleteModal, warehouse.value);
 };
@@ -99,14 +99,20 @@ const retryLoad = async () => {
               Back to Warehouses
             </UButton>
             <UButton
-              v-if="warehouse?.id && canManageWarehouses"
+              v-if="
+                warehouse?.id &&
+                authStore.hasAnyRole(['admin', 'warehouse_manager'])
+              "
               color="primary"
               @click="editWarehouse"
             >
               Edit Warehouse
             </UButton>
             <UButton
-              v-if="warehouse?.id && canManageWarehouses"
+              v-if="
+                warehouse?.id &&
+                authStore.hasAnyRole(['admin', 'warehouse_manager'])
+              "
               :color="warehouse?.status === 'active' ? 'warning' : 'success'"
               variant="soft"
               @click="toggleStatus"
@@ -114,7 +120,10 @@ const retryLoad = async () => {
               {{ warehouse?.status === "active" ? "Deactivate" : "Activate" }}
             </UButton>
             <UButton
-              v-if="warehouse?.id && canManageWarehouses"
+              v-if="
+                warehouse?.id &&
+                authStore.hasAnyRole(['admin', 'warehouse_manager'])
+              "
               color="error"
               variant="soft"
               @click="deleteWarehouse"
@@ -149,7 +158,7 @@ const retryLoad = async () => {
 
       <template v-else>
         <AdminPermissionNotice
-          v-if="!canManageWarehouses"
+          v-if="!authStore.hasAnyRole(['admin', 'warehouse_manager'])"
           description="Your role can review this warehouse, but warehouse update, status, and delete actions are restricted to warehouse-authorized accounts."
         />
 
