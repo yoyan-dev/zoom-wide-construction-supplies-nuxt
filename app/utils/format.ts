@@ -34,3 +34,9 @@ export const formatShortDateOrFallback = (
 
 export const formatLongDate = (value: string) =>
   longDateFormatter.format(new Date(value));
+
+export const formatStatusLabel = (value: string) =>
+  value
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");

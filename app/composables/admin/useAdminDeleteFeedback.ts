@@ -70,7 +70,7 @@ export function useAdminDeleteFeedback() {
           errorTitle: `${resourceLabelPlural} not deleted`,
           errorDescription: (failedResponse) => {
             const progress = `Deleted ${deleted} of ${ids.length} ${resourceLabelPlural.toLowerCase()} before the request failed.`;
-            const detail = getResponseDetail(failedResponse);
+            const detail = getResponseDetail(failedResponse as any);
             return detail ? `${progress} ${detail}` : progress;
           },
         });

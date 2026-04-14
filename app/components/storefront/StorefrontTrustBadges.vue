@@ -15,7 +15,8 @@ const props = withDefaults(
       {
         icon: "i-lucide-shield-check",
         title: "Verified supply",
-        description: "Product details stay tied to live stock and pricing records.",
+        description:
+          "Product details stay tied to live stock and pricing records.",
       },
       {
         icon: "i-lucide-truck",
@@ -34,12 +35,7 @@ const props = withDefaults(
 </script>
 
 <template>
-  <div
-    :class="[
-      'grid gap-3',
-      props.compact ? 'sm:grid-cols-3' : 'md:grid-cols-3',
-    ]"
-  >
+  <div class="grid gap-3">
     <div
       v-for="item in props.items"
       :key="item.title"

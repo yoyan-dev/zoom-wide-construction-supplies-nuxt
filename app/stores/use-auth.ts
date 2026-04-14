@@ -149,9 +149,7 @@ const normalizeSession = (value: unknown): AuthSession | null => {
 const getRoleLandingPath = (role?: UserRole | null) => {
   switch (role) {
     case "admin":
-      return "/admin/dashboard";
-    case "manager":
-      return "/admin/dashboard";
+      return "/admin";
     case "staff":
       return "/staff";
     case "driver":
@@ -235,10 +233,13 @@ export const useAuthStore = defineStore("auth", () => {
     isLoading.value = true;
 
     try {
-      const response = await $fetch<H3Response<AuthSession>>("/api/auth/login", {
-        method: "POST",
-        body: payload,
-      });
+      const response = await $fetch<H3Response<AuthSession>>(
+        "/api/auth/login",
+        {
+          method: "POST",
+          body: payload,
+        },
+      );
       const nextSession = normalizeSession(response.data);
 
       if (!nextSession) {
@@ -350,11 +351,10 @@ export const useAuthStore = defineStore("auth", () => {
     } catch (error) {
       return {
         status: "error",
-        message:
-          toAuthErrorMessage(
-            error,
-            "Signed out locally, but the server session could not be revoked.",
-          ),
+        message: toAuthErrorMessage(
+          error,
+          "Signed out locally, but the server session could not be revoked.",
+        ),
         statusMessage: "unauthorized",
         data: null,
       };

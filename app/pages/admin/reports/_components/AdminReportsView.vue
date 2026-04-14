@@ -8,27 +8,24 @@ import AdminPageHeader from "../../_components/AdminPageHeader.vue";
 import AdminPageStateCard from "../../_components/AdminPageStateCard.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
 import {
+  buildAdminReportsCsv,
+  type AdminCustomerReportRow,
+  type AdminLowStockReportRow,
+  type AdminReportStatusRow,
+} from "~/utils/admin-reports";
+import {
   formatCurrency,
   formatNumber,
-  formatShortDateOrFallback,
+  formatStatusLabel,
 } from "~/utils/format";
 import { buildInventoryBalanceMap } from "~/utils/inventory-balance";
+import CustomerReportCard from "./CustomerReportCard.vue";
+import LowStockReportCard from "./LowStockReportCard.vue";
+import ReportAmountList from "./ReportAmountList.vue";
 import ReportMetricCard from "./ReportMetricCard.vue";
+import ReportSection from "./ReportSection.vue";
+import ReportStatusGrid from "./ReportStatusGrid.vue";
 import ReportsFilters from "./ReportsFilters.vue";
-
-type ReportStatusRow = {
-  label: string;
-  count: number;
-  amount?: number;
-};
-
-type CustomerReportRow = {
-  id: string;
-  name: string;
-  contact: string;
-  orders: number;
-  revenue: number;
-};
 
 const reportLimit = 100;
 
@@ -181,12 +178,6 @@ const isWithinDateRange = (value?: string | null) => {
   return true;
 };
 
-const labelStatus = (value: string) =>
-  value
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-
 const filteredOrders = computed(() =>
   orders.value.filter((order) => {
     const matchesDate = isWithinDateRange(order.created_at);
@@ -242,7 +233,7 @@ const filteredProducts = computed(() =>
   }),
 );
 
-const lowStockProducts = computed(() =>
+const lowStockProducts = computed<AdminLowStockReportRow[]>(() =>
   products.value
     .map((product) => ({
       product,
@@ -270,11 +261,11 @@ const countByStatus = <T extends string>(
   statuses: readonly T[],
 ) =>
   statuses.map((status) => ({
-    label: labelStatus(status),
+    label: formatStatusLabel(status),
     count: rows.filter((row) => row.status === status).length,
   }));
 
-const orderStatusRows = computed<ReportStatusRow[]>(() =>
+const orderStatusRows = computed<AdminReportStatusRow[]>(() =>
   ([
     "pending",
     "approved",
@@ -282,7 +273,7 @@ const orderStatusRows = computed<ReportStatusRow[]>(() =>
     "cancelled",
     "completed",
   ] as OrderStatus[]).map((status) => ({
-    label: labelStatus(status),
+    label: formatStatusLabel(status),
     count: filteredOrders.value.filter((order) => order.status === status).length,
     amount: sumOrders(
       filteredOrders.value.filter((order) => order.status === status),
@@ -290,10 +281,10 @@ const orderStatusRows = computed<ReportStatusRow[]>(() =>
   })),
 );
 
-const paymentStatusRows = computed<ReportStatusRow[]>(() =>
+const paymentStatusRows = computed<AdminReportStatusRow[]>(() =>
   (["pending", "paid", "failed", "refunded"] as PaymentStatus[]).map(
     (status) => ({
-      label: labelStatus(status),
+      label: formatStatusLabel(status),
       count: filteredPayments.value.filter((payment) => payment.status === status)
         .length,
       amount: sumPayments(
@@ -303,32 +294,32 @@ const paymentStatusRows = computed<ReportStatusRow[]>(() =>
   ),
 );
 
-const paymentMethodRows = computed<ReportStatusRow[]>(() => {
+const paymentMethodRows = computed<AdminReportStatusRow[]>(() => {
   const methods = ["cash", "card", "bank_transfer", "mobile_wallet"];
   return methods.map((method) => {
     const rows = filteredPayments.value.filter((payment) => payment.method === method);
     return {
-      label: labelStatus(method),
+      label: formatStatusLabel(method),
       count: rows.length,
       amount: sumPayments(rows),
     };
   });
 });
 
-const deliveryStatusRows = computed<ReportStatusRow[]>(() =>
+const deliveryStatusRows = computed<AdminReportStatusRow[]>(() =>
   countByStatus(
     filteredDeliveries.value,
     ["scheduled", "in_transit", "delivered", "failed", "cancelled"] as DeliveryStatus[],
   ),
 );
 
-const movementRows = computed<ReportStatusRow[]>(() =>
+const movementRows = computed<AdminReportStatusRow[]>(() =>
   (["in", "out", "adjustment"] as InventoryMovementType[]).map((type) => {
     const rows = filteredMovements.value.filter(
       (entry) => entry.movement_type === type,
     );
     return {
-      label: labelStatus(type),
+      label: formatStatusLabel(type),
       count: rows.length,
       amount: rows.reduce(
         (total, entry) => total + Math.abs(Number(entry.quantity_change ?? 0)),
@@ -342,8 +333,8 @@ const customerMap = computed(
   () => new Map(customers.value.map((customer) => [customer.id, customer])),
 );
 
-const customerReportRows = computed<CustomerReportRow[]>(() => {
-  const rows = new Map<string, CustomerReportRow>();
+const customerReportRows = computed<AdminCustomerReportRow[]>(() => {
+  const rows = new Map<string, AdminCustomerReportRow>();
 
   for (const order of filteredOrders.value) {
     const customer = customerMap.value.get(order.customer_id);
@@ -398,63 +389,18 @@ const summaryCards = computed(() => [
   },
 ]);
 
-const escapeCsv = (value: string | number) => {
-  const text = String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-};
-
 const buildCsvRows = () => {
-  const rows: Array<Array<string | number>> = [
-    ["Admin Reports"],
-    ["Date range", dateRangeLabel.value],
-    [],
-    ["Sales Report"],
-    ["Metric", "Value"],
-    ["Orders", filteredOrders.value.length],
-    ["Gross sales", salesAmount.value],
-    ...orderStatusRows.value.map((row) => [
-      row.label,
-      row.count,
-      row.amount ?? 0,
-    ]),
-    [],
-    ["Payment Report"],
-    ["Status", "Count", "Amount"],
-    ...paymentStatusRows.value.map((row) => [
-      row.label,
-      row.count,
-      row.amount ?? 0,
-    ]),
-    [],
-    ["Inventory Report"],
-    ["Movement", "Records", "Quantity"],
-    ...movementRows.value.map((row) => [row.label, row.count, row.amount ?? 0]),
-    [],
-    ["Low Stock Report"],
-    ["Product", "SKU", "Current", "Minimum", "Status"],
-    ...lowStockProducts.value.map((row) => [
-      row.product.name ?? "Unnamed product",
-      row.product.sku ?? "",
-      row.currentStock,
-      row.minimumStock,
-      labelStatus(row.state),
-    ]),
-    [],
-    ["Delivery Performance Report"],
-    ["Status", "Count"],
-    ...deliveryStatusRows.value.map((row) => [row.label, row.count]),
-    [],
-    ["Customer Order History"],
-    ["Customer", "Contact", "Orders", "Revenue"],
-    ...customerReportRows.value.map((row) => [
-      row.name,
-      row.contact,
-      row.orders,
-      row.revenue,
-    ]),
-  ];
-
-  return rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+  return buildAdminReportsCsv({
+    dateRangeLabel: dateRangeLabel.value,
+    ordersCount: filteredOrders.value.length,
+    grossSales: salesAmount.value,
+    orderStatusRows: orderStatusRows.value,
+    paymentStatusRows: paymentStatusRows.value,
+    movementRows: movementRows.value,
+    lowStockProducts: lowStockProducts.value,
+    deliveryStatusRows: deliveryStatusRows.value,
+    customerReportRows: customerReportRows.value,
+  });
 };
 
 const downloadCsv = () => {
@@ -525,214 +471,46 @@ const handleRetry = async () => {
           />
         </div>
 
-        <section class="space-y-4">
-          <div>
-            <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-              Sales report
-            </p>
-            <h2 class="mt-1 text-xl font-semibold text-slate-900">
-              Orders by status
-            </h2>
-          </div>
-          <UCard>
-            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-              <div
-                v-for="row in orderStatusRows"
-                :key="row.label"
-                class="rounded-sm border border-default p-4"
-              >
-                <p class="text-sm font-medium text-slate-900">
-                  {{ row.label }}
-                </p>
-                <p class="mt-2 text-2xl font-semibold">
-                  {{ formatNumber(row.count) }}
-                </p>
-                <p class="mt-1 text-sm text-slate-600">
-                  {{ formatCurrency(row.amount ?? 0) }}
-                </p>
-              </div>
-            </div>
-          </UCard>
-        </section>
+        <ReportSection eyebrow="Sales report" title="Orders by status">
+          <ReportStatusGrid :rows="orderStatusRows" amount-format="currency" />
+        </ReportSection>
 
-        <section class="space-y-4">
-          <div>
-            <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-              Payment report
-            </p>
-            <h2 class="mt-1 text-xl font-semibold text-slate-900">
-              Payment outcomes and methods
-            </h2>
-          </div>
+        <ReportSection
+          eyebrow="Payment report"
+          title="Payment outcomes and methods"
+        >
           <div class="grid gap-4 lg:grid-cols-2">
-            <UCard>
-              <div class="space-y-3">
-                <div
-                  v-for="row in paymentStatusRows"
-                  :key="row.label"
-                  class="flex items-center justify-between gap-4 border-b border-default pb-3 last:border-b-0 last:pb-0"
-                >
-                  <div>
-                    <p class="font-medium text-slate-900">{{ row.label }}</p>
-                    <p class="text-sm text-slate-500">
-                      {{ formatNumber(row.count) }} records
-                    </p>
-                  </div>
-                  <p class="font-semibold">{{ formatCurrency(row.amount ?? 0) }}</p>
-                </div>
-              </div>
-            </UCard>
-            <UCard>
-              <div class="space-y-3">
-                <div
-                  v-for="row in paymentMethodRows"
-                  :key="row.label"
-                  class="flex items-center justify-between gap-4 border-b border-default pb-3 last:border-b-0 last:pb-0"
-                >
-                  <div>
-                    <p class="font-medium text-slate-900">{{ row.label }}</p>
-                    <p class="text-sm text-slate-500">
-                      {{ formatNumber(row.count) }} records
-                    </p>
-                  </div>
-                  <p class="font-semibold">{{ formatCurrency(row.amount ?? 0) }}</p>
-                </div>
-              </div>
-            </UCard>
+            <ReportAmountList :rows="paymentStatusRows" />
+            <ReportAmountList :rows="paymentMethodRows" />
           </div>
-        </section>
+        </ReportSection>
 
-        <section class="space-y-4">
-          <div>
-            <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-              Inventory report
-            </p>
-            <h2 class="mt-1 text-xl font-semibold text-slate-900">
-              Stock movement summary
-            </h2>
-          </div>
-          <UCard>
-            <div class="grid gap-3 md:grid-cols-3">
-              <div
-                v-for="row in movementRows"
-                :key="row.label"
-                class="rounded-sm border border-default p-4"
-              >
-                <p class="text-sm font-medium text-slate-900">
-                  {{ row.label }}
-                </p>
-                <p class="mt-2 text-2xl font-semibold">
-                  {{ formatNumber(row.count) }}
-                </p>
-                <p class="mt-1 text-sm text-slate-600">
-                  {{ formatNumber(row.amount ?? 0) }} units
-                </p>
-              </div>
-            </div>
-          </UCard>
-        </section>
+        <ReportSection eyebrow="Inventory report" title="Stock movement summary">
+          <ReportStatusGrid
+            :rows="movementRows"
+            columns-class="md:grid-cols-3"
+            amount-format="number"
+            amount-suffix="units"
+          />
+        </ReportSection>
 
-        <section class="space-y-4">
-          <div>
-            <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-              Low-stock report
-            </p>
-            <h2 class="mt-1 text-xl font-semibold text-slate-900">
-              Products needing attention
-            </h2>
-          </div>
-          <UCard>
-            <div v-if="lowStockProducts.length" class="space-y-3">
-              <div
-                v-for="row in lowStockProducts"
-                :key="row.product.id"
-                class="flex flex-col gap-3 border-b border-default pb-3 last:border-b-0 last:pb-0 md:flex-row md:items-center md:justify-between"
-              >
-                <div>
-                  <p class="font-medium text-slate-900">
-                    {{ row.product.name ?? "Unnamed product" }}
-                  </p>
-                  <p class="text-sm text-slate-500">
-                    {{ row.product.sku ?? "No SKU" }}
-                  </p>
-                </div>
-                <div class="flex flex-wrap items-center gap-2">
-                  <UBadge :color="row.state === 'out' ? 'error' : 'warning'" variant="subtle">
-                    {{ labelStatus(row.state) }}
-                  </UBadge>
-                  <span class="text-sm text-slate-600">
-                    {{ formatNumber(row.currentStock) }} on hand / min
-                    {{ formatNumber(row.minimumStock) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <p v-else class="text-sm text-slate-600">
-              No low-stock products match the current filters.
-            </p>
-          </UCard>
-        </section>
+        <ReportSection eyebrow="Low-stock report" title="Products needing attention">
+          <LowStockReportCard :rows="lowStockProducts" />
+        </ReportSection>
 
-        <section class="space-y-4">
-          <div>
-            <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-              Delivery performance report
-            </p>
-            <h2 class="mt-1 text-xl font-semibold text-slate-900">
-              Fulfillment status mix
-            </h2>
-          </div>
-          <UCard>
-            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-              <div
-                v-for="row in deliveryStatusRows"
-                :key="row.label"
-                class="rounded-sm border border-default p-4"
-              >
-                <p class="text-sm font-medium text-slate-900">
-                  {{ row.label }}
-                </p>
-                <p class="mt-2 text-2xl font-semibold">
-                  {{ formatNumber(row.count) }}
-                </p>
-              </div>
-            </div>
-          </UCard>
-        </section>
+        <ReportSection
+          eyebrow="Delivery performance report"
+          title="Fulfillment status mix"
+        >
+          <ReportStatusGrid :rows="deliveryStatusRows" />
+        </ReportSection>
 
-        <section class="space-y-4">
-          <div>
-            <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-              Customer order history
-            </p>
-            <h2 class="mt-1 text-xl font-semibold text-slate-900">
-              Top customer activity
-            </h2>
-          </div>
-          <UCard>
-            <div v-if="customerReportRows.length" class="space-y-3">
-              <div
-                v-for="row in customerReportRows"
-                :key="row.id"
-                class="grid gap-3 border-b border-default pb-3 last:border-b-0 last:pb-0 md:grid-cols-[1fr_auto_auto]"
-              >
-                <div>
-                  <p class="font-medium text-slate-900">{{ row.name }}</p>
-                  <p class="text-sm text-slate-500">{{ row.contact }}</p>
-                </div>
-                <p class="text-sm text-slate-600">
-                  {{ formatNumber(row.orders) }} orders
-                </p>
-                <p class="font-semibold">
-                  {{ formatCurrency(row.revenue) }}
-                </p>
-              </div>
-            </div>
-            <p v-else class="text-sm text-slate-600">
-              Customer order history will appear once orders match the current filters.
-            </p>
-          </UCard>
-        </section>
+        <ReportSection
+          eyebrow="Customer order history"
+          title="Top customer activity"
+        >
+          <CustomerReportCard :rows="customerReportRows" />
+        </ReportSection>
       </template>
     </div>
   </div>

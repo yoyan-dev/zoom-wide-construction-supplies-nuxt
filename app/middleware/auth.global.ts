@@ -79,20 +79,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (
-    isSectionPath(to.path, "/admin/users") &&
-    !authStore.hasAnyRole(["admin"])
-  ) {
-    return redirectToRoleHome();
-  }
-
-  if (
-    isSectionPath(to.path, "/admin/drivers") &&
-    !authStore.hasAnyRole(["admin"])
-  ) {
-    return redirectToRoleHome();
-  }
-
-  if (
     isWarehousePath &&
     !authStore.hasAnyRole(["warehouse_manager", "admin", "manager"])
   ) {

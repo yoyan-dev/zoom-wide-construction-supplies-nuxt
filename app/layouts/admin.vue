@@ -2,14 +2,13 @@
 import type { NavigationMenuItem } from "@nuxt/ui";
 
 const open = ref(false);
-const authStore = useAuthStore();
 
 const links = computed<NavigationMenuItem[][]>(() => [
   [
     {
       label: "Dashboard",
       icon: "i-lucide-layout-dashboard",
-      to: "/admin/dashboard",
+      to: "/admin",
       onSelect: () => (open.value = false),
     },
 
@@ -108,17 +107,7 @@ const links = computed<NavigationMenuItem[][]>(() => [
         },
       ],
     },
-  ].filter((item) => {
-    if (
-      "to" in item &&
-      (item.to === "/admin/users" || item.to === "/admin/drivers")
-    ) {
-      return authStore.hasAnyRole(["admin"]);
-    }
-
-    return true;
-  }),
-
+  ],
   [],
 ]);
 
