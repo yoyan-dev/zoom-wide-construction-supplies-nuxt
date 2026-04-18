@@ -3,6 +3,7 @@ import AdminPageHeader from "../../../_components/AdminPageHeader.vue";
 
 const props = defineProps<{
   total: number;
+  canCreate: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -17,7 +18,7 @@ const emit = defineEmits<{
     description="Review payment records, status visibility, finance summary signals, and related order context."
     :total="props.total"
     total-label="payment records"
-    action-label="New Payment"
+    :action-label="props.canCreate ? 'New Payment' : ''"
     @action="emit('create')"
   />
 </template>

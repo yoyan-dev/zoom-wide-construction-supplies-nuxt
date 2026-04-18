@@ -9,6 +9,7 @@ import { useAdminResponseToast } from "~/composables/admin/useAdminResponseToast
 type InventoryMovementModalPayload = {
   product?: Product | null;
   products?: Product[];
+  onSaved?: () => Promise<void> | void;
 };
 
 const props = defineProps<{
@@ -63,8 +64,25 @@ const movementTypeOptions = [
 ];
 
 const isProductLocked = computed(() => Boolean(props.payload?.product?.id));
+const normalizedQuantityChange = computed(() => {
+  const value = Number(draft.quantity_change);
+
+  if (!Number.isFinite(value) || value === 0) {
+    return 0;
+  }
+
+  if (draft.movement_type === "in") {
+    return Math.abs(value);
+  }
+
+  if (draft.movement_type === "out") {
+    return -Math.abs(value);
+  }
+
+  return value;
+});
 const isSubmitDisabled = computed(
-  () => !draft.product_id.trim() || !draft.quantity_change,
+  () => !draft.product_id.trim() || !normalizedQuantityChange.value,
 );
 
 const handleSave = async () => {
@@ -76,7 +94,7 @@ const handleSave = async () => {
   const response = await inventoryStore.createInventoryMovement({
     product_id: draft.product_id.trim(),
     movement_type: draft.movement_type,
-    quantity_change: draft.quantity_change,
+    quantity_change: normalizedQuantityChange.value,
     note: draft.note.trim() || null,
   } satisfies CreateInventoryMovementPayload);
   isSaving.value = false;
@@ -95,6 +113,7 @@ const handleSave = async () => {
     return;
   }
 
+  await props.payload?.onSaved?.();
   emit("close", false);
 };
 </script>
@@ -140,6 +159,10 @@ const handleSave = async () => {
             />
           </UFormField>
         </div>
+
+        <p class="text-xs text-slate-500">
+          Stock in is saved as a positive movement. Stock out is saved as a negative movement. Adjustment keeps the sign you enter.
+        </p>
 
         <UFormField label="Note">
           <UTextarea

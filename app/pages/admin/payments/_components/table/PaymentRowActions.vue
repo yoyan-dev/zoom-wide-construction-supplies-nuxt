@@ -14,6 +14,7 @@ const props = defineProps<{
   orderBasePath?: string;
 }>();
 
+const authStore = useAuthStore();
 const { openModal } = useModal();
 const viewActions = computed<AdminActionItem[]>(() => [
   {
@@ -33,11 +34,15 @@ const viewActions = computed<AdminActionItem[]>(() => [
 ]);
 
 const editActions = computed<AdminActionItem[]>(() => [
-  {
-    label: "Update Payment",
-    icon: "i-lucide-pencil",
-    onClick: () => openModal(PaymentEditModal, props.payment),
-  },
+  ...(authStore.hasAnyRole(["admin", "finance"])
+    ? [
+        {
+          label: "Update Payment",
+          icon: "i-lucide-pencil",
+          onClick: () => openModal(PaymentEditModal, props.payment),
+        } satisfies AdminActionItem,
+      ]
+    : []),
 ]);
 
 const sections = computed<AdminActionSection[]>(() => [

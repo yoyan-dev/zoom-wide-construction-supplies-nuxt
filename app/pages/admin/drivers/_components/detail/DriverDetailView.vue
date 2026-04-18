@@ -16,6 +16,7 @@ const props = defineProps<{
   driverId: string;
 }>();
 
+const authStore = useAuthStore();
 const driverStore = useDriverStore();
 const { getLoadErrorMessage, isMissingResourceResponse } =
   useAdminPageLoadState();
@@ -47,16 +48,19 @@ const goBack = () => {
 };
 
 const editDriver = () => {
+  if (!authStore.hasAnyRole(["admin"])) return;
   if (!driver.value) return;
   void openModal(DriverEditModal, driver.value);
 };
 
 const toggleStatus = () => {
+  if (!authStore.hasAnyRole(["admin"])) return;
   if (!driver.value) return;
   void openModal(DriverStatusModal, driver.value);
 };
 
 const deleteDriver = () => {
+  if (!authStore.hasAnyRole(["admin"])) return;
   if (!driver.value) return;
   void openModal(DriverDeleteModal, driver.value);
 };
@@ -91,11 +95,15 @@ const retryLoad = async () => {
             <UButton color="neutral" variant="outline" @click="goBack">
               Back to Drivers
             </UButton>
-            <UButton v-if="driver?.id" color="primary" @click="editDriver">
+            <UButton
+              v-if="driver?.id && authStore.hasAnyRole(['admin'])"
+              color="primary"
+              @click="editDriver"
+            >
               Edit Driver
             </UButton>
             <UButton
-              v-if="driver?.id"
+              v-if="driver?.id && authStore.hasAnyRole(['admin'])"
               :color="driver?.is_active === false ? 'success' : 'warning'"
               variant="soft"
               @click="toggleStatus"
@@ -103,7 +111,7 @@ const retryLoad = async () => {
               {{ driver?.is_active === false ? "Activate" : "Deactivate" }}
             </UButton>
             <UButton
-              v-if="driver?.id"
+              v-if="driver?.id && authStore.hasAnyRole(['admin'])"
               color="error"
               variant="soft"
               @click="deleteDriver"

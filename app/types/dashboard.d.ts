@@ -42,6 +42,39 @@ export interface DashboardDeliverySummary {
   count: number;
 }
 
+export interface DashboardActivity {
+  id: string;
+  label: string;
+  detail: string;
+  date: string | null;
+  icon: string;
+}
+
+export interface DashboardStatusSummary<TStatus extends string = string> {
+  status: TStatus;
+  count: number;
+}
+
+export interface DashboardMetricSummary {
+  total: number;
+  by_status: DashboardStatusSummary[];
+  revenue_series: DashboardRevenuePoint[];
+}
+
+export interface DashboardPaymentSummary extends DashboardMetricSummary {
+  paid_total: number;
+}
+
+export interface DashboardInventorySummary {
+  total: number;
+  low_stock_count: number;
+  low_stock_items: DashboardLowStockRow[];
+}
+
+export interface DashboardProductInsights {
+  top_products: DashboardTopProductRow[];
+}
+
 export interface DashboardResponse {
   range_label: string;
   kpis: DashboardKpi[];

@@ -119,7 +119,7 @@ const footerItems = computed<NavigationMenuItem[]>(() => [
 
         <template #right>
           <template v-if="isAuthenticated">
-            <AppUserDropdown color="warning" variant="soft" />
+            <AppUserDropdown variant="soft" />
           </template>
 
           <template v-else>

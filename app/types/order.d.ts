@@ -64,6 +64,7 @@ export interface FetchOrderParams {
   status?: OrderStatus | "";
   customer_id?: string;
   page?: number;
+  limit?: number;
 }
 
 export interface OrderPagination {

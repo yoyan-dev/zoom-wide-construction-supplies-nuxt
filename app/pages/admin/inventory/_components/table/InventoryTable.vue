@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
 import type { InventoryLog } from "~/types/inventory";
+import type { PaginationMeta } from "~/types/pagination";
 import type { Product } from "~/types/product";
 import type { Warehouse } from "~/types/warehouse";
 import { formatNumber, formatShortDateOrFallback } from "~/utils/format";
 import { buildInventoryBalanceMap } from "~/utils/inventory-balance";
 import { getInventoryStockState } from "../shared/inventory-stock";
 import AdminTableEmptyState from "../../../_components/AdminTableEmptyState.vue";
+import AdminServerPagination from "../../../_components/AdminServerPagination.vue";
 import InventoryRowActions from "./InventoryRowActions.vue";
-
-const table = useTemplateRef("table");
 
 const props = defineProps<{
   products: Product[];
@@ -21,6 +20,12 @@ const props = defineProps<{
   detailBasePath: string;
   productBasePath?: string;
   isLoading: boolean;
+  pagination: PaginationMeta;
+}>();
+
+const emit = defineEmits<{
+  (event: "page-change", page: number): void;
+  (event: "movement-saved"): void;
 }>();
 
 const stockMap = computed(() =>
@@ -89,11 +94,6 @@ const columns: TableColumn<Product>[] = [
   },
 ];
 
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10,
-});
-
 const stockBadge = (product: Product) =>
   getInventoryStockState(
     stockMap.value[product.id ?? ""] ?? 0,
@@ -105,14 +105,9 @@ const stockBadge = (product: Product) =>
   <UCard>
     <UTable
       v-if="props.isLoading || hasRows"
-      ref="table"
-      v-model:pagination="pagination"
       :data="props.products"
       :columns="columns"
       class="text-sm"
-      :pagination-options="{
-        getPaginationRowModel: getPaginationRowModel(),
-      }"
       :loading="props.isLoading"
     >
       <template #product-cell="{ row }">
@@ -161,7 +156,7 @@ const stockBadge = (product: Product) =>
             {{ row.original.unit ?? "" }}
           </span>
           <span class="text-xs text-slate-500">
-            Base {{ formatNumber(row.original.stock_quantity ?? 0) }}
+            Catalog stock {{ formatNumber(row.original.stock_quantity ?? 0) }}
           </span>
         </div>
       </template>
@@ -195,6 +190,7 @@ const stockBadge = (product: Product) =>
             :product="row.original"
             :detail-base-path="props.detailBasePath"
             :product-base-path="props.productBasePath"
+            :on-movement-saved="() => emit('movement-saved')"
           />
         </div>
       </template>
@@ -204,6 +200,11 @@ const stockBadge = (product: Product) =>
       v-else
       :title="emptyTitle"
       :description="emptyDescription"
+    />
+    <AdminServerPagination
+      v-if="hasRows"
+      :pagination="props.pagination"
+      @page-change="emit('page-change', $event)"
     />
   </UCard>
 </template>

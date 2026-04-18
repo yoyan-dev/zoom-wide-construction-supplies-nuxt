@@ -39,8 +39,14 @@ const projectedStock = computed(
   () => props.currentStock + (draft.quantity_change || 0),
 );
 
+const wouldReduceBelowZero = computed(() => projectedStock.value < 0);
+
 const isSubmitDisabled = computed(
-  () => props.isSaving || !props.product.id || !draft.quantity_change,
+  () =>
+    props.isSaving ||
+    !props.product.id ||
+    !draft.quantity_change ||
+    wouldReduceBelowZero.value,
 );
 
 const handleSubmit = () => {
@@ -95,6 +101,15 @@ const handleSubmit = () => {
       </div>
 
       <div class="grid gap-4">
+        <UAlert
+          v-if="wouldReduceBelowZero"
+          color="warning"
+          variant="soft"
+          icon="i-lucide-triangle-alert"
+          title="Projected stock is below zero"
+          description="Reduce the adjustment amount before saving this stock movement."
+        />
+
         <UFormField
           label="Quantity change"
           description="Positive values add stock. Negative values reduce stock."

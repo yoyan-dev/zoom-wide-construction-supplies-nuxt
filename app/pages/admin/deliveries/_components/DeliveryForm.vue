@@ -179,6 +179,14 @@ const handleSubmit = () => {
             type="datetime-local"
           />
         </UFormField>
+
+        <UFormField label="Delivered date and time">
+          <UInput
+            v-model="draft.delivered_at"
+            class="w-full"
+            type="datetime-local"
+          />
+        </UFormField>
       </div>
     </div>
 

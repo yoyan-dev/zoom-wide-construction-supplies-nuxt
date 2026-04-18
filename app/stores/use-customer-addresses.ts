@@ -127,7 +127,7 @@ export const useCustomerAddressesStore = defineStore(
           total: meta.total ?? result.total ?? nextAddresses.length,
           totalPages: meta.totalPages ?? meta.total_pages ?? 0,
         };
-        console.log(result);
+
         return {
           status: "success",
           message: result.message || "Customer addresses fetched successfully",

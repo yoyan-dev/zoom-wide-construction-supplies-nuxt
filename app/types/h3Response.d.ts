@@ -59,6 +59,7 @@ export interface ApiSuccessResponse<T = unknown> {
   message?: string;
   total?: number;
   meta?: PaginationMeta;
+  error?: ApiErrorPayload;
 }
 
 export interface ApiErrorResponse {

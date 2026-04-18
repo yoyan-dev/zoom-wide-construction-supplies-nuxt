@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { TableColumn } from "@nuxt/ui";
+import type { PaginationMeta } from "~/types/pagination";
 import type { User } from "~/types/user";
 import { formatShortDateOrFallback } from "~/utils/format";
 import AdminTableEmptyState from "../../../_components/AdminTableEmptyState.vue";
+import AdminServerPagination from "../../../_components/AdminServerPagination.vue";
 import UserRowActions from "./UserRowActions.vue";
 import {
   getInternalUserRoleLabel,
@@ -12,14 +13,17 @@ import {
   isMatchingStatusFilter,
 } from "../internal-user-options";
 
-const table = useTemplateRef("table");
-
 const props = defineProps<{
   users: User[];
   search: string;
   role: string;
   status: string;
   isLoading: boolean;
+  pagination: PaginationMeta;
+}>();
+
+const emit = defineEmits<{
+  (event: "page-change", page: number): void;
 }>();
 
 const filteredUsers = computed(() =>
@@ -74,24 +78,15 @@ const columns: TableColumn<User>[] = [
   },
 ];
 
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 6,
-});
 </script>
 
 <template>
   <UCard>
     <UTable
       v-if="props.isLoading || hasRows"
-      ref="table"
-      v-model:pagination="pagination"
       :data="filteredUsers"
       :columns="columns"
       class="text-sm"
-      :pagination-options="{
-        getPaginationRowModel: getPaginationRowModel(),
-      }"
       :loading="props.isLoading"
     >
       <template #user-cell="{ row }">
@@ -155,16 +150,10 @@ const pagination = ref({
       :description="emptyDescription"
     />
 
-    <div
+    <AdminServerPagination
       v-if="hasRows"
-      class="flex justify-end border-t border-default px-4 pt-4"
-    >
-      <UPagination
-        :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-        :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-        :total="table?.tableApi?.getFilteredRowModel().rows.length"
-        @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)"
-      />
-    </div>
+      :pagination="props.pagination"
+      @page-change="emit('page-change', $event)"
+    />
   </UCard>
 </template>

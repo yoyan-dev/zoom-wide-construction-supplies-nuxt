@@ -32,12 +32,25 @@ const normalizeResponseText = (value?: string | null) => {
   return text ? text : undefined;
 };
 
+const isAccessDeniedResponse = <T>(response?: AdminResponse<T> | null) => {
+  if (!response || isSuccessResponse(response)) {
+    return false;
+  }
+
+  const text = `${response.message ?? ""} ${response.statusMessage ?? ""}`.trim();
+  return /unauthorized|forbidden|access denied|permission|not allowed/i.test(text);
+};
+
 const getResponseTitle = <T>(
   response?: AdminResponse<T> | null,
   fallback?: string,
 ) => {
   if (!response) {
     return fallback ?? "Request completed";
+  }
+
+  if (isAccessDeniedResponse(response)) {
+    return "Access denied";
   }
 
   return (
@@ -117,6 +130,9 @@ export function useAdminResponseToast() {
     showError(
       title,
       resolveText(options.errorDescription, response) ??
+        (isAccessDeniedResponse(response)
+          ? "Your current role cannot perform this admin action."
+          : undefined) ??
         getResponseDescription(response, title) ??
         "Please try again.",
     );
@@ -126,6 +142,7 @@ export function useAdminResponseToast() {
   return {
     toast,
     isSuccessResponse,
+    isAccessDeniedResponse,
     showSuccess,
     showError,
     notifyResponse,

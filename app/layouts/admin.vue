@@ -3,12 +3,12 @@ import type { NavigationMenuItem } from "@nuxt/ui";
 
 const open = ref(false);
 
-const links = [
+const links = computed<NavigationMenuItem[][]>(() => [
   [
     {
       label: "Dashboard",
       icon: "i-lucide-layout-dashboard",
-      to: "/admin/dashboard",
+      to: "/admin",
       onSelect: () => (open.value = false),
     },
 
@@ -32,15 +32,14 @@ const links = [
           to: "/admin/inventory",
           onSelect: () => (open.value = false),
         },
+        {
+          label: "Warehouses",
+          to: "/admin/warehouses",
+          onSelect: () => (open.value = false),
+        },
       ],
     },
 
-    {
-      label: "Warehouse",
-      icon: "i-lucide-package",
-      to: "/admin/warehouse",
-      onSelect: () => (open.value = false),
-    },
     {
       label: "Orders",
       icon: "i-lucide-shopping-cart",
@@ -66,6 +65,12 @@ const links = [
       to: "/admin/payments",
       onSelect: () => (open.value = false),
     },
+    {
+      label: "Reports",
+      icon: "i-lucide-chart-column",
+      to: "/admin/reports",
+      onSelect: () => (open.value = false),
+    },
 
     {
       label: "Drivers",
@@ -77,13 +82,6 @@ const links = [
       label: "Users",
       icon: "i-lucide-users",
       to: "/admin/users",
-      onSelect: () => (open.value = false),
-    },
-
-    {
-      label: "Reports",
-      icon: "i-lucide-bar-chart",
-      to: "/admin/reports",
       onSelect: () => (open.value = false),
     },
 
@@ -110,25 +108,16 @@ const links = [
       ],
     },
   ],
-
-  [
-    {
-      label: "Help & Support",
-      icon: "i-lucide-life-buoy",
-      to: "/admin/help",
-      onSelect: () => (open.value = false),
-    },
-  ],
-] satisfies NavigationMenuItem[][];
+  [],
+]);
 
 const groups = computed(() => [
   {
     id: "links",
     label: "Navigation",
-    items: links.flat(),
+    items: links.value.flat(),
   },
 ]);
-
 </script>
 <template>
   <UDashboardGroup unit="rem">
@@ -165,6 +154,7 @@ const groups = computed(() => [
         />
 
         <UNavigationMenu
+          v-if="links[1].length"
           :collapsed="collapsed"
           :items="links[1]"
           orientation="vertical"

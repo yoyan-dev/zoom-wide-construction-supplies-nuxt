@@ -14,6 +14,7 @@ const props = defineProps<{
   user: User;
 }>();
 
+const authStore = useAuthStore();
 const { openModal } = useModal();
 
 const sections = computed<AdminActionSection[]>(() => [
@@ -29,32 +30,36 @@ const sections = computed<AdminActionSection[]>(() => [
   },
   {
     label: "Manage",
-    actions: [
-      {
-        label: "Edit account",
-        icon: "i-lucide-pencil-line",
-        onClick: () => openModal(UserEditModal, props.user),
-      },
-      {
-        label: props.user.is_active ? "Deactivate account" : "Activate account",
-        icon: props.user.is_active
-          ? "i-lucide-user-x"
-          : "i-lucide-user-check",
-        color: props.user.is_active ? "warning" : "success",
-        onClick: () => openModal(UserStatusModal, props.user),
-      },
-    ],
+    actions: authStore.hasAnyRole(["admin"])
+      ? [
+          {
+            label: "Edit account",
+            icon: "i-lucide-pencil-line",
+            onClick: () => openModal(UserEditModal, props.user),
+          },
+          {
+            label: props.user.is_active ? "Deactivate account" : "Activate account",
+            icon: props.user.is_active
+              ? "i-lucide-user-x"
+              : "i-lucide-user-check",
+            color: props.user.is_active ? "warning" : "success",
+            onClick: () => openModal(UserStatusModal, props.user),
+          },
+        ]
+      : [],
   },
   {
     label: "Danger zone",
-    actions: [
-      {
-        label: "Delete account",
-        icon: "i-lucide-trash-2",
-        color: "error",
-        onClick: () => openModal(UserDeleteModal, props.user),
-      },
-    ],
+    actions: authStore.hasAnyRole(["admin"])
+      ? [
+          {
+            label: "Delete account",
+            icon: "i-lucide-trash-2",
+            color: "error",
+            onClick: () => openModal(UserDeleteModal, props.user),
+          },
+        ]
+      : [],
   },
 ]);
 </script>

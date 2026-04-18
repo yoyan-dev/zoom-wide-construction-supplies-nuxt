@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import type { UpdateAccountPayload } from "~/types/account";
+import AdminPageHeader from "../../_components/AdminPageHeader.vue";
+import AdminPageStateCard from "../../_components/AdminPageStateCard.vue";
+import AdminSystemSettingsCard from "./AdminSystemSettingsCard.vue";
 
 const accountStore = useAccountStore();
 const authStore = useAuthStore();
@@ -147,46 +150,34 @@ const goToSecurity = () => {
 
 <template>
   <div class="min-h-screen space-y-6">
-    <section
-      class="rounded-sm border border-slate-200/70 bg-white p-6 shadow-sm md:p-8 dark:bg-gray-900"
-    >
-      <div
-        class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
-      >
-        <div>
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-            Admin Settings
-          </p>
-          <h1 class="mt-2 text-2xl font-semibold md:text-3xl">
-            Account settings
-          </h1>
-          <p class="mt-2 max-w-3xl text-sm text-slate-600 md:text-base">
-            Update your admin profile details, contact information, and profile
-            image.
-          </p>
-        </div>
+    <AdminPageHeader
+      eyebrow="Admin Settings"
+      title="Account settings"
+      description="Update your admin profile details, contact information, and profile image."
+      action-label="Security settings"
+      action-icon="i-lucide-shield-check"
+      action-color="neutral"
+      @action="goToSecurity"
+    />
 
-        <UButton color="neutral" variant="outline" @click="goToSecurity">
-          Security settings
-        </UButton>
-      </div>
-    </section>
+    <AdminPageStateCard
+      v-if="pageError"
+      eyebrow="Admin Settings"
+      title="Account settings unavailable"
+      :description="pageError"
+      tone="error"
+      action-label="Retry"
+      :action-loading="isRetrying"
+      @action="handleRetry"
+    />
 
     <div
+      v-else
       class="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)] xl:items-start"
     >
       <UCard>
         <div class="space-y-6">
-          <UAlert
-            v-if="pageError"
-            color="error"
-            variant="soft"
-            icon="i-lucide-circle-alert"
-            title="Account settings unavailable"
-            :description="pageError"
-          />
-
-          <template v-else>
+          <template>
             <UAlert
               v-if="formError"
               color="error"
@@ -345,6 +336,8 @@ const goToSecurity = () => {
             </UButton>
           </div>
         </UCard>
+
+        <AdminSystemSettingsCard />
       </div>
     </div>
   </div>

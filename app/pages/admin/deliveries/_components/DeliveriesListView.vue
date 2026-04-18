@@ -68,7 +68,7 @@ const loadPage = async () => {
 
 await loadPage();
 
-const { deliveries, totalDeliveries, query, isLoading } =
+const { deliveries, totalDeliveries, query, pagination, isLoading } =
   storeToRefs(deliveryStore);
 const { orders } = storeToRefs(orderStore);
 const { customers } = storeToRefs(customerStore);
@@ -101,6 +101,14 @@ const handleStatus = async (value: string) => {
     q: search.value,
     status: value === "all" ? "" : (value as DeliveryStatus),
     page: 1,
+  });
+};
+
+const handlePageChange = async (page: number) => {
+  await deliveryStore.fetchDeliveries({
+    q: search.value,
+    status: status.value === "all" ? "" : (status.value as DeliveryStatus),
+    page,
   });
 };
 
@@ -152,6 +160,8 @@ const handleRetry = async () => {
           :status="status"
           :detail-base-path="props.detailBasePath"
           :is-loading="isLoading"
+          :pagination="pagination"
+          @page-change="handlePageChange"
         />
       </template>
     </div>

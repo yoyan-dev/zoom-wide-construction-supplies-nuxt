@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import type { PaymentMethod, PaymentStatus } from "~/types/payment";
+import AdminPermissionNotice from "../../_components/AdminPermissionNotice.vue";
 import AdminPageStateCard from "../../_components/AdminPageStateCard.vue";
 import AddPaymentModal from "./modals/AddPaymentModal.vue";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
@@ -18,6 +19,7 @@ const props = defineProps<{
 const paymentStore = usePaymentStore();
 const orderStore = useOrderStore();
 const customerStore = useCustomerStore();
+const authStore = useAuthStore();
 const { openModal } = useModal();
 const { getLoadErrorMessage } = useAdminPageLoadState();
 const pageError = ref<string | null>(null);
@@ -62,7 +64,8 @@ const loadPage = async () => {
 
 await loadPage();
 
-const { payments, query, isLoading } = storeToRefs(paymentStore);
+const { payments, totalPayments, query, pagination, isLoading } =
+  storeToRefs(paymentStore);
 const { orders } = storeToRefs(orderStore);
 const { customers } = storeToRefs(customerStore);
 const search = computed(() => query.value.q ?? "");
@@ -85,13 +88,13 @@ const methodOptions = [
   { label: "Mobile Wallet", value: "mobile_wallet" },
 ];
 
-const fetchWithFilters = async () => {
+const fetchWithFilters = async (page = 1) => {
   await paymentStore.fetchPayments({
     q: search.value,
     status: status.value === "all" ? "" : (status.value as PaymentStatus),
     method: method.value === "all" ? "" : (method.value as PaymentMethod),
     order_id: undefined,
-    page: 1,
+    page,
   });
 };
 
@@ -115,7 +118,12 @@ const handleMethod = async (value: string) => {
   await fetchWithFilters();
 };
 
+const handlePageChange = async (page: number) => {
+  await fetchWithFilters(page);
+};
+
 const handleCreate = () => {
+  if (!authStore.hasAnyRole(["admin", "finance"])) return;
   void openModal(AddPaymentModal, {
     orders: orders.value,
   });
@@ -131,7 +139,11 @@ const handleRetry = async () => {
 <template>
   <div class="min-h-screen">
     <div class="space-y-6">
-      <PaymentHeader :total="payments.length" @create="handleCreate" />
+      <PaymentHeader
+        :total="totalPayments"
+        :can-create="authStore.hasAnyRole(['admin', 'finance'])"
+        @create="handleCreate"
+      />
 
       <template v-if="pageError">
         <AdminPageStateCard
@@ -146,6 +158,10 @@ const handleRetry = async () => {
       </template>
 
       <template v-else>
+        <AdminPermissionNotice
+          v-if="!authStore.hasAnyRole(['admin', 'finance'])"
+          description="Your role can review payment records, but creating or updating payments is restricted to finance-authorized accounts."
+        />
         <PaymentSummaryCards :payments="payments" />
         <PaymentsFilters
           :search="search"
@@ -167,6 +183,8 @@ const handleRetry = async () => {
           :detail-base-path="props.detailBasePath"
           :order-base-path="props.orderBasePath"
           :is-loading="isLoading"
+          :pagination="pagination"
+          @page-change="handlePageChange"
         />
       </template>
     </div>

@@ -38,6 +38,7 @@ export const useOrderStore = defineStore("orders", () => {
   const query = ref<FetchOrderParams>({
     q: "",
     page: 1,
+    limit: 10,
   });
 
   const pagination = ref<PaginationMeta>({
@@ -80,7 +81,7 @@ export const useOrderStore = defineStore("orders", () => {
 
       pagination.value = {
         page: result.meta?.page || 1,
-        limit: result.meta?.limit || 10,
+        limit: result.meta?.limit || query.value.limit || 10,
         total: result.meta?.total || result.total || 0,
         totalPages: result.meta?.totalPages || 0,
       };

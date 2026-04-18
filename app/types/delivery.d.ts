@@ -23,6 +23,7 @@ export interface FetchDeliveryParams {
   order_id?: string;
   driver_id?: string;
   page?: number;
+  limit?: number;
 }
 
 export interface CreateDeliveryPayload {
