@@ -7,6 +7,7 @@ type BackendMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
 type BackendRequestOptions = {
   method?: BackendMethod;
+  query?: Record<string, string | number | boolean | null | undefined>;
   body?: BodyInit | Record<string, unknown> | null;
   headers?: HeadersInit;
 };
@@ -188,6 +189,13 @@ export const backendRequestRaw = <T>(
 ) =>
   $fetch.raw<H3Response<T>>(buildBackendApiUrl(path), {
     method: options.method,
+    query: Object.fromEntries(
+      Object.entries(options.query ?? {}).filter(([, value]) => {
+        if (value === undefined || value === null) return false;
+        if (typeof value === "string") return value.trim().length > 0;
+        return true;
+      }),
+    ),
     body: options.body,
     headers: options.headers,
     ignoreResponseError: true,

@@ -106,7 +106,26 @@ Improved account personalization and user access flows by adding image upload su
 
 Week 9 (April 9 - 15)
 
+Day 1: Thursday, April 9
+
+Worked only during the morning because the afternoon was used for a meeting with Sir Jealmar. In the morning, I reviewed the current project progress, checked the remaining admin completion tasks, and prepared notes for the next admin workflow.
+
+Day 2: Friday, April 10
+
+Continued organizing the remaining admin readiness tasks. I reviewed the checklist for reports, settings, role-based access, workflow hardening, and production checks, then prepared the work plan for the next implementation pass. This helped clarify which parts of the admin system still needed cleanup, testing, and final polishing before moving into the larger completion work.
+
 Day 3: Saturday, April 11
 
 Audited the admin completion checklist and production readiness state. I confirmed the completed navigation, warehouse, dashboard, and server-side pagination work, ran the production build successfully, and reviewed the admin pages for existing loading, empty, API error, invalid-detail, and role-redirect handling. I also documented the remaining readiness blockers, especially the unfinished reports, settings, role-based behavior, and workflow hardening phases that must be completed before final admin QA can be fully signed off. I then completed the admin reports page with sales, payment, inventory, low-stock, delivery performance, and customer order history sections, including date and status filters plus a CSV download option. After that, I finished the admin settings phase by reviewing the real account and password flows, making notification settings clearly display-only, documenting current business defaults, and aligning the settings pages with the shared admin header and error-state patterns. I also completed the role-based admin behavior phase by centralizing admin permission checks, hiding user and driver management from managers, restricting payment and warehouse mutation actions to authorized roles, improving role redirects, and making access-denied errors clearer. I continued with workflow hardening by re-checking the main admin CRUD and operations flows, tightening delivery status editing, payment status access, inventory movement handling, and stock adjustment safeguards. I also continued production-readiness cleanup by removing leftover debug output, confirming the admin sidebar routes resolve, and re-running the production build successfully.
 
+Day 4: Monday, April 13
+
+Focused on authentication and admin workflow stability so the system can behave more reliably across roles and sessions. I migrated the frontend auth session handling, added backend login, logout, and refresh API routes, and introduced a shared backend API helper to keep server communication cleaner. I also removed the older admin permissions composable and moved permission behavior closer to the auth store and page logic, then updated the admin dashboard, users, drivers, payments, and warehouse pages so restricted actions and role-based controls remain consistent after the session changes.
+
+Day 5: Tuesday, April 14
+
+Refactored large admin pages into smaller, focused components to make the project easier to maintain and continue improving. I reorganized the admin dashboard into dedicated hero, KPI, revenue, status summary, top products, and activity feed components, then split the product detail page into clearer sections for product information, media stats, specifications, descriptions, handbook details, and the detail header. I also cleaned up the admin reports page by moving report sections, status grids, low-stock cards, customer report cards, and amount lists into reusable components, while improving shared formatting helpers and report utilities for cleaner reporting logic.
+
+Day 6: Wednesday, April 15
+
+Started preparing the React Native mobile application foundation for the Zoom Wide system using the workspace at `C:\Development\ZOOM-ZBN-BRYS-APP\Zoom-wide-React-Native`. I reviewed the Expo Router project structure, confirmed the main app configuration, and prepared the dependency setup needed for upcoming mobile integration work. I added API communication support with Axios, image handling support with Expo Image, and validation support with Zod, then refreshed the lockfiles so the project dependencies stay aligned. I also cleaned up the Expo plugin configuration and kept the app ready for the next phase of mobile features, including authentication, product browsing, ordering flows, and connection to the existing construction supplies backend.

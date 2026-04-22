@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
-import type { Customer } from "~/types/customer";
+import type { Customer, CustomerType } from "~/types/customer";
 import type { PaginationMeta } from "~/types/pagination";
 import { formatShortDateOrFallback } from "~/utils/format";
 import AdminTableEmptyState from "../../../_components/AdminTableEmptyState.vue";
 import AdminServerPagination from "../../../_components/AdminServerPagination.vue";
+import { getCustomerTypeLabel, resolveCustomerType } from "../customer-options";
 import CustomerRowActions from "./CustomerRowActions.vue";
 
 const props = defineProps<{
@@ -14,6 +15,8 @@ const props = defineProps<{
   isLoading: boolean;
   detailBasePath: string;
   pagination: PaginationMeta;
+  customerType: CustomerType;
+  emptyBaseDescription: string;
 }>();
 
 const emit = defineEmits<{
@@ -37,17 +40,20 @@ const filteredCustomers = computed(() =>
 const hasRows = computed(() => filteredCustomers.value.length > 0);
 const hasSearch = computed(() => props.search.trim().length > 0);
 const hasAccountFilter = computed(() => props.accountStatus !== "all");
+const typeLabelLower = computed(() =>
+  getCustomerTypeLabel(props.customerType).toLowerCase(),
+);
 
 const emptyTitle = computed(() =>
   hasSearch.value || hasAccountFilter.value
-    ? "No customers match the current filters"
-    : "No customers yet",
+    ? `No ${typeLabelLower.value}s match the current filters`
+    : `No ${typeLabelLower.value}s yet`,
 );
 
 const emptyDescription = computed(() =>
   hasSearch.value || hasAccountFilter.value
     ? "Try a different search term or account filter."
-    : "Customer records appear here when they are available in the system.",
+    : props.emptyBaseDescription,
 );
 
 const columns: TableColumn<Customer>[] = [
@@ -60,6 +66,11 @@ const columns: TableColumn<Customer>[] = [
     id: "contact",
     header: "Contact",
     accessorFn: (row) => row.contact_name,
+  },
+  {
+    id: "type",
+    header: "Type",
+    accessorFn: (row) => resolveCustomerType(row),
   },
   {
     id: "account",
@@ -100,7 +111,7 @@ const columns: TableColumn<Customer>[] = [
             {{
               row.original.user_id
                 ? "Online account linked"
-                : "Customer profile only"
+                : `${getCustomerTypeLabel(resolveCustomerType(row.original))} profile only`
             }}
           </span>
         </div>
@@ -115,6 +126,11 @@ const columns: TableColumn<Customer>[] = [
             </template>
           </span>
         </div>
+      </template>
+      <template #type-cell="{ row }">
+        <UBadge color="primary" variant="subtle">
+          {{ getCustomerTypeLabel(resolveCustomerType(row.original)) }}
+        </UBadge>
       </template>
       <template #account-cell="{ row }">
         <UBadge
@@ -139,6 +155,7 @@ const columns: TableColumn<Customer>[] = [
           <CustomerRowActions
             :customer="row.original"
             :detail-base-path="props.detailBasePath"
+            :customer-type="props.customerType"
           />
         </div>
       </template>

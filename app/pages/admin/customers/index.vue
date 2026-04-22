@@ -7,5 +7,8 @@ definePageMeta({
 </script>
 
 <template>
-  <CustomersListView detail-base-path="/admin/customers" />
+  <CustomersListView
+    detail-base-path="/admin/customers"
+    customer-type="customer"
+  />
 </template>

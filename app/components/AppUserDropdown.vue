@@ -63,6 +63,15 @@ const items = computed(() => {
       icon: "i-lucide-layout-dashboard",
       to: accountTarget.value,
     },
+    ...(authStore.role === "customer"
+      ? [
+          {
+            label: "Projects",
+            icon: "i-lucide-clipboard-list",
+            to: "/shop/account/projects",
+          },
+        ]
+      : []),
   ];
 
   const settingsItems = [

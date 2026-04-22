@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import type { Customer } from "~/types/customer";
+import type { Customer, CustomerType } from "~/types/customer";
+import { CUSTOMER_TYPE_OPTIONS } from "./customer-options";
 
 export type CustomerSubmitValue = {
   user_id?: string;
+  customer_type: CustomerType;
   company_name: string;
   contact_name: string;
   phone?: string;
@@ -25,6 +27,7 @@ const emit = defineEmits<{
 
 const draft = reactive({
   user_id: "",
+  customer_type: "customer" as CustomerType,
   company_name: "",
   contact_name: "",
   phone: "",
@@ -42,6 +45,8 @@ watch(
   () => props.customer,
   (value) => {
     draft.user_id = value?.user_id ?? "";
+    draft.customer_type =
+      value?.customer_type === "contractor" ? "contractor" : "customer";
     draft.company_name = value?.company_name ?? "";
     draft.contact_name = value?.contact_name ?? "";
     draft.phone = value?.phone ?? "";
@@ -66,6 +71,7 @@ const handleSubmit = () => {
 
   emit("submit", {
     user_id: normalize(draft.user_id),
+    customer_type: draft.customer_type,
     company_name: draft.company_name.trim(),
     contact_name: draft.contact_name.trim(),
     phone: normalize(draft.phone),
@@ -80,6 +86,15 @@ const handleSubmit = () => {
   <UForm @submit.prevent="handleSubmit">
     <div class="space-y-4">
       <div class="grid gap-4 md:grid-cols-2">
+        <UFormField label="Record type" required>
+          <USelect
+            v-model="draft.customer_type"
+            class="w-full"
+            :items="CUSTOMER_TYPE_OPTIONS"
+            placeholder="Select type"
+          />
+        </UFormField>
+
         <UFormField label="Company name">
           <UInput
             v-model="draft.company_name"
@@ -87,7 +102,9 @@ const handleSubmit = () => {
             placeholder="ABC Trading"
           />
         </UFormField>
+      </div>
 
+      <div class="grid gap-4 md:grid-cols-2">
         <UFormField label="Contact name">
           <UInput
             v-model="draft.contact_name"

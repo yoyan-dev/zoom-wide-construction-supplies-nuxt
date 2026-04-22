@@ -7,6 +7,11 @@ import CustomerAccountCard from "./CustomerAccountCard.vue";
 import CustomerAddressCard from "./CustomerAddressCard.vue";
 import CustomerOrderSummaryCard from "./CustomerOrderSummaryCard.vue";
 import CustomerOverviewCard from "./CustomerOverviewCard.vue";
+import {
+  getCustomerTypeLabel,
+  resolveCustomerType,
+} from "../customer-options";
+import type { CustomerType } from "~/types/customer";
 import { useAdminPageLoadState } from "~/composables/admin/useAdminPageLoadState";
 import { useModal } from "~/composables/admin/useModal";
 
@@ -14,9 +19,11 @@ const props = withDefaults(
   defineProps<{
     customerId: string;
     backTo?: string;
+    customerType?: CustomerType;
   }>(),
   {
     backTo: "/admin/customers",
+    customerType: "customer",
   },
 );
 
@@ -52,12 +59,18 @@ const goBack = () => {
 
 const editCustomer = () => {
   if (!customer.value) return;
-  void openModal(CustomerEditModal, customer.value);
+  void openModal(CustomerEditModal, {
+    customer: customer.value,
+    customerType: props.customerType,
+  });
 };
 
 const deleteCustomer = () => {
   if (!customer.value) return;
-  void openModal(CustomerDeleteModal, customer.value);
+  void openModal(CustomerDeleteModal, {
+    customer: customer.value,
+    customerType: props.customerType,
+  });
 };
 
 const retryLoad = async () => {
@@ -76,22 +89,25 @@ const retryLoad = async () => {
         >
           <div>
             <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-              Customer Management
+              {{ getCustomerTypeLabel(props.customerType) }} Management
             </p>
             <h1 class="mt-2 text-2xl font-semibold">
-              {{ customer?.company_name ?? "Customer not found" }}
+              {{
+                customer?.company_name ??
+                `${getCustomerTypeLabel(props.customerType)} not found`
+              }}
             </h1>
             <p class="mt-2 text-sm text-slate-600">
-              Review customer identity, contact details, linked account context,
-              and address information.
+              Review {{ getCustomerTypeLabel(resolveCustomerType(customer)).toLowerCase() }} identity,
+              contact details, linked account context, and address information.
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <UButton color="neutral" variant="outline" @click="goBack">
-              Back to Customers
+              Back to {{ getCustomerTypeLabel(props.customerType) }}s
             </UButton>
             <UButton v-if="customer?.id" color="primary" @click="editCustomer">
-              Edit Customer
+              Edit {{ getCustomerTypeLabel(props.customerType) }}
             </UButton>
             <UButton
               v-if="customer?.id"
@@ -99,7 +115,7 @@ const retryLoad = async () => {
               variant="soft"
               @click="deleteCustomer"
             >
-              Delete Customer
+              Delete {{ getCustomerTypeLabel(props.customerType) }}
             </UButton>
           </div>
         </div>
@@ -107,8 +123,8 @@ const retryLoad = async () => {
 
       <AdminPageStateCard
         v-if="pageError"
-        eyebrow="Customer Details"
-        title="Customer unavailable"
+        :eyebrow="`${getCustomerTypeLabel(props.customerType)} Details`"
+        :title="`${getCustomerTypeLabel(props.customerType)} unavailable`"
         :description="pageError"
         tone="error"
         action-label="Retry"
@@ -118,10 +134,10 @@ const retryLoad = async () => {
 
       <AdminPageStateCard
         v-else-if="isMissingCustomer || !customer"
-        eyebrow="Customer Details"
-        title="Customer not found"
-        description="Check the URL or return to the customers list."
-        action-label="Back to Customers"
+        :eyebrow="`${getCustomerTypeLabel(props.customerType)} Details`"
+        :title="`${getCustomerTypeLabel(props.customerType)} not found`"
+        :description="`Check the URL or return to the ${getCustomerTypeLabel(props.customerType).toLowerCase()}s list.`"
+        :action-label="`Back to ${getCustomerTypeLabel(props.customerType)}s`"
         action-color="neutral"
         action-icon="i-lucide-arrow-left"
         @action="goBack"

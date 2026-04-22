@@ -35,7 +35,7 @@ const props = withDefaults(
 </script>
 
 <template>
-  <div class="grid gap-3">
+  <div class="flex flex-col gap-3">
     <div
       v-for="item in props.items"
       :key="item.title"

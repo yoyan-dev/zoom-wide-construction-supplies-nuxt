@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Customer } from "~/types/customer";
+import { getCustomerTypeLabel, resolveCustomerType } from "../customer-options";
 
 const props = defineProps<{
   customer: Customer;
@@ -10,6 +11,10 @@ const customerInitial = computed(
 );
 
 const summaryItems = computed(() => [
+  {
+    label: "Type",
+    value: getCustomerTypeLabel(resolveCustomerType(props.customer)),
+  },
   {
     label: "Account",
     value: props.customer.user_id ? "Linked" : "Unlinked",
@@ -32,7 +37,7 @@ const summaryItems = computed(() => [
     >
       <div class="text-center">
         <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Customer
+          {{ getCustomerTypeLabel(resolveCustomerType(props.customer)) }}
         </p>
         <p class="mt-3 text-5xl font-semibold text-slate-800">
           {{ customerInitial }}
@@ -48,6 +53,9 @@ const summaryItems = computed(() => [
           <h2 class="text-xl font-semibold text-slate-900">
             {{ props.customer.company_name }}
           </h2>
+          <UBadge color="primary" variant="subtle">
+            {{ getCustomerTypeLabel(resolveCustomerType(props.customer)) }}
+          </UBadge>
           <UBadge
             :color="props.customer.user_id ? 'success' : 'neutral'"
             variant="subtle"

@@ -1,6 +1,11 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-import type { Customer, FetchCustomerParams } from "~/types/customer";
+import type {
+  CreateCustomerPayload,
+  Customer,
+  FetchCustomerParams,
+  UpdateCustomerPayload,
+} from "~/types/customer";
 import type { PaginationMeta } from "~/types/pagination";
 import type { StoreResponse } from "~/types/store-response";
 import { apiRequest, apiRequestRaw } from "~/utils/api";
@@ -96,7 +101,7 @@ export const useCustomerStore = defineStore("customers", () => {
   }
 
   async function addCustomer(
-    payload: Omit<Customer, "id" | "created_at" | "updated_at">,
+    payload: CreateCustomerPayload,
   ): Promise<StoreResponse> {
     isLoading.value = true;
 
@@ -128,7 +133,7 @@ export const useCustomerStore = defineStore("customers", () => {
 
   async function updateCustomer(
     id: string,
-    payload: Partial<Omit<Customer, "id" | "created_at" | "updated_at">>,
+    payload: UpdateCustomerPayload,
   ): Promise<StoreResponse> {
     isLoading.value = true;
 

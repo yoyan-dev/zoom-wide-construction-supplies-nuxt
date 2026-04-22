@@ -123,6 +123,12 @@ const accountRows = computed(() => [
     to: "/cart",
   },
   {
+    label: "Projects",
+    icon: "i-lucide-clipboard-list",
+    value: "Manage project loads",
+    to: "/shop/account/projects",
+  },
+  {
     label: "Saved addresses",
     icon: "i-lucide-map-pinned",
     value: `${formatNumber(addresses.value.length)} on file`,

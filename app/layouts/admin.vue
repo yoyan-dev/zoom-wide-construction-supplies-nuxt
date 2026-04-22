@@ -52,6 +52,18 @@ const links = computed<NavigationMenuItem[][]>(() => [
       to: "/admin/customers",
       onSelect: () => (open.value = false),
     },
+    {
+      label: "Contractors",
+      icon: "i-lucide-hard-hat",
+      to: "/admin/contractors",
+      onSelect: () => (open.value = false),
+    },
+    {
+      label: "Suppliers",
+      icon: "i-lucide-building-2",
+      to: "/admin/suppliers",
+      onSelect: () => (open.value = false),
+    },
 
     {
       label: "Deliveries",

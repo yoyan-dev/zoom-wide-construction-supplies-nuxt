@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CustomerDetailView from "../_components/detail/CustomerDetailView.vue";
+import CustomerDetailView from "../../customers/_components/detail/CustomerDetailView.vue";
 
 definePageMeta({
   layout: "admin",
@@ -12,7 +12,7 @@ const customerId = computed(() => String(route.params.id));
 <template>
   <CustomerDetailView
     :customer-id="customerId"
-    back-to="/admin/customers"
-    customer-type="customer"
+    back-to="/admin/contractors"
+    customer-type="contractor"
   />
 </template>
